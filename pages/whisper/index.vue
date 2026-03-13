@@ -39,7 +39,7 @@
               :disabled="isProcessing || isUploading"
             >
               <span class="button-icon">🎙️</span>
-              <span class="button-text">録音開始</span>
+              <span class="button-text">録音</span>
             </button>
 
             <button
@@ -48,7 +48,7 @@
               :disabled="isProcessing || isUploading"
             >
               <span class="button-icon">{{ isUploading ? '⏳' : '📂' }}</span>
-              <span class="button-text">{{ isUploading ? '処理中...' : 'ファイル' }}</span>
+              <span class="button-text">{{ isUploading ? '処理中...' : '音声ファイル' }}</span>
             </button>
           </template>
 
