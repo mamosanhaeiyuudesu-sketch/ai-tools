@@ -79,6 +79,7 @@
             <thead>
               <tr>
                 <th class="col-date">日時</th>
+                <th class="col-title">タイトル</th>
                 <th class="col-copy">コピー</th>
                 <th class="col-delete">削除</th>
               </tr>
@@ -86,6 +87,7 @@
             <tbody>
               <tr v-for="item in history" :key="item.id">
                 <td class="col-date">{{ formatDate(item.timestamp) }}</td>
+                <td class="col-title">{{ item.title }}</td>
                 <td class="col-copy">
                   <button @click="copyHistory(item)" class="action-button copy" :title="item.id === copiedHistoryId ? 'コピーしました!' : 'コピー'">
                     {{ item.id === copiedHistoryId ? '✓' : '📋' }}
@@ -110,6 +112,7 @@ interface HistoryItem {
   id: string
   timestamp: string
   text: string
+  title: string
 }
 
 const STORAGE_KEY = 'whisper-history'
@@ -143,11 +146,24 @@ const saveHistory = () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history.value))
 }
 
-const addHistory = (text: string) => {
+const fetchTitle = async (text: string): Promise<string> => {
+  try {
+    const response = await $fetch<{ title: string }>('/api/snapreader/title', {
+      method: 'POST',
+      body: { transcript: text },
+    })
+    return response.title
+  } catch {
+    return ''
+  }
+}
+
+const addHistory = (text: string, title: string) => {
   const item: HistoryItem = {
     id: Date.now().toString(),
     timestamp: new Date().toISOString(),
     text,
+    title,
   }
   history.value.unshift(item)
   saveHistory()
@@ -262,7 +278,8 @@ const transcribeRecording = () => {
       }
 
       const data = await response.json()
-      addHistory(data.text)
+      const title = await fetchTitle(data.text)
+      addHistory(data.text, title)
     } catch (err) {
       error.value = err instanceof Error ? err.message : '予期しないエラーが発生しました'
       console.error('Transcription error:', err)
@@ -299,7 +316,8 @@ const onFileSelected = async (event: Event) => {
     }
 
     const data = await response.json()
-    addHistory(data.text)
+    const title = await fetchTitle(data.text)
+    addHistory(data.text, title)
   } catch (err) {
     error.value = err instanceof Error ? err.message : '予期しないエラーが発生しました'
     console.error('Upload transcription error:', err)
@@ -678,6 +696,14 @@ const onFileSelected = async (event: Event) => {
 .col-date {
   white-space: nowrap;
   width: 130px;
+}
+
+.col-title {
+  color: #e2e8f0;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .col-copy,
