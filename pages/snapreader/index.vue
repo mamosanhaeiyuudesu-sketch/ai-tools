@@ -3,14 +3,14 @@
     <div class="container">
       <header class="header">
         <h1>SnapReader</h1>
-        <p class="subtitle">画像を送って、数秒で要約</p>
+        <p class="subtitle">画像を送って、文字起こし</p>
       </header>
 
       <div class="uploader">
         <div class="buttons-row">
           <button class="record-button camera-button" @click="fileInput?.click()" :disabled="loading">
-            <span class="button-icon">📷</span>
-            <span class="button-text">画像を送る</span>
+            <span class="button-icon">{{ loading ? '⏳' : '📷' }}</span>
+            <span class="button-text">{{ loading ? '解析中' : '画像を送る' }}</span>
           </button>
           <input
             ref="fileInput"
@@ -20,88 +20,11 @@
             @change="onFileChange"
           />
         </div>
-
-        <div v-if="previewUrl" class="preview">
-          <img :src="previewUrl" alt="選択した画像のプレビュー" />
-        </div>
-      </div>
-
-      <div v-if="previewUrl" class="actions">
-        <button class="primary-button" :disabled="!imageBase64 || loading" @click="submit">
-          {{ loading ? '送信中...' : '要約を依頼する' }}
-        </button>
-        <button class="ghost-button" :disabled="loading" @click="reset">
-          リセット
-        </button>
       </div>
 
       <div v-if="error" class="status status--error">
         <p>{{ error }}</p>
       </div>
-
-      <div v-if="loading" class="status status--info">
-        <p>画像を送信しています。少々お待ちください…</p>
-      </div>
-
-      <div v-if="summary" class="status status--success">
-        <h2>要約</h2>
-        <p class="summary-text">{{ summary }}</p>
-      </div>
-
-      <div v-if="transcript" class="status status--info">
-        <h2>全文書き起こし</h2>
-        <p class="summary-text">{{ transcript }}</p>
-      </div>
-
-      <section v-if="summary" class="chat">
-        <div v-if="chatMessages.length" class="chat__log">
-          <div
-            v-for="(message, index) in chatMessages"
-            :key="index"
-            class="chat__bubble"
-            :class="message.role === 'user' ? 'chat__bubble--user' : 'chat__bubble--assistant'"
-          >
-            <p>{{ message.content }}</p>
-          </div>
-        </div>
-        <p v-else class="chat__empty">質問を入力すると会話が始まります。</p>
-        <div class="chat__suggestions">
-          <p class="chat__suggestions-title">この画像を深掘りする質問</p>
-          <div v-if="suggestedQuestions.length" class="chat__suggestions-list">
-            <button
-              v-for="(question, index) in suggestedQuestions"
-              :key="index"
-              class="chat__suggestion"
-              type="button"
-              :disabled="chatLoading || suggestionsLoading"
-              @click="onSuggestionClick(question)"
-            >
-              {{ question }}
-            </button>
-          </div>
-          <p v-else class="chat__suggestions-empty">
-            {{ suggestionsLoading ? '提案を生成中…' : '質問候補はありません。' }}
-          </p>
-          <p v-if="suggestionsError" class="chat__suggestions-status chat__suggestions-status--error">
-            {{ suggestionsError }}
-          </p>
-        </div>
-        <form class="chat__form" @submit.prevent="sendChat">
-          <textarea
-            v-model="chatInput"
-            class="chat__input"
-            placeholder="質問を入力..."
-            :disabled="chatLoading"
-            @keydown="onChatKeydown"
-          ></textarea>
-          <button class="primary-button" type="submit" :disabled="chatLoading || !chatInput.trim()">
-            {{ chatLoading ? '送信中...' : '送信' }}
-          </button>
-        </form>
-        <div v-if="chatError" class="status status--error">
-          <p>{{ chatError }}</p>
-        </div>
-      </section>
 
       <div v-if="history.length > 0" class="history">
         <h2>履歴</h2>
@@ -110,6 +33,7 @@
             <thead>
               <tr>
                 <th class="col-date">日時</th>
+                <th class="col-title">タイトル</th>
                 <th class="col-copy">コピー</th>
                 <th class="col-delete">削除</th>
               </tr>
@@ -117,6 +41,7 @@
             <tbody>
               <tr v-for="item in history" :key="item.id">
                 <td class="col-date">{{ formatDate(item.timestamp) }}</td>
+                <td class="col-title">{{ item.title }}</td>
                 <td class="col-copy">
                   <button
                     @click="copyHistory(item)"
@@ -141,34 +66,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
-type ChatMessage = {
-  role: 'user' | 'assistant'
-  content: string
-}
-
 interface HistoryItem {
   id: string
   timestamp: string
-  summary: string
+  transcript: string
+  title: string
 }
 
 const STORAGE_KEY = 'snapreader-history'
 
-const previewUrl = ref<string>('')
 const fileInput = ref<HTMLInputElement | null>(null)
 const imageBase64 = ref<string>('')
-const summary = ref<string>('')
-const transcript = ref<string>('')
 const error = ref<string>('')
 const loading = ref(false)
-const chatMessages = ref<ChatMessage[]>([])
-const chatInput = ref('')
-const chatLoading = ref(false)
-const chatError = ref('')
-const includeImageInChat = ref(false)
-const suggestedQuestions = ref<string[]>([])
-const suggestionsLoading = ref(false)
-const suggestionsError = ref('')
 const history = ref<HistoryItem[]>([])
 const copiedHistoryId = ref<string | null>(null)
 
@@ -187,11 +97,12 @@ const saveHistory = () => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(history.value))
 }
 
-const addHistory = (summaryText: string) => {
+const addHistory = (transcriptText: string, titleText: string) => {
   const item: HistoryItem = {
     id: Date.now().toString(),
     timestamp: new Date().toISOString(),
-    summary: summaryText,
+    transcript: transcriptText,
+    title: titleText,
   }
   history.value.unshift(item)
   saveHistory()
@@ -204,7 +115,7 @@ const deleteHistory = (id: string) => {
 
 const copyHistory = async (item: HistoryItem) => {
   try {
-    await navigator.clipboard.writeText(item.summary)
+    await navigator.clipboard.writeText(item.transcript)
     copiedHistoryId.value = item.id
     setTimeout(() => { copiedHistoryId.value = null }, 2000)
   } catch (err) {
@@ -236,9 +147,6 @@ const formatText = (text: string) => {
   return withoutMarkdown.replace(/。/g, '。\n').trim()
 }
 
-const normalizeQuestion = (question: string) =>
-  formatText(question).replace(/\s+/g, ' ').trim()
-
 const toDataUrl = (file: File) =>
   new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
@@ -253,8 +161,6 @@ const onFileChange = async (event: Event) => {
   if (!file) return
 
   error.value = ''
-  summary.value = ''
-  transcript.value = ''
 
   if (!file.type.startsWith('image/')) {
     error.value = '画像ファイルを選択してください。'
@@ -263,167 +169,31 @@ const onFileChange = async (event: Event) => {
 
   try {
     const dataUrl = await toDataUrl(file)
-    previewUrl.value = dataUrl
     imageBase64.value = dataUrl
   } catch (err) {
     error.value = (err as Error).message
-  }
-}
-
-const updateSuggestions = async () => {
-  if (!transcript.value) return
-
-  suggestionsLoading.value = true
-  suggestionsError.value = ''
-
-  try {
-    const response = await $fetch<{ questions: string[] }>('/api/snapreader/questions', {
-      method: 'POST',
-      body: { transcript: transcript.value },
-    })
-    suggestedQuestions.value = (response?.questions ?? [])
-      .map((question) => normalizeQuestion(question))
-      .filter(Boolean)
-      .slice(0, 3)
-  } catch (err: any) {
-    suggestionsError.value =
-      err?.data?.message || err?.statusMessage || err?.message || '質問候補の取得に失敗しました。'
-  } finally {
-    suggestionsLoading.value = false
-  }
-}
-
-const submit = async () => {
-  if (!imageBase64.value) {
-    error.value = '画像を選択してください。'
     return
   }
 
   loading.value = true
-  error.value = ''
-  summary.value = ''
-  chatMessages.value = []
-  chatInput.value = ''
-  chatError.value = ''
-  suggestedQuestions.value = []
-  suggestionsError.value = ''
-
   try {
     const transcriptResponse = await $fetch<{ transcript: string }>('/api/snapreader/transcript', {
       method: 'POST',
       body: { imageBase64: imageBase64.value },
     })
-    transcript.value = formatText(transcriptResponse.transcript)
-
-    const summaryResponse = await $fetch<{ summary: string }>('/api/snapreader/summary', {
+    const text = formatText(transcriptResponse.transcript)
+    const titleResponse = await $fetch<{ title: string }>('/api/snapreader/title', {
       method: 'POST',
-      body: { transcript: transcript.value },
+      body: { transcript: text },
     })
-    summary.value = formatText(summaryResponse.summary)
-    addHistory(summary.value)
-
-    await updateSuggestions()
+    addHistory(text, titleResponse.title)
   } catch (err: any) {
     error.value =
       err?.data?.message || err?.statusMessage || err?.message || '解析に失敗しました。'
   } finally {
     loading.value = false
+    if (fileInput.value) fileInput.value.value = ''
   }
-}
-
-const sendChat = async (overrideQuestion?: string) => {
-  if (!summary.value) { chatError.value = '要約がありません。'; return }
-  if (!imageBase64.value) { chatError.value = '画像を選択してください。'; return }
-
-  const question = (overrideQuestion ?? chatInput.value).trim()
-  if (!question || chatLoading.value) return
-
-  chatLoading.value = true
-  chatError.value = ''
-
-  const nextMessages: ChatMessage[] = [
-    ...chatMessages.value,
-    { role: 'user', content: question },
-  ]
-  const trimmedMessages = nextMessages.slice(-8)
-  chatMessages.value = [...nextMessages, { role: 'assistant', content: '' }]
-  const assistantIndex = chatMessages.value.length - 1
-  let assistantRaw = ''
-
-  try {
-    const response = await fetch('/api/snapreader/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        imageBase64: includeImageInChat.value ? imageBase64.value : undefined,
-        summary: summary.value,
-        transcript: transcript.value,
-        messages: trimmedMessages,
-      }),
-    })
-
-    if (!response.ok) {
-      let message = '返信の取得に失敗しました。'
-      try {
-        const data = await response.json()
-        message = data?.message || data?.statusMessage || message
-      } catch {
-        const text = await response.text()
-        if (text) message = text
-      }
-      throw new Error(message)
-    }
-
-    if (!response.body) throw new Error('返信のストリームを取得できませんでした。')
-
-    const reader = response.body.getReader()
-    const decoder = new TextDecoder()
-
-    while (true) {
-      const { value, done } = await reader.read()
-      if (done) break
-      if (value) {
-        assistantRaw += decoder.decode(value, { stream: true })
-        chatMessages.value[assistantIndex].content = formatText(assistantRaw)
-      }
-    }
-
-    assistantRaw += decoder.decode()
-    chatMessages.value[assistantIndex].content = formatText(assistantRaw)
-    await updateSuggestions()
-  } catch (err: any) {
-    chatError.value =
-      err?.data?.message || err?.statusMessage || err?.message || '返信の取得に失敗しました。'
-  } finally {
-    chatInput.value = ''
-    chatLoading.value = false
-  }
-}
-
-const onChatKeydown = (event: KeyboardEvent) => {
-  if (event.key !== 'Enter') return
-  if (!(event.metaKey || event.ctrlKey)) return
-  event.preventDefault()
-  sendChat()
-}
-
-const onSuggestionClick = (question: string) => {
-  chatInput.value = question
-  sendChat(question)
-}
-
-const reset = () => {
-  previewUrl.value = ''
-  imageBase64.value = ''
-  summary.value = ''
-  transcript.value = ''
-  error.value = ''
-  chatMessages.value = []
-  chatInput.value = ''
-  chatError.value = ''
-  suggestedQuestions.value = []
-  suggestionsError.value = ''
-  if (fileInput.value) fileInput.value.value = ''
 }
 </script>
 
@@ -557,78 +327,6 @@ const reset = () => {
   font-weight: 500;
 }
 
-.preview {
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.preview img {
-  width: 100%;
-  display: block;
-  object-fit: contain;
-  max-height: 360px;
-}
-
-@media (max-width: 1023px) {
-  .preview img {
-    max-height: 280px;
-  }
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-}
-
-@media (max-width: 1023px) {
-  .actions {
-    flex-direction: column;
-  }
-}
-
-.primary-button {
-  flex: 1;
-  padding: 12px 16px;
-  border: none;
-  background: linear-gradient(135deg, #38bdf8, #6366f1);
-  color: #f8fafc;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-
-.primary-button:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.primary-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.ghost-button {
-  padding: 12px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: transparent;
-  color: #e2e8f0;
-  border-radius: 8px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.ghost-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.ghost-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
 
 .status {
   border-radius: 12px;
@@ -636,26 +334,8 @@ const reset = () => {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.status h2 {
-  margin: 0 0 6px;
-  font-size: 16px;
-  color: #f8fafc;
-}
-
 .status p {
   margin: 0;
-}
-
-.summary-text {
-  white-space: pre-wrap;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #e2e8f0;
-}
-
-.status--success {
-  background: rgba(74, 222, 128, 0.08);
-  border-color: rgba(74, 222, 128, 0.3);
 }
 
 .status--error {
@@ -670,132 +350,6 @@ const reset = () => {
   border-color: rgba(125, 211, 252, 0.4);
   color: #e0f2fe;
   font-size: 14px;
-}
-
-.chat {
-  display: grid;
-  gap: 12px;
-}
-
-.chat__log {
-  display: grid;
-  gap: 8px;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.chat__bubble {
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 14px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-}
-
-.chat__bubble p {
-  margin: 0;
-}
-
-.chat__bubble--user {
-  background: rgba(56, 189, 248, 0.15);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-  color: #e0f2fe;
-}
-
-.chat__bubble--assistant {
-  background: rgba(165, 243, 252, 0.05);
-  border: 1px solid rgba(125, 211, 252, 0.2);
-  color: #cffafe;
-}
-
-.chat__empty {
-  margin: 0;
-  font-size: 13px;
-  color: #94a3b8;
-}
-
-.chat__suggestions {
-  display: grid;
-  gap: 8px;
-}
-
-.chat__suggestions-title {
-  margin: 0;
-  font-size: 14px;
-  color: #cbd5e1;
-}
-
-.chat__suggestions-list {
-  display: grid;
-  gap: 8px;
-}
-
-.chat__suggestion {
-  text-align: left;
-  background: rgba(56, 189, 248, 0.12);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  color: #e0f2fe;
-  border-radius: 10px;
-  padding: 8px 10px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.2s ease;
-}
-
-.chat__suggestion:hover:not(:disabled) {
-  transform: translateY(-1px);
-  border-color: #7dd3fc;
-}
-
-.chat__suggestion:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.chat__suggestions-empty,
-.chat__suggestions-status {
-  margin: 0;
-  font-size: 13px;
-  color: #94a3b8;
-}
-
-.chat__suggestions-status--error {
-  color: #fca5a5;
-}
-
-.chat__form {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 8px;
-}
-
-@media (max-width: 1023px) {
-  .chat__form {
-    grid-template-columns: 1fr;
-  }
-}
-
-.chat__input {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  padding: 10px 12px;
-  color: #e2e8f0;
-  font-family: inherit;
-  font-size: 14px;
-  resize: none;
-  max-height: 100px;
-  transition: border-color 0.2s ease;
-}
-
-.chat__input:focus {
-  outline: none;
-  border-color: rgba(56, 189, 248, 0.5);
-}
-
-.chat__input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .history {
@@ -867,6 +421,14 @@ const reset = () => {
 .col-date {
   white-space: nowrap;
   width: 130px;
+}
+
+.col-title {
+  color: #e2e8f0;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .col-copy,
