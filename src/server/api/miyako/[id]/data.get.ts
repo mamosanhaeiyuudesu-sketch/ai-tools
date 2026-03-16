@@ -1,0 +1,41 @@
+// 指定した会期の議案一覧・発言者集計を取得する
+export default defineEventHandler(async (event) => {
+  const sessionId = getRouterParam(event, 'id')
+  if (!sessionId) throw createError({ statusCode: 400, statusMessage: 'session id required' })
+
+  const { cloudflare } = event.context as any
+  const db = cloudflare.env.MIYAKO_DB
+
+  const [sessionRow, billsResult, speakersResult] = await Promise.all([
+    db
+      .prepare(`SELECT * FROM sessions WHERE session_id = ?`)
+      .bind(sessionId)
+      .first(),
+    db
+      .prepare(
+        `SELECT bill_id, bill_number, bill_title, proposer, result, result_method
+         FROM bills WHERE session_id = ? ORDER BY bill_id`
+      )
+      .bind(sessionId)
+      .all(),
+    db
+      .prepare(
+        `SELECT speaker_name, speaker_role, speaker_party, speaker_faction,
+                COUNT(*) as utterance_count
+         FROM utterances
+         WHERE session_id = ? AND utterance_type IN ('質問','討論')
+         GROUP BY speaker_name, speaker_role, speaker_party, speaker_faction
+         ORDER BY utterance_count DESC`
+      )
+      .bind(sessionId)
+      .all(),
+  ])
+
+  if (!sessionRow) throw createError({ statusCode: 404, statusMessage: '会期が見つかりません' })
+
+  return {
+    session: sessionRow,
+    bills: billsResult.results,
+    speakers: speakersResult.results,
+  }
+})

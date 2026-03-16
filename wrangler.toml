@@ -11,6 +11,11 @@ database_name = "tasks-db"
 database_id = "379f07c2-e5f1-4406-bd8d-3f7587a5bdc6"
 # Run: wrangler d1 create tasks-db  to get the database_id
 
+[[d1_databases]]
+binding = "MIYAKO_DB"
+database_name = "miyako-gijiroku"
+database_id = "07376f0e-60c5-4124-b363-a135d0c8821b"
+
 [build]
 command = "npm run build"
 
