@@ -2,8 +2,25 @@
   <div class="page">
     <div class="container">
       <header class="header">
-        <h1>Whisper</h1>
-        <p class="subtitle">音声を文字に変換</p>
+        <div class="header-center">
+          <h1>Whisper</h1>
+          <p class="subtitle">音声を文字に変換</p>
+        </div>
+        <div class="header-actions">
+          <button
+            class="action-btn"
+            data-label="要約"
+            :disabled="filteredTexts.length === 0 || isSummarizing"
+            @click="runSummary"
+          >
+            <span>📝</span>
+            <span class="action-label">要約</span>
+          </button>
+          <button class="action-btn" data-label="設定" @click="settingsOpen = true">
+            <span>⚙️</span>
+            <span class="action-label">設定</span>
+          </button>
+        </div>
       </header>
 
       <div class="recorder">
@@ -68,31 +85,159 @@
 
       <div v-if="error" class="error">
         <p>{{ error }}</p>
-        <button @click="error = ''" class="reset-button">閉じる</button>
+        <button class="reset-button" @click="error = ''">閉じる</button>
       </div>
 
       <HistoryTable :history="history" :copiedId="copiedHistoryId" @copy="copyHistory" @delete="deleteHistory" />
+    </div>
+
+    <!-- 設定モーダル -->
+    <div v-if="settingsOpen" class="modal-overlay" @click.self="settingsOpen = false">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>設定</h2>
+          <button class="modal-close" @click="settingsOpen = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="field">
+            <label>要約する期間</label>
+            <select v-model="settings.period" class="select">
+              <option value="all">すべて</option>
+              <option value="today">今日</option>
+              <option value="week">過去7日</option>
+              <option value="month">過去30日</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>システムプロンプト</label>
+            <textarea
+              v-model="settings.systemPrompt"
+              class="textarea"
+              rows="4"
+              placeholder="要約してください"
+            />
+          </div>
+          <div class="field">
+            <label>OpenAI Vector Store ID <span class="optional">（任意）</span></label>
+            <input
+              v-model="settings.vectorStoreId"
+              class="input"
+              type="text"
+              placeholder="vs_xxxxxxxxxx"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-primary" @click="saveSettings">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 要約結果モーダル -->
+    <div v-if="summaryOpen" class="modal-overlay" @click.self="summaryOpen = false">
+      <div class="modal modal-large">
+        <div class="modal-header">
+          <h2>要約結果</h2>
+          <button class="modal-close" @click="summaryOpen = false">✕</button>
+        </div>
+        <div class="modal-body">
+          <div v-if="isSummarizing" class="summary-loading">
+            <span class="spinner" />
+            <span>要約中...</span>
+          </div>
+          <div v-else class="summary-text">{{ summaryResult }}</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-ghost" @click="copySummary">{{ summaryCopied ? 'コピーしました' : 'コピー' }}</button>
+          <button class="btn-primary" @click="summaryOpen = false">閉じる</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useHistory } from '~/composables/useHistory'
 
 const isRecording = ref(false)
 const isPaused = ref(false)
 const isProcessing = ref(false)
 const isUploading = ref(false)
+const isSummarizing = ref(false)
 const duration = ref(0)
 const error = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
+const settingsOpen = ref(false)
+const summaryOpen = ref(false)
+const summaryResult = ref('')
+const summaryCopied = ref(false)
 
 const { history, copiedHistoryId, addHistory, deleteHistory, copyHistory } = useHistory('whisper-history')
 
+// --- 設定 ---
+const defaultSettings = { period: 'all', systemPrompt: '要約してください', vectorStoreId: '' }
+const settings = ref({ ...defaultSettings })
+
+onMounted(() => {
+  const stored = localStorage.getItem('whisper-summary-settings')
+  if (stored) {
+    try { settings.value = { ...defaultSettings, ...JSON.parse(stored) } } catch {}
+  }
+})
+
+const saveSettings = () => {
+  localStorage.setItem('whisper-summary-settings', JSON.stringify(settings.value))
+  settingsOpen.value = false
+}
+
+// --- 要約対象テキスト ---
+const filteredTexts = computed(() => {
+  const now = new Date()
+  return history.value
+    .filter((item) => {
+      if (settings.value.period === 'all') return true
+      const d = new Date(item.timestamp)
+      if (settings.value.period === 'today') return d.toDateString() === now.toDateString()
+      if (settings.value.period === 'week') return now.getTime() - d.getTime() <= 7 * 24 * 60 * 60 * 1000
+      if (settings.value.period === 'month') return now.getTime() - d.getTime() <= 30 * 24 * 60 * 60 * 1000
+      return true
+    })
+    .map((item) => item.text)
+})
+
+const runSummary = async () => {
+  if (!filteredTexts.value.length) return
+  summaryResult.value = ''
+  summaryOpen.value = true
+  isSummarizing.value = true
+  try {
+    const res = await $fetch<{ summary: string }>('/api/whisper/summarize', {
+      method: 'POST',
+      body: {
+        texts: filteredTexts.value,
+        systemPrompt: settings.value.systemPrompt || '要約してください',
+        vectorStoreId: settings.value.vectorStoreId || undefined,
+      },
+    })
+    summaryResult.value = res.summary
+  } catch (err) {
+    summaryResult.value = err instanceof Error ? err.message : '要約に失敗しました'
+  } finally {
+    isSummarizing.value = false
+  }
+}
+
+const copySummary = async () => {
+  await navigator.clipboard.writeText(summaryResult.value)
+  summaryCopied.value = true
+  setTimeout(() => { summaryCopied.value = false }, 2000)
+}
+
+// --- 録音 ---
 let mediaRecorder: MediaRecorder | null = null
 let audioChunks: Blob[] = []
-let timerInterval: NodeJS.Timeout | null = null
+let timerInterval: ReturnType<typeof setInterval> | null = null
 
 const formatTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60)
@@ -117,7 +262,6 @@ const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
     mediaRecorder = new MediaRecorder(stream)
     audioChunks = []
-
     mediaRecorder.ondataavailable = (event) => { audioChunks.push(event.data) }
     mediaRecorder.start()
     isRecording.value = true
@@ -211,7 +355,7 @@ const onFileSelected = async (event: Event) => {
   align-items: center;
   justify-content: center;
   padding: 32px 16px;
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 @media (max-width: 1023px) {
@@ -225,6 +369,7 @@ const onFileSelected = async (event: Event) => {
 .container {
   width: 100%;
   max-width: 600px;
+  margin-left: 10px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
@@ -242,11 +387,21 @@ const onFileSelected = async (event: Event) => {
   }
 }
 
+/* ヘッダー */
 .header {
-  text-align: center;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.header h1 {
+.header-center {
+  flex: 1;
+  text-align: center;
+  padding: 0 0 0 40px;
+}
+
+.header-center h1 {
   margin: 0;
   font-size: clamp(24px, 4vw, 32px);
   color: #f8fafc;
@@ -262,6 +417,74 @@ const onFileSelected = async (event: Event) => {
   font-size: 16px;
 }
 
+.header-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  padding-top: 4px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #f8fafc;
+}
+
+.action-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (max-width: 1023px) {
+  .action-label {
+    display: none;
+  }
+
+  .action-btn {
+    position: relative;
+    padding: 8px 10px;
+  }
+
+  .action-btn::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #334155;
+    color: #f1f5f9;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+
+  .action-btn:hover::after {
+    opacity: 1;
+  }
+}
+
+/* 録音UI */
 .recorder {
   display: flex;
   flex-direction: column;
@@ -440,5 +663,187 @@ const onFileSelected = async (event: Event) => {
 
 .reset-button:hover {
   opacity: 0.9;
+}
+
+/* モーダル */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+}
+
+.modal {
+  width: 100%;
+  max-width: 480px;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+.modal-large {
+  max-width: 600px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #f1f5f9;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+
+.modal-close:hover {
+  color: #f1f5f9;
+}
+
+.modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+.optional {
+  font-weight: 400;
+  color: #64748b;
+}
+
+.select,
+.input,
+.textarea {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #f1f5f9;
+  font-size: 14px;
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.select:focus,
+.input:focus,
+.textarea:focus {
+  border-color: #38bdf8;
+}
+
+.textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.select option {
+  background: #1e293b;
+}
+
+.btn-primary {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #38bdf8, #6366f1);
+  color: #f8fafc;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-ghost {
+  padding: 8px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+}
+
+.summary-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 32px 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(56, 189, 248, 0.3);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.summary-text {
+  color: #e2e8f0;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
 }
 </style>
