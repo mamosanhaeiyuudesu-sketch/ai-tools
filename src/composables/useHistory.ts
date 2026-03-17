@@ -26,14 +26,19 @@ export function useHistory(storageKey: string) {
     localStorage.setItem(storageKey, JSON.stringify(history.value))
   }
 
-  const addHistory = (text: string, title: string) => {
-    history.value.unshift({
-      id: Date.now().toString(),
-      timestamp: new Date().toISOString(),
-      text,
-      title,
-    })
+  const addHistory = (text: string, title: string): string => {
+    const id = Date.now().toString()
+    history.value.unshift({ id, timestamp: new Date().toISOString(), text, title })
     saveHistory()
+    return id
+  }
+
+  const updateHistory = (id: string, text: string) => {
+    const item = history.value.find((h) => h.id === id)
+    if (item) {
+      item.text = text
+      saveHistory()
+    }
   }
 
   const deleteHistory = (id: string) => {
@@ -53,5 +58,5 @@ export function useHistory(storageKey: string) {
     }
   }
 
-  return { history, copiedHistoryId, addHistory, deleteHistory, copyHistory }
+  return { history, copiedHistoryId, addHistory, updateHistory, deleteHistory, copyHistory }
 }

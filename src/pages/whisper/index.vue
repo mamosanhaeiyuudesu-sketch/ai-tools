@@ -7,6 +7,10 @@
           <p class="subtitle">音声を文字に変換</p>
         </div>
         <div class="header-actions">
+          <button class="action-btn" data-label="設定" @click="settingsOpen = true">
+            <span>⚙️</span>
+            <span class="action-label">設定</span>
+          </button>
           <button
             class="action-btn"
             data-label="要約"
@@ -15,10 +19,6 @@
           >
             <span>📝</span>
             <span class="action-label">要約</span>
-          </button>
-          <button class="action-btn" data-label="設定" @click="settingsOpen = true">
-            <span>⚙️</span>
-            <span class="action-label">設定</span>
           </button>
         </div>
       </header>
@@ -126,6 +126,20 @@
               placeholder="vs_xxxxxxxxxx"
             />
           </div>
+
+          <hr class="section-divider" />
+
+          <div class="section-title">辞書（校正）</div>
+          <p class="section-desc">文字起こし後にAIがこの辞書を使って自動校正します。</p>
+
+          <div v-for="(entry, i) in settings.dictionary" :key="i" class="dict-row">
+            <input v-model="entry.input" class="input dict-input" placeholder="入力" />
+            <span class="dict-arrow">→</span>
+            <input v-model="entry.output" class="input dict-input" placeholder="変換" />
+            <button class="dict-remove" @click="removeDictEntry(i)">✕</button>
+          </div>
+
+          <button class="btn-add-dict" @click="addDictEntry">＋ 追加</button>
         </div>
         <div class="modal-footer">
           <button class="btn-primary" @click="saveSettings">保存</button>
@@ -173,18 +187,27 @@ const summaryOpen = ref(false)
 const summaryResult = ref('')
 const summaryCopied = ref(false)
 
-const { history, copiedHistoryId, addHistory, deleteHistory, copyHistory } = useHistory('whisper-history')
+const { history, copiedHistoryId, addHistory, updateHistory, deleteHistory, copyHistory } = useHistory('whisper-history')
 
 // --- 設定 ---
-const defaultSettings = { period: 'all', systemPrompt: '要約してください', vectorStoreId: '' }
-const settings = ref({ ...defaultSettings })
+interface DictEntry { input: string; output: string }
+const defaultSettings = {
+  period: 'all',
+  systemPrompt: '要約してください',
+  vectorStoreId: '',
+  dictionary: [] as DictEntry[],
+}
+const settings = ref<typeof defaultSettings>({ ...defaultSettings, dictionary: [] })
 
 onMounted(() => {
   const stored = localStorage.getItem('whisper-summary-settings')
   if (stored) {
-    try { settings.value = { ...defaultSettings, ...JSON.parse(stored) } } catch {}
+    try { settings.value = { ...defaultSettings, dictionary: [], ...JSON.parse(stored) } } catch {}
   }
 })
+
+const addDictEntry = () => settings.value.dictionary.push({ input: '', output: '' })
+const removeDictEntry = (i: number) => settings.value.dictionary.splice(i, 1)
 
 const saveSettings = () => {
   localStorage.setItem('whisper-summary-settings', JSON.stringify(settings.value))
@@ -309,7 +332,8 @@ const transcribeRecording = () => {
       }
       const data = await response.json()
       const title = await fetchTitle(data.text)
-      addHistory(data.text, title)
+      const id = addHistory(data.text, title)
+      proofreadInBackground(id, data.text)
     } catch (err) {
       error.value = err instanceof Error ? err.message : '予期しないエラーが発生しました'
       console.error('Transcription error:', err)
@@ -318,6 +342,20 @@ const transcribeRecording = () => {
       duration.value = 0
       mediaRecorder!.stream.getTracks().forEach(track => track.stop())
     }
+  }
+}
+
+const proofreadInBackground = async (id: string, text: string) => {
+  const entries = settings.value.dictionary.filter((d) => d.input)
+  if (!entries.length) return
+  try {
+    const res = await $fetch<{ text: string }>('/api/whisper/proofread', {
+      method: 'POST',
+      body: { text, dictionary: entries },
+    })
+    if (res.text && res.text !== text) updateHistory(id, res.text)
+  } catch {
+    // 校正失敗は無視（元のテキストを保持）
   }
 }
 
@@ -339,7 +377,8 @@ const onFileSelected = async (event: Event) => {
     }
     const data = await response.json()
     const title = await fetchTitle(data.text)
-    addHistory(data.text, title)
+    const id = addHistory(data.text, title)
+    proofreadInBackground(id, data.text)
   } catch (err) {
     error.value = err instanceof Error ? err.message : '予期しないエラーが発生しました'
     console.error('Upload transcription error:', err)
@@ -845,5 +884,74 @@ const onFileSelected = async (event: Event) => {
   font-size: 14px;
   line-height: 1.7;
   white-space: pre-wrap;
+}
+
+/* 辞書セクション */
+.section-divider {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin: 4px 0;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.section-desc {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.dict-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dict-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.dict-arrow {
+  color: #64748b;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.dict-remove {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.dict-remove:hover {
+  color: #f87171;
+}
+
+.btn-add-dict {
+  align-self: flex-start;
+  background: none;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #64748b;
+  font-size: 12px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-add-dict:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #94a3b8;
 }
 </style>

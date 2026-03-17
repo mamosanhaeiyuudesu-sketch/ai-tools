@@ -17,15 +17,19 @@
             <td class="col-title">{{ item.title }}</td>
             <td class="col-copy">
               <button
-                @click="$emit('copy', item)"
                 class="action-button"
                 :title="item.id === copiedId ? 'コピーしました!' : 'コピー'"
+                @click="$emit('copy', item)"
               >
                 {{ item.id === copiedId ? '✓' : '📋' }}
               </button>
             </td>
             <td class="col-delete">
-              <button @click="$emit('delete', item.id)" class="action-button delete" title="削除">🗑️</button>
+              <template v-if="confirmingId === item.id">
+                <button class="action-button confirm-yes" title="削除する" @click="confirmDelete(item.id)">✓</button>
+                <button class="action-button confirm-no" title="キャンセル" @click="confirmingId = null">✕</button>
+              </template>
+              <button v-else class="action-button delete" title="削除" @click="confirmingId = item.id">🗑️</button>
             </td>
           </tr>
         </tbody>
@@ -35,6 +39,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue'
 import type { HistoryItem } from '~/types/history'
 
 defineProps<{
@@ -42,10 +47,17 @@ defineProps<{
   copiedId: string | null
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   copy: [item: HistoryItem]
   delete: [id: string]
 }>()
+
+const confirmingId = ref<string | null>(null)
+
+const confirmDelete = (id: string) => {
+  emit('delete', id)
+  confirmingId.value = null
+}
 
 const formatDate = (iso: string): string => {
   const d = new Date(iso)
@@ -146,6 +158,10 @@ const formatDate = (iso: string): string => {
   text-align: center;
 }
 
+.col-delete {
+  width: 52px;
+}
+
 .action-button {
   background: none;
   border: none;
@@ -163,5 +179,17 @@ const formatDate = (iso: string): string => {
 
 .action-button.delete:hover {
   background: rgba(239, 68, 68, 0.15);
+}
+
+.action-button.confirm-yes {
+  color: #4ade80;
+}
+
+.action-button.confirm-yes:hover {
+  background: rgba(74, 222, 128, 0.15);
+}
+
+.action-button.confirm-no {
+  color: #94a3b8;
 }
 </style>
