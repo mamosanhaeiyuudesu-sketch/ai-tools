@@ -3,15 +3,18 @@
     <TherapistKaitoHeader />
 
     <main>
-      <article class="page-wrapper">
-        <header class="page-header">
-          <h1>月ノ瀬 海倭さんについて</h1>
+      <header class="page-hero-header">
+        <div class="page-hero-inner">
+          <span class="hero-eyebrow">プロフィール</span>
+          <h1>月ノ瀬 海倭について</h1>
           <p>
             私をあなたの心の翻訳器として使ってください。<br />
             声にならない想いに光を当てて、本来の自分を思い出すお手伝いをします。
           </p>
-        </header>
+        </div>
+      </header>
 
+      <article class="page-wrapper">
         <div class="page-content">
           <section class="profile-section">
             <h2>セラピストになったきっかけ</h2>

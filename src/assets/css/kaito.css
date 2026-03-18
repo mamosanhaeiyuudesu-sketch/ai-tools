@@ -257,13 +257,55 @@ header {
   font-weight: 600;
 }
 
+.page-hero-header {
+  padding: 64px 24px 56px;
+  position: relative;
+  overflow: hidden;
+  /* headerセレクタのsticky/z-indexをリセット */
+  background: transparent;
+  border-bottom: none;
+  backdrop-filter: none;
+  z-index: auto;
+}
+
+.page-hero-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(200px, 30%);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(56, 163, 165, 0.35), transparent);
+}
+
+.page-hero-inner {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+}
+
+.page-hero-inner h1 {
+  font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: 0.1em;
+  color: #1d4040;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.page-hero-inner p {
+  margin: 0;
+  color: #4a6262;
+  line-height: 2;
+  font-size: 0.97rem;
+}
+
 .page-wrapper {
   max-width: var(--content-max);
-  padding: 60px 20px 100px;
+  padding: 48px 24px 100px;
   margin: 0 auto;
-  background: var(--color-surface);
-  border-radius: var(--radius-large);
-  box-shadow: var(--shadow-soft);
 }
 
 .page-header {
@@ -473,88 +515,135 @@ body.home .secondary-link:focus-visible {
 }
 
 .home-hero {
-  padding: 40px 20px 60px;
+  padding: 56px 20px 72px;
   max-width: var(--content-max);
   margin: 0 auto;
 }
 
 .hero-grid {
   display: grid;
-  gap: 36px;
+  gap: 48px;
   align-items: center;
 }
 
 .hero-name-image {
-  width: min(560px, 92%);
-  margin: -10px auto 10px;
+  width: min(500px, 92%);
+  margin: 0 auto;
   display: block;
-  filter: drop-shadow(0 18px 26px rgba(56, 163, 165, 0.25));
+  filter: drop-shadow(0 24px 32px rgba(56, 163, 165, 0.22));
 }
 
 .hero-text h1 {
   font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
   font-size: clamp(2.2rem, 4.8vw, 3.6rem);
-  margin: 8px 0 20px;
-  letter-spacing: 0.08em;
+  margin: 16px 0 28px;
+  letter-spacing: 0.1em;
+  line-height: 1.4;
   color: #1d4040;
 }
 
 .hero-eyebrow {
   display: inline-flex;
-  padding: 6px 14px;
+  padding: 5px 16px;
   border-radius: 999px;
-  background: rgba(56, 163, 165, 0.15);
+  background: rgba(56, 163, 165, 0.12);
   color: #2d5858;
-  font-size: 0.85rem;
-  letter-spacing: 0.12em;
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  border: 1px solid rgba(56, 163, 165, 0.2);
 }
 
 .hero-lead {
   font-size: 1.05rem;
-  line-height: 1.9;
+  line-height: 2;
   color: #3d5252;
-  margin: 0 0 20px;
+  margin: 0 0 28px;
+  border-left: 3px solid rgba(56, 163, 165, 0.35);
+  padding-left: 16px;
+}
+
+.hero-copy {
+  margin-bottom: 8px;
 }
 
 .hero-copy p {
-  margin: 0 0 16px;
-  line-height: 1.9;
+  margin: 0 0 20px;
+  line-height: 2;
   color: #3d5252;
+  font-size: 0.97rem;
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 24px;
+  gap: 14px;
+  margin-top: 32px;
 }
 
 .home-section {
-  padding: 40px 20px;
+  padding: 20px 20px 0;
   max-width: var(--content-max);
   margin: 0 auto;
 }
 
+.home-section + .home-section {
+  padding-top: 28px;
+}
+
 .section-inner {
   background: rgba(255, 255, 255, 0.78);
-  border-radius: 24px;
-  padding: 32px;
-  box-shadow: 0 18px 36px rgba(56, 163, 165, 0.12);
-  border: 1px solid rgba(56, 163, 165, 0.15);
+  border-radius: 28px;
+  padding: 40px 36px;
+  box-shadow: 0 20px 48px rgba(56, 163, 165, 0.1);
+  border: 1px solid rgba(56, 163, 165, 0.13);
 }
 
 .section-inner h2 {
   font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
-  font-size: clamp(1.6rem, 3.2vw, 2.2rem);
-  margin: 0 0 18px;
-  letter-spacing: 0.08em;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  margin: 0 0 28px;
+  letter-spacing: 0.1em;
   color: #1d4040;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(56, 163, 165, 0.15);
 }
 
 .section-inner p {
-  margin: 0 0 14px;
-  line-height: 1.9;
+  margin: 0 0 18px;
+  line-height: 2;
   color: #3d5252;
+  font-size: 0.97rem;
+}
+
+.section-inner p:last-of-type {
+  margin-bottom: 0;
+}
+
+.section-inner p strong {
+  display: block;
+  font-size: 1.06rem;
+  color: #1d4040;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+  font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
+}
+
+.section-link-wrap {
+  margin-top: 32px;
+}
+
+.hero-quote {
+  font-family: "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
+  font-size: 1.1rem !important;
+  letter-spacing: 0.1em;
+  color: #1d4040 !important;
+  text-align: center;
+  padding: 24px 20px !important;
+  margin: 24px 0 !important;
+  background: rgba(56, 163, 165, 0.06);
+  border-radius: 12px;
+  border: none;
+  position: relative;
 }
 
 .home-section.glow .section-inner {
@@ -566,36 +655,51 @@ body.home .secondary-link:focus-visible {
 }
 
 .home-cta {
-  padding: 50px 20px 90px;
+  padding: 28px 20px 100px;
   max-width: var(--content-max);
   margin: 0 auto;
 }
 
+.home-cta .section-inner {
+  text-align: center;
+}
+
+.home-cta .section-inner > p {
+  max-width: 540px;
+  margin-left: auto;
+  margin-right: auto;
+  color: #4a6060;
+  line-height: 2;
+}
+
 .cta-grid {
   display: grid;
-  gap: 16px;
-  margin-top: 24px;
+  gap: 14px;
+  margin-top: 32px;
 }
 
 .cta-card {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 18px 20px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(56, 163, 165, 0.2);
+  padding: 20px 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(56, 163, 165, 0.18);
   text-decoration: none;
   font-weight: 600;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
   color: #2d5858;
-  box-shadow: 0 12px 26px rgba(56, 163, 165, 0.15);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 24px rgba(56, 163, 165, 0.1);
+  transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
 }
 
 .cta-card:hover,
 .cta-card:focus-visible {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 32px rgba(56, 163, 165, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 36px rgba(56, 163, 165, 0.18);
+  background: rgba(255, 255, 255, 1);
 }
 
 body.home .site-footer {
@@ -612,8 +716,9 @@ body.home .footer-sns a {
 }
 
 body.home .page-wrapper {
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(56, 163, 165, 0.15);
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 body.home .page-header h1,
@@ -733,16 +838,35 @@ body.home .nav-toggle:checked + .nav-toggle-label span:nth-child(3) {
 }
 
 @media (min-width: 860px) {
+  .hero-grid {
+    grid-template-columns: 44% 56%;
+    gap: 64px;
+  }
+
+  .hero-name-image {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
   .section-inner {
-    padding: 40px 48px;
+    padding: 52px 60px;
   }
 
   .cta-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .hero-name-image {
-    margin-top: -24px;
+  .home-hero {
+    padding: 72px 24px 80px;
+  }
+
+  .home-section {
+    padding: 28px 24px 0;
+  }
+
+  .home-cta {
+    padding: 36px 24px 110px;
   }
 }
 
@@ -750,21 +874,37 @@ body.home .nav-toggle:checked + .nav-toggle-label span:nth-child(3) {
 .target-list {
   list-style: none;
   padding: 0;
-  margin: 24px 0;
+  margin: 28px 0 0;
+  display: grid;
+  gap: 10px;
 }
 
 .target-list li {
-  padding: 16px 20px;
-  background: rgba(56, 163, 165, 0.06);
+  padding: 14px 20px 14px 44px;
+  background: rgba(56, 163, 165, 0.055);
   border-radius: 12px;
-  margin-bottom: 12px;
-  border-left: 4px solid var(--color-primary);
-  color: #2d3a3a;
-  line-height: 1.6;
+  color: #2d4040;
+  line-height: 1.7;
+  font-size: 0.97rem;
+  position: relative;
+  transition: background 0.2s ease;
 }
 
-.target-list li:last-child {
-  margin-bottom: 0;
+.target-list li::before {
+  content: '';
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  opacity: 0.75;
+}
+
+.target-list li:hover {
+  background: rgba(56, 163, 165, 0.1);
 }
 
 /* FAQ styles */

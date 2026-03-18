@@ -3,15 +3,18 @@
     <TherapistKaitoHeader />
 
     <main>
-      <article class="page-wrapper">
-        <header class="page-header">
+      <header class="page-hero-header">
+        <div class="page-hero-inner">
+          <span class="hero-eyebrow">こんな方へ</span>
           <h1>こんな方へ</h1>
           <p>
             本当に変わりたいと思っている方へ。<br />
             あなたの想いに寄り添い、本来の自分を思い出すお手伝いをします。
           </p>
-        </header>
+        </div>
+      </header>
 
+      <article class="page-wrapper">
         <div class="page-content">
           <section class="profile-section">
             <h2>おすすめの方</h2>

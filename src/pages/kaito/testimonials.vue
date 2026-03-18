@@ -3,15 +3,18 @@
     <TherapistKaitoHeader />
 
     <main>
-      <article class="page-wrapper">
-        <header class="page-header">
+      <header class="page-hero-header">
+        <div class="page-hero-inner">
+          <span class="hero-eyebrow">お客様の声</span>
           <h1>お客様の声</h1>
           <p>
             セッションやヒーリングを受けられた方々の声をご紹介します。<br />
             感じ方は一人ひとり異なりますが、変化のヒントとしてご覧ください。
           </p>
-        </header>
+        </div>
+      </header>
 
+      <article class="page-wrapper">
         <div class="page-content">
           <section class="profile-section">
             <h2>FLSセッション体験談</h2>

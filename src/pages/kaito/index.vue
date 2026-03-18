@@ -42,7 +42,7 @@
             <li>自分の幸せって何か知りたい方</li>
             <li>怒りや憎しみから解放されたい方</li>
           </ul>
-          <div style="margin-top: 24px;">
+          <div class="section-link-wrap">
             <NuxtLink class="read-more" to="/kaito/for-you">詳しく見る</NuxtLink>
           </div>
         </div>
@@ -61,7 +61,7 @@
             ヒーリング中にメッセージやイメージを受け取り、あなたの心の深い部分に光を当てていきます。
             前世の記憶が見えることもあります。
           </p>
-          <div style="margin-top: 24px;">
+          <div class="section-link-wrap">
             <NuxtLink class="read-more" to="/kaito/services">サービス詳細を見る</NuxtLink>
           </div>
         </div>
@@ -76,13 +76,13 @@
             子供のキラキラした笑顔のまま大人になってほしい。<br />
             お互いを尊重し合える世界を作りたい。
           </p>
-          <p>「私をあなたの心の翻訳器として使ってください」</p>
+          <p class="hero-quote">「私をあなたの心の翻訳器として使ってください」</p>
           <p>
             声にならない想いに光を当てて気付いてもらう。<br />
             フタをしてしまった想いや感情を解放し、本来の自分を思い出してもらうお手伝い。<br />
             それが私の使命だと感じています。
           </p>
-          <div style="margin-top: 24px;">
+          <div class="section-link-wrap">
             <NuxtLink class="read-more" to="/kaito/profile">月ノ瀬 海倭さんについて詳しく</NuxtLink>
           </div>
         </div>

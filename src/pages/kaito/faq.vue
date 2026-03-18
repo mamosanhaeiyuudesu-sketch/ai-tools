@@ -3,15 +3,18 @@
     <TherapistKaitoHeader />
 
     <main>
-      <article class="page-wrapper">
-        <header class="page-header">
+      <header class="page-hero-header">
+        <div class="page-hero-inner">
+          <span class="hero-eyebrow">FAQ</span>
           <h1>よくある質問</h1>
           <p>
             セッションやヒーリングについて、よくいただくご質問にお答えします。<br />
             この他にも気になることがあれば、お気軽にお問い合わせください。
           </p>
-        </header>
+        </div>
+      </header>
 
+      <article class="page-wrapper">
         <div class="page-content">
           <div class="faq-list">
             <div class="faq-item">

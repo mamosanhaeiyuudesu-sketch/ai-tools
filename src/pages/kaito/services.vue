@@ -3,15 +3,18 @@
     <TherapistKaitoHeader />
 
     <main>
-      <article class="page-wrapper">
-        <header class="page-header">
+      <header class="page-hero-header">
+        <div class="page-hero-inner">
+          <span class="hero-eyebrow">サービス</span>
           <h1>サービス内容</h1>
           <p>
             本来の自分を思い出すためのセッションをご用意しています。<br />
             あなたのペースに合わせて、一緒に歩んでいきましょう。
           </p>
-        </header>
+        </div>
+      </header>
 
+      <article class="page-wrapper">
         <div class="page-content">
           <section class="profile-section">
             <h2>FLSセッション（Forcus Light Spirit）</h2>
