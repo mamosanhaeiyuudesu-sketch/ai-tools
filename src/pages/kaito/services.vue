@@ -100,7 +100,7 @@
               <li>紹介価格</li>
               <li>グループ受講割引</li>
             </ul>
-            <p>詳しくはお問い合わせください。</p>
+            <p style="margin-top: 12px;">詳しくはお問い合わせください。</p>
           </section>
 
           <div style="margin-top: 60px; text-align: center;">
