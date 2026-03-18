@@ -74,6 +74,16 @@
       <HistoryTable :history="history" :copiedId="copiedHistoryId" @copy="copyHistory" @delete="deleteHistory" />
     </div>
 
+    <!-- テーマ ワードクラウド -->
+    <div v-if="themes.length" class="word-cloud" aria-hidden="true">
+      <span
+        v-for="(theme, i) in themes"
+        :key="i"
+        class="cloud-word"
+        :style="wordStyle(i)"
+      >{{ theme }}</span>
+    </div>
+
     <!-- 設定モーダル -->
     <div v-if="settingsOpen" class="modal-overlay" @click.self="settingsOpen = false">
       <div class="modal">
@@ -98,6 +108,15 @@
 
           <!-- 励まし設定 -->
           <div class="section-title">励まし方</div>
+          <div class="field">
+            <label>ベース知識（Vector Store ID）</label>
+            <input
+              v-model="settings.vectorStoreId"
+              class="input"
+              placeholder="vs_xxxxxxxxxxxx（省略可）"
+            />
+            <p class="section-desc">OpenAIのVector Store IDを指定すると、励ますときにその知識を参照します。</p>
+          </div>
           <div class="field">
             <label>対象期間</label>
             <select v-model="settings.period" class="select">
@@ -164,12 +183,51 @@ const resultCopied = ref(false)
 
 const { history, copiedHistoryId, addHistory, updateHistory, deleteHistory, copyHistory } = useHistory('hagemashi-history')
 
+// --- テーマ ワードクラウド ---
+const themes = ref<string[]>([])
+
+const WORD_STYLES = [
+  { size: 24, rotate: -4, color: '#f97316' },
+  { size: 15, rotate:  5, color: '#ec4899' },
+  { size: 28, rotate: -7, color: '#fb923c' },
+  { size: 18, rotate:  3, color: '#f472b6' },
+  { size: 13, rotate: -2, color: '#f97316' },
+  { size: 21, rotate:  6, color: '#ec4899' },
+  { size: 17, rotate: -5, color: '#fb923c' },
+  { size: 26, rotate:  4, color: '#f472b6' },
+]
+
+const wordStyle = (i: number) => {
+  const s = WORD_STYLES[i % WORD_STYLES.length]
+  return {
+    fontSize: `${s.size}px`,
+    color: s.color,
+    transform: `rotate(${s.rotate}deg)`,
+    animationDelay: `${i * 0.12}s`,
+  }
+}
+
+const generateThemes = async () => {
+  const texts = history.value.slice(0, 10).map(h => h.text)
+  if (texts.length < 2) return
+  try {
+    const res = await $fetch<{ themes: string[] }>('/api/hagemashi/themes', {
+      method: 'POST',
+      body: { texts },
+    })
+    themes.value = res.themes ?? []
+  } catch {
+    // テーマ生成失敗は無視
+  }
+}
+
 // --- 設定 ---
 interface DictEntry { input: string; output: string }
 const defaultSettings = {
   period: 'all',
   encouragePrompt: '話した内容を踏まえて、温かく励ましてください。',
   dictionary: [] as DictEntry[],
+  vectorStoreId: '',
 }
 const settings = ref<typeof defaultSettings>({ ...defaultSettings, dictionary: [] })
 
@@ -178,6 +236,7 @@ onMounted(() => {
   if (stored) {
     try { settings.value = { ...defaultSettings, dictionary: [], ...JSON.parse(stored) } } catch {}
   }
+  generateThemes()
 })
 
 const addDictEntry = () => settings.value.dictionary.push({ input: '', output: '' })
@@ -216,6 +275,7 @@ const runEncourage = async () => {
       body: {
         texts: filteredTexts.value,
         encouragePrompt: settings.value.encouragePrompt,
+        vectorStoreId: settings.value.vectorStoreId || undefined,
       },
     })
     encourageResult.value = res.result
@@ -332,23 +392,68 @@ const transcribeRecording = () => {
 <style scoped>
 .page {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 32px 16px;
-  min-height: 100%;
+  padding: 32px 16px 48px;
+  min-height: 100dvh;
+  gap: 0;
 }
 
 @media (max-width: 1023px) {
   .page {
-    padding: 12px 16px;
-    align-items: flex-start;
-    padding-top: 16px;
+    padding: 16px 16px 40px;
   }
+}
+
+.word-cloud {
+  width: 100%;
+  max-width: 640px;
+  height: 100px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px 22px;
+  padding: 32px 12px 8px;
+  overflow: hidden;
+}
+
+@media (max-width: 1023px) {
+  .word-cloud {
+    height: 180px;
+    padding: 16px 12px 4px;
+    gap: 10px 16px;
+  }
+}
+
+.cloud-word {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: default;
+  user-select: none;
+  opacity: 0;
+  display: inline-block;
+  transition: opacity 0.25s, transform 0.25s;
+  animation: cloud-in 0.7s ease forwards;
+  white-space: nowrap;
+}
+
+.cloud-word:hover {
+  opacity: 1 !important;
+  filter: brightness(1.3);
+  transform: scale(1.1) rotate(0deg) !important;
+}
+
+@keyframes cloud-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.88); }
+  to   { opacity: 0.65; transform: translateY(0) scale(1); }
 }
 
 .container {
   width: 100%;
   max-width: 600px;
+  max-height: 70dvh;
+  overflow-y: auto;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
@@ -360,8 +465,13 @@ const transcribeRecording = () => {
   margin-left: 10px;
 }
 
+.container::-webkit-scrollbar { width: 4px; }
+.container::-webkit-scrollbar-track { background: transparent; }
+.container::-webkit-scrollbar-thumb { background: rgba(249, 115, 22, 0.3); border-radius: 2px; }
+.container::-webkit-scrollbar-thumb:hover { background: rgba(249, 115, 22, 0.55); }
+
 @media (max-width: 1023px) {
-  .container { padding: 20px; gap: 12px; }
+  .container { padding: 20px; gap: 12px; max-height: 68dvh; }
 }
 
 .header {
