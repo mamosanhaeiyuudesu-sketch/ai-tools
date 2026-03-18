@@ -329,8 +329,16 @@ watch([sessionCount, windowEnd], resetAndRender)
 
 .main-layout {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  align-items: flex-start;
+  align-items: stretch;
+}
+
+@media (min-width: 768px) {
+  .main-layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
 }
 
 .heatmap-card {
@@ -339,9 +347,15 @@ watch([sessionCount, windowEnd], resetAndRender)
 }
 
 .wordcloud-card {
-  width: 330px;
+  width: 100%;
   flex-shrink: 0;
   align-self: stretch;
+}
+
+@media (min-width: 768px) {
+  .wordcloud-card {
+    width: 330px;
+  }
 }
 
 .heatmap-scroll {
@@ -355,6 +369,12 @@ watch([sessionCount, windowEnd], resetAndRender)
 
 .wordcloud-container {
   width: 100%;
-  height: 340px;
+  height: 280px;
+}
+
+@media (min-width: 768px) {
+  .wordcloud-container {
+    height: 340px;
+  }
 }
 </style>
