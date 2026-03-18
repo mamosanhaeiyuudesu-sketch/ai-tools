@@ -837,6 +837,23 @@ body.home .nav-toggle:checked + .nav-toggle-label span:nth-child(3) {
   }
 }
 
+@media (max-width: 480px) {
+  body.home .nav-container {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+
+  body.home .logo {
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+  }
+
+  body.home .cta-link {
+    padding: 9px 12px;
+    font-size: 0.82rem;
+  }
+}
+
 @media (min-width: 860px) {
   .hero-grid {
     grid-template-columns: 44% 56%;
