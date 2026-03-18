@@ -13,10 +13,10 @@ const STOPWORDS = new Set([
   '掛かる', '受ける', '関する', '行う', '行なう', '元年', '因る', '出る', '入る',
   '見る', '置く', '来る', '対する', '付く', '取る', '当たる', '係る', '伴う',
   '図る', '向ける', '与える', '設ける', '基づく', '求める', '休憩', '質疑',
-  '議決', '議案', '請け負い', '一貫',
+  '議決', '議案', '請け負い', '一貫', '子供', '道路',
 ])
 
-const TOP_KEYWORDS = 35
+const TOP_KEYWORDS = 100
 const MAX_DISPLAY = 25
 const CELL_WIDTH = 28
 
@@ -147,12 +147,16 @@ function renderHeatmap() {
       opposite: true,
       categories: sessions.map(shortLabel),
       labels: { rotation: 60, style: { fontSize: '9px' }, align: 'left', y: -15 },
+      gridLineWidth: 1,
+      gridLineColor: 'rgba(10,0,0,0.3)',
     },
     yAxis: {
       categories: keywords,
       title: { text: undefined },
       labels: { style: { fontSize: '11px' }, step: 1 },
-      reversed: false,
+      reversed: true,
+      gridLineWidth: 1,
+      gridLineColor: 'rgba(10,0,0,0.3)',
     },
     colorAxis: {
       min: 0,
@@ -169,7 +173,8 @@ function renderHeatmap() {
     tooltip: {
       formatter: function (this: any) {
         if (this.point.value === null || this.point.value === undefined) return false
-        return `<b>${sessions[this.point.x]}</b><br/>${keywords[this.point.y]}: <b>${this.point.value.toFixed(3)}</b>`
+        const label = sessions[this.point.x].replace(/〜[\d-]+$/, '〜')
+        return `<b>${label}</b><br/>${keywords[this.point.y]}: <b>${this.point.value.toFixed(3)}</b>`
       },
     },
     series: [{
@@ -242,7 +247,6 @@ watch([sessionCount, windowEnd], resetAndRender)
   <v-container max-width="1400" class="miyako-container">
     <div class="miyako-header">
       <h1 class="miyako-title">宮古島市議会 議事録分析</h1>
-      <p class="miyako-subtitle">2019〜2025年 会期別キーワード特徴度ヒートマップ</p>
     </div>
 
     <v-card class="mb-2" elevation="1">
@@ -263,14 +267,10 @@ watch([sessionCount, windowEnd], resetAndRender)
             hide-details
             color="indigo"
             thumb-size="14"
-            style="min-width: 120px; max-width: 180px"
+            style="min-width: 120px; max-width: 180px; margin-right: 10px"
           />
           <span class="text-caption text-no-wrap text-medium-emphasis">{{ rangeLabel }}</span>
         </div>
-
-        <span class="text-caption text-medium-emphasis ml-auto">
-          <v-icon size="13" class="mr-1">mdi-gesture-tap</v-icon>列をクリックでワードクラウド表示
-        </span>
       </v-card-text>
     </v-card>
 
@@ -290,9 +290,9 @@ watch([sessionCount, windowEnd], resetAndRender)
 
         <v-card elevation="1" class="wordcloud-card">
           <template v-if="selectedSession">
-            <v-card-title class="text-subtitle-1 px-3 pt-2 pb-1">
+            <v-card-title class="text-subtitle-1 pr-3 pt-2 pb-1" style="padding-left: 0; margin-left: -3px">
               <v-icon class="mr-1" color="indigo" size="16">mdi-cloud</v-icon>
-              {{ selectedSession }}
+              {{ selectedSession?.replace(/〜[\d-]+$/, '〜') }}
             </v-card-title>
             <v-card-text class="pa-2">
               <div ref="wordcloudRef" class="wordcloud-container"></div>
@@ -318,18 +318,13 @@ watch([sessionCount, windowEnd], resetAndRender)
 
 .miyako-header {
   text-align: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .miyako-title {
   font-size: clamp(20px, 4vw, 28px);
   font-weight: 700;
   margin: 0 0 2px;
-}
-
-.miyako-subtitle {
-  color: rgba(0, 0, 0, 0.54);
-  margin: 0;
 }
 
 .main-layout {
