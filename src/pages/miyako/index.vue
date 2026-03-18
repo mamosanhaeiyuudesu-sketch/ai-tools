@@ -17,11 +17,15 @@ const STOPWORDS = new Set([
 ])
 
 const TOP_KEYWORDS = 35
+const MAX_DISPLAY = 30
+const CELL_WIDTH = 28
 
 const loading = ref(true)
 const rawData = ref<FeaturesData>({})
-const sessionTypeFilter = ref<'all' | '定例会' | '臨時会'>('all')
+const sessionTypeFilter = ref<'定例会' | '臨時会'>('定例会')
 const selectedSession = ref<string | null>(null)
+const sessionCount = MAX_DISPLAY
+const windowEnd = ref(0)
 
 const heatmapRef = ref<HTMLElement>()
 const wordcloudRef = ref<HTMLElement>()
@@ -55,22 +59,32 @@ function parseDate(key: string): Date {
 function shortLabel(key: string): string {
   const m = key.match(/(令和|平成)(元|\d+)年\s+第(\d+)回\s+(定例会|臨時会)/)
   if (!m) return key
-  const era = m[1] === '令和' ? 'R' : 'H'
+  const era = m[1] === '令和' ? '令' : '平'
   const year = m[2] === '元' ? '1' : m[2]
-  const type = m[4] === '定例会' ? '定' : '臨'
-  return `${era}${year}-${m[3]}${type}`
+  return `${era}${year}-${m[3]}`
 }
 
 const filteredSessions = computed(() =>
   Object.keys(rawData.value)
-    .filter(k => sessionTypeFilter.value === 'all' || k.includes(sessionTypeFilter.value))
+    .filter(k => k.includes(sessionTypeFilter.value))
     .sort((a, b) => parseDate(a).getTime() - parseDate(b).getTime())
 )
 
+const windowEndMax = computed(() => filteredSessions.value.length)
+const windowEndMin = computed(() => Math.min(sessionCount, filteredSessions.value.length))
+
+const displayedSessions = computed(() => {
+  const sessions = filteredSessions.value
+  if (!sessions.length) return []
+  const end = Math.min(windowEnd.value, sessions.length)
+  const start = Math.max(0, end - sessionCount)
+  return sessions.slice(start, end)
+})
+
 const topKeywords = computed(() => {
   const maxScore = new Map<string, number>()
-  for (const words of Object.values(rawData.value)) {
-    for (const { word, score } of words) {
+  for (const key of displayedSessions.value) {
+    for (const { word, score } of (rawData.value[key] ?? [])) {
       if (!STOPWORDS.has(word) && (maxScore.get(word) ?? 0) < score) {
         maxScore.set(word, score)
       }
@@ -82,10 +96,25 @@ const topKeywords = computed(() => {
     .map(([w]) => w)
 })
 
+const rangeLabel = computed(() => {
+  const s = displayedSessions.value
+  if (!s.length) return ''
+  return `${shortLabel(s[0])} 〜 ${shortLabel(s[s.length - 1])}`
+})
+
+watch(filteredSessions, (sessions) => {
+  windowEnd.value = sessions.length
+}, { immediate: true })
+
+
+
 function renderHeatmap() {
   if (!heatmapRef.value || !HC) return
-  const sessions = filteredSessions.value
+  const sessions = displayedSessions.value
   const keywords = topKeywords.value
+  const rowHeight = 22
+  const chartHeight = keywords.length * rowHeight + 100
+  const chartWidth = sessions.length * CELL_WIDTH + 280
 
   const data: [number, number, number | null][] = []
   for (let si = 0; si < sessions.length; si++) {
@@ -102,23 +131,25 @@ function renderHeatmap() {
   heatmapChart = HC.chart(heatmapRef.value, {
     chart: {
       type: 'heatmap',
-      scrollablePlotArea: {
-        minWidth: sessions.length * 24,
-        scrollPositionX: 1,
-      },
+      width: chartWidth,
+      height: chartHeight,
       style: { fontFamily: 'inherit' },
       marginRight: 160,
+      marginLeft: 110,
+      marginBottom: 80,
       animation: false,
+      backgroundColor: '#FFFFFF',
+      plotBackgroundColor: '#FFFFFF',
     },
     title: { text: undefined },
     xAxis: {
       categories: sessions.map(shortLabel),
-      labels: { rotation: -60, style: { fontSize: '9px' } },
+      labels: { rotation: -60, style: { fontSize: '9px' }, align: 'right' },
     },
     yAxis: {
       categories: keywords,
       title: { text: undefined },
-      labels: { style: { fontSize: '11px' } },
+      labels: { style: { fontSize: '11px' }, step: 1 },
       reversed: false,
     },
     colorAxis: {
@@ -192,13 +223,20 @@ function renderWordcloud() {
   })
 }
 
-watch(sessionTypeFilter, async () => {
+async function resetAndRender() {
   selectedSession.value = null
   wordcloudChart?.destroy()
   wordcloudChart = null
   await nextTick()
   renderHeatmap()
+}
+
+watch(sessionTypeFilter, async () => {
+  await nextTick()
+  resetAndRender()
 })
+
+watch([sessionCount, windowEnd], resetAndRender)
 </script>
 
 <template>
@@ -208,49 +246,63 @@ watch(sessionTypeFilter, async () => {
       <p class="miyako-subtitle">2019〜2025年 会期別キーワード特徴度ヒートマップ</p>
     </div>
 
-    <v-card class="mb-4" elevation="1">
-      <v-card-text class="d-flex align-center gap-4 flex-wrap py-3">
+    <v-card class="mb-2" elevation="1">
+      <v-card-text class="d-flex align-center gap-4 flex-wrap py-2">
         <v-btn-toggle v-model="sessionTypeFilter" mandatory color="indigo" variant="outlined" density="compact">
-          <v-btn value="all">すべて</v-btn>
           <v-btn value="定例会">定例会</v-btn>
           <v-btn value="臨時会">臨時会</v-btn>
         </v-btn-toggle>
-        <span class="text-caption text-medium-emphasis">
-          {{ filteredSessions.length }} 会期 / 上位 {{ TOP_KEYWORDS }} キーワード
+
+        <div class="d-flex align-center gap-2 slider-group">
+          <span class="text-caption text-medium-emphasis text-no-wrap">期間</span>
+          <v-slider
+            v-model="windowEnd"
+            :min="windowEndMin"
+            :max="windowEndMax"
+            :step="1"
+            density="compact"
+            hide-details
+            color="indigo"
+            thumb-size="14"
+            style="min-width: 120px; max-width: 180px"
+          />
+          <span class="text-caption text-no-wrap text-medium-emphasis">{{ rangeLabel }}</span>
+        </div>
+
+        <span class="text-caption text-medium-emphasis ml-auto">
+          <v-icon size="13" class="mr-1">mdi-gesture-tap</v-icon>列をクリックでワードクラウド表示
+          <span class="mx-2">—</span>
+          <v-icon size="13" class="mr-1">mdi-gesture-swipe-horizontal</v-icon>横スクロールで全会期確認
         </span>
       </v-card-text>
     </v-card>
 
-    <div v-if="loading" class="d-flex justify-center py-12">
+    <div v-if="loading" class="d-flex justify-center py-8">
       <v-progress-circular indeterminate color="indigo" size="48" />
     </div>
 
     <template v-else>
-      <v-card class="mb-4" elevation="1">
-        <v-card-text class="pa-3">
-          <p class="text-caption text-medium-emphasis mb-3">
-            <v-icon size="13" class="mr-1">mdi-gesture-tap</v-icon>
-            列をクリックすると会期のワードクラウドを表示 —
-            <v-icon size="13" class="mx-1">mdi-gesture-swipe-horizontal</v-icon>
-            横スクロールで全会期を確認（右端が最新）
-          </p>
-          <div ref="heatmapRef" class="heatmap-container"></div>
+      <v-card class="mb-2" elevation="1">
+        <v-card-text class="pa-2">
+          <div class="heatmap-scroll">
+            <div ref="heatmapRef" class="heatmap-container"></div>
+          </div>
         </v-card-text>
       </v-card>
 
       <v-card v-if="selectedSession" elevation="1">
-        <v-card-title class="text-subtitle-1 px-4 pt-3 pb-1">
+        <v-card-title class="text-subtitle-1 px-4 pt-2 pb-1">
           <v-icon class="mr-2" color="indigo" size="18">mdi-cloud</v-icon>
           {{ selectedSession }}
         </v-card-title>
-        <v-card-text class="pa-3">
+        <v-card-text class="pa-2">
           <div ref="wordcloudRef" class="wordcloud-container"></div>
         </v-card-text>
       </v-card>
 
-      <div v-else class="text-center py-8 text-medium-emphasis text-body-2">
-        <v-icon size="24" class="d-block mb-2">mdi-gesture-tap</v-icon>
-        ヒートマップの列をクリックすると、その会期のワードクラウドが表示されます
+      <div v-else class="text-center py-4 text-medium-emphasis text-caption">
+        <v-icon size="18" class="mr-1">mdi-gesture-tap</v-icon>
+        ヒートマップの列をクリックするとワードクラウドが表示されます
       </div>
     </template>
   </v-container>
@@ -258,19 +310,19 @@ watch(sessionTypeFilter, async () => {
 
 <style scoped>
 .miyako-container {
-  padding-top: 24px;
-  padding-bottom: 48px;
+  padding-top: 12px;
+  padding-bottom: 24px;
 }
 
 .miyako-header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 12px;
 }
 
 .miyako-title {
   font-size: clamp(20px, 4vw, 28px);
   font-weight: 700;
-  margin: 0 0 4px;
+  margin: 0 0 2px;
 }
 
 .miyako-subtitle {
@@ -278,14 +330,17 @@ watch(sessionTypeFilter, async () => {
   margin: 0;
 }
 
+.heatmap-scroll {
+  overflow: auto;
+  max-height: 600px;
+}
+
 .heatmap-container {
-  width: 100%;
-  height: 540px;
-  overflow: hidden;
+  display: inline-block;
 }
 
 .wordcloud-container {
   width: 100%;
-  height: 360px;
+  height: 340px;
 }
 </style>
