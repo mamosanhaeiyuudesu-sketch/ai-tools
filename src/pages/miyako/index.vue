@@ -17,12 +17,12 @@ const STOPWORDS = new Set([
 ])
 
 const TOP_KEYWORDS = 100
-const MAX_DISPLAY = 20
+const MAX_DISPLAY = 30
 const CELL_WIDTH = 28
 
 const loading = ref(true)
 const rawData = ref<FeaturesData>({})
-const sessionTypeFilter = ref<'定例会' | '臨時会'>('定例会')
+const sessionTypeFilter = ref<'すべて' | '定例会' | '臨時会'>('すべて')
 const selectedSession = ref<string | null>(null)
 const sessionCount = MAX_DISPLAY
 const windowEnd = ref(0)
@@ -191,7 +191,7 @@ function shortLabel(key: string): string {
 
 const filteredSessions = computed(() =>
   Object.keys(rawData.value)
-    .filter(k => k.includes(sessionTypeFilter.value))
+    .filter(k => sessionTypeFilter.value === 'すべて' || k.includes(sessionTypeFilter.value))
     .sort((a, b) => parseDate(a).getTime() - parseDate(b).getTime())
 )
 
@@ -238,8 +238,8 @@ function renderHeatmap() {
   const sessions = displayedSessions.value
   const keywords = topKeywords.value
   const rowHeight = 22
-  const chartHeight = keywords.length * rowHeight + 140
-  const chartWidth = sessions.length * CELL_WIDTH + 280
+  const chartHeight = keywords.length * rowHeight + 54
+  const chartWidth = sessions.length * CELL_WIDTH + 37
 
   // null を -1 で表現して outOfRange カラーに割り当てる
   const data: [number, number, number][] = []
@@ -260,12 +260,12 @@ function renderHeatmap() {
 
   heatmapChart.setOption({
     animation: false,
-    grid: { top: 80, right: 20, bottom: 10, left: 130 },
+    grid: { top: 50, right: 7, bottom: 4, left: 50 },
     xAxis: {
       type: 'category',
       data: sessions.map(shortLabel),
       position: 'top',
-      axisLabel: { rotate: 60, fontSize: 9, align: 'left', margin: 34 },
+      axisLabel: { rotate: 60, fontSize: 9, align: 'left', margin: 30 },
       splitLine: { show: true, lineStyle: { color: 'rgba(0,0,0,0.08)' } },
       axisTick: { show: false },
       axisLine: { show: false },
@@ -371,13 +371,13 @@ watch([sessionCount, windowEnd], resetAndRender)
           <span class="text-[11px] font-semibold text-[#6878a8] whitespace-nowrap uppercase tracking-[0.04em]">会期</span>
           <div class="flex rounded-lg overflow-hidden border border-[#3949AB]">
             <button
-              v-for="opt in ['定例会', '臨時会']"
+              v-for="opt in ['すべて', '定例会', '臨時会']"
               :key="opt"
               :class="[
                 'px-3 py-1 text-xs font-medium cursor-pointer border-none transition-colors',
                 sessionTypeFilter === opt ? 'bg-[#1A237E] text-white' : 'bg-white text-[#1A237E] hover:bg-blue-50'
               ]"
-              @click="sessionTypeFilter = opt as '定例会' | '臨時会'"
+              @click="sessionTypeFilter = opt as 'すべて' | '定例会' | '臨時会'"
             >{{ opt }}</button>
           </div>
         </div>

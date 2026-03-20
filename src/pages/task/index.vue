@@ -4,6 +4,8 @@ const LS_TOKEN = 'trello_token'
 const LS_EXCLUDED = 'trello_excluded'
 
 const DEFAULT_EXCLUDED = ''
+
+const route = useRoute()
 interface Card {
   id: string
   name: string
@@ -35,6 +37,7 @@ const settingsKey = ref('')
 const settingsToken = ref('')
 const settingsExcluded = ref('')
 
+const isMounted = ref(false)
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
@@ -42,8 +45,10 @@ const boards = ref<Board[]>([])
 const allDates = ref<string[]>([])
 
 const now = new Date()
-const startMonth = ref(`${now.getFullYear()}-01`)
-const endMonth = ref(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
+const defaultStart = `${now.getFullYear()}-01`
+const defaultEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+const startMonth = ref((route.query.start as string) || defaultStart)
+const endMonth = ref((route.query.end as string) || defaultEnd)
 
 // --- Task modal ---
 const showTaskModal = ref(false)
@@ -70,6 +75,7 @@ onMounted(() => {
   apiKey.value = localStorage.getItem(LS_KEY) || ''
   apiToken.value = localStorage.getItem(LS_TOKEN) || ''
   excludedText.value = localStorage.getItem(LS_EXCLUDED) || DEFAULT_EXCLUDED
+  isMounted.value = true
 
   if (hasCredentials.value) {
     load()
@@ -141,11 +147,21 @@ function timeRemaining(dueStr: string): Pick<Card, 'isOverdue' | 'isUrgent' | 'd
   return { isOverdue: false, isUrgent: false, display: `残り${Math.floor(diffH / 24)}日` }
 }
 
+function syncUrl() {
+  const url = new URL(window.location.href)
+  url.searchParams.set('start', startMonth.value)
+  url.searchParams.set('end', endMonth.value)
+  url.searchParams.set('view', doneView.value)
+  window.history.replaceState({}, '', url.toString())
+}
+
 async function load() {
   if (!hasCredentials.value) return
+  syncUrl()
   loading.value = true
   error.value = ''
   boards.value = []
+  selectedDate.value = null
 
   try {
     const rawBoards = await trelloGet('/members/me/boards')
@@ -377,12 +393,61 @@ async function saveTask() {
   }
 }
 
+// --- Month Picker ---
+type PickerTarget = 'start' | 'end'
+const pickerOpen = ref<PickerTarget | null>(null)
+const pickerYearStart = ref(parseInt(startMonth.value.split('-')[0]))
+const pickerYearEnd = ref(parseInt(endMonth.value.split('-')[0]))
+
+function formatMonthLabel(val: string) {
+  const [y, m] = val.split('-').map(Number)
+  return `${y}年${m}月`
+}
+
+function togglePicker(t: PickerTarget) {
+  if (pickerOpen.value === t) {
+    pickerOpen.value = null
+  } else {
+    if (t === 'start') pickerYearStart.value = parseInt(startMonth.value.split('-')[0])
+    else pickerYearEnd.value = parseInt(endMonth.value.split('-')[0])
+    pickerOpen.value = t
+  }
+}
+
+function prevYear(t: PickerTarget) {
+  if (t === 'start') pickerYearStart.value--
+  else pickerYearEnd.value--
+}
+
+function nextYear(t: PickerTarget) {
+  if (t === 'start') pickerYearStart.value++
+  else pickerYearEnd.value++
+}
+
+function selectMonth(t: PickerTarget, m: number) {
+  const year = t === 'start' ? pickerYearStart.value : pickerYearEnd.value
+  const val = `${year}-${String(m).padStart(2, '0')}`
+  if (t === 'start') startMonth.value = val
+  else endMonth.value = val
+  pickerOpen.value = null
+}
+
+function isSelectedMonth(t: PickerTarget, m: number) {
+  const current = t === 'start' ? startMonth.value : endMonth.value
+  const year = t === 'start' ? pickerYearStart.value : pickerYearEnd.value
+  return current === `${year}-${String(m).padStart(2, '0')}`
+}
+
 // --- DONE chart ---
 type DoneView = 'table' | 'line' | 'stacked' | 'total'
-const doneView = ref<DoneView>('table')
+const DONE_VIEWS: DoneView[] = ['table', 'line', 'stacked', 'total']
+const doneView = ref<DoneView>(
+  DONE_VIEWS.includes(route.query.view as DoneView) ? (route.query.view as DoneView) : 'table',
+)
 const chartRef = ref<HTMLElement>()
 let doneChart: any = null
 let EC: any = null
+const selectedDate = ref<string | null>(null)
 
 const BOARD_COLORS = ['#38bdf8', '#818cf8', '#34d399', '#fb923c', '#f472b6', '#a78bfa', '#4ade80', '#facc15']
 
@@ -396,7 +461,10 @@ const doneViewOptions: { key: DoneView; label: string }[] = [
 async function renderDoneChart() {
   if (!chartRef.value || doneView.value === 'table') return
   if (!EC) EC = await import('echarts')
-  if (!doneChart) doneChart = EC.init(chartRef.value, 'dark')
+  if (!doneChart || !EC.getInstanceByDom(chartRef.value)) {
+    doneChart?.dispose()
+    doneChart = EC.init(chartRef.value, 'dark')
+  }
 
   const sortedDates = [...allDates.value].reverse()
   const baseOpts = {
@@ -493,6 +561,16 @@ async function renderDoneChart() {
       }],
     }, true)
   }
+
+  doneChart.off('click')
+  if (doneView.value === 'line' || doneView.value === 'stacked') {
+    doneChart.on('click', (params: any) => {
+      const date = sortedDates[params.dataIndex] ?? null
+      selectedDate.value = selectedDate.value === date ? null : date
+    })
+  } else {
+    selectedDate.value = null
+  }
 }
 
 watch(doneView, async (v) => {
@@ -505,8 +583,23 @@ watch(doneView, async (v) => {
   renderDoneChart()
 })
 
-watch(allDates, () => {
-  if (doneView.value !== 'table') renderDoneChart()
+watch(allDates, async () => {
+  if (doneView.value !== 'table') {
+    await nextTick()
+    renderDoneChart()
+  }
+})
+
+watch(selectedDate, async () => {
+  await nextTick()
+  doneChart?.resize()
+})
+
+// doneView変更は即座にURLへ反映（start/endはload()時に更新）
+watch(doneView, () => {
+  const url = new URL(window.location.href)
+  url.searchParams.set('view', doneView.value)
+  window.history.replaceState({}, '', url.toString())
 })
 
 onUnmounted(() => {
@@ -698,14 +791,59 @@ async function deleteTask() {
 </script>
 
 <template>
+  <!-- Month picker backdrop -->
+  <div v-if="pickerOpen" class="fixed inset-0 z-40" @click="pickerOpen = null" />
+
   <div class="min-h-screen pb-16 text-[#e2e8f0] text-sm">
     <!-- Header -->
     <header class="sticky top-0 z-[100] flex items-center gap-3 px-5 py-3.5 bg-[rgba(15,23,42,0.92)] backdrop-blur-[12px] border-b border-white/[0.08]">
       <h1 class="flex-none m-0 ml-2 text-xl font-bold bg-gradient-to-br from-sky-400 to-indigo-500 bg-clip-text text-transparent">タスクくん</h1>
       <div v-if="hasCredentials" class="flex items-center gap-2 ml-auto">
-        <input v-model="startMonth" class="bg-white/[0.06] border border-white/10 rounded-md px-2.5 py-1.5 text-[#e2e8f0] text-[13px] [color-scheme:dark]" type="month" />
+        <!-- Start month picker -->
+        <div class="relative z-50" @click.stop>
+          <button
+            class="bg-white/[0.06] border border-white/10 rounded-md px-2.5 py-1.5 text-[#e2e8f0] text-[13px] cursor-pointer hover:bg-white/[0.1] transition-colors min-w-[90px] text-left"
+            @click="togglePicker('start')"
+          >{{ formatMonthLabel(startMonth) }}</button>
+          <div v-if="pickerOpen === 'start'" class="absolute top-full left-0 mt-1 bg-[#1e293b] border border-white/10 rounded-xl p-3 shadow-xl w-44">
+            <div class="flex items-center justify-between mb-2">
+              <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors text-sm" @click="prevYear('start')">‹</button>
+              <span class="text-[13px] font-semibold text-slate-200">{{ pickerYearStart }}年</span>
+              <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors text-sm" @click="nextYear('start')">›</button>
+            </div>
+            <div class="grid grid-cols-3 gap-1">
+              <button
+                v-for="m in 12" :key="m"
+                class="py-1 rounded-md text-[12px] transition-colors cursor-pointer"
+                :class="isSelectedMonth('start', m) ? 'bg-sky-500 text-white font-semibold' : 'text-slate-300 hover:bg-white/10'"
+                @click="selectMonth('start', m)"
+              >{{ m }}月</button>
+            </div>
+          </div>
+        </div>
         <span class="text-slate-600">〜</span>
-        <input v-model="endMonth" class="bg-white/[0.06] border border-white/10 rounded-md px-2.5 py-1.5 text-[#e2e8f0] text-[13px] [color-scheme:dark]" type="month" />
+        <!-- End month picker -->
+        <div class="relative z-50" @click.stop>
+          <button
+            class="bg-white/[0.06] border border-white/10 rounded-md px-2.5 py-1.5 text-[#e2e8f0] text-[13px] cursor-pointer hover:bg-white/[0.1] transition-colors min-w-[90px] text-left"
+            @click="togglePicker('end')"
+          >{{ formatMonthLabel(endMonth) }}</button>
+          <div v-if="pickerOpen === 'end'" class="absolute top-full left-0 mt-1 bg-[#1e293b] border border-white/10 rounded-xl p-3 shadow-xl w-44">
+            <div class="flex items-center justify-between mb-2">
+              <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors text-sm" @click="prevYear('end')">‹</button>
+              <span class="text-[13px] font-semibold text-slate-200">{{ pickerYearEnd }}年</span>
+              <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors text-sm" @click="nextYear('end')">›</button>
+            </div>
+            <div class="grid grid-cols-3 gap-1">
+              <button
+                v-for="m in 12" :key="m"
+                class="py-1 rounded-md text-[12px] transition-colors cursor-pointer"
+                :class="isSelectedMonth('end', m) ? 'bg-sky-500 text-white font-semibold' : 'text-slate-300 hover:bg-white/10'"
+                @click="selectMonth('end', m)"
+              >{{ m }}月</button>
+            </div>
+          </div>
+        </div>
         <button
           class="px-4 py-1.5 rounded-lg border-none bg-gradient-to-br from-sky-400 to-indigo-500 text-white text-[13px] font-semibold cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:opacity-90 hover:enabled:-translate-y-px"
           :disabled="loading"
@@ -757,6 +895,7 @@ async function deleteTask() {
               type="text"
               placeholder="タスク名を入力"
               autofocus
+              @keydown.enter="(e) => { if (!e.isComposing) saveTask() }"
             />
           </div>
 
@@ -848,13 +987,13 @@ async function deleteTask() {
     </Teleport>
 
     <!-- No credentials -->
-    <div v-if="!hasCredentials" class="flex flex-col items-center justify-center gap-3 min-h-[60vh] text-slate-500">
+    <div v-if="isMounted && !hasCredentials" class="flex flex-col items-center justify-center gap-3 min-h-[60vh] text-slate-500">
       <div class="text-5xl">🔑</div>
       <p class="m-0">APIキーが未設定です</p>
       <button class="px-4 py-2 rounded-lg border-none bg-gradient-to-br from-sky-400 to-indigo-500 text-white text-[13px] font-semibold cursor-pointer" @click="openSettings">設定を開く</button>
     </div>
 
-    <template v-else>
+    <template v-else-if="isMounted">
       <!-- Error -->
       <div v-if="error && !showTaskModal" class="mx-5 my-3 px-3.5 py-2.5 bg-red-500/12 border border-red-500/30 rounded-lg text-red-300 text-[13px]">⚠ {{ error }}</div>
 
@@ -1039,10 +1178,39 @@ async function deleteTask() {
               </table>
             </div>
             <!-- Chart -->
-            <div v-else ref="chartRef" class="w-full h-[320px] rounded-xl border border-white/[0.07]" />
+            <div v-else class="flex gap-4 items-start">
+              <div ref="chartRef" class="flex-1 min-w-0 h-[480px] rounded-xl border border-white/[0.07]" style="cursor:pointer" />
+              <!-- Date detail panel -->
+              <transition name="slide-fade">
+                <div v-if="selectedDate && (doneView === 'line' || doneView === 'stacked')" class="w-80 flex-none bg-white/[0.04] border border-white/[0.08] rounded-xl p-3 self-stretch overflow-y-auto max-h-[480px]">
+                  <div class="flex items-center justify-between mb-2.5">
+                    <span class="text-[13px] font-bold text-emerald-400">{{ formatDate(selectedDate) }}</span>
+                    <button class="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-300 text-xs cursor-pointer" @click="selectedDate = null">✕</button>
+                  </div>
+                  <template v-for="board in boards" :key="board.id">
+                    <template v-if="board.done[selectedDate]?.length">
+                      <p class="m-0 mb-1 text-[11px] font-bold text-slate-500 uppercase tracking-wide">{{ board.name }}</p>
+                      <ul class="list-none m-0 p-0 mb-2.5 flex flex-col gap-1">
+                        <li v-for="item in board.done[selectedDate]" :key="item.id" class="flex items-center gap-1.5 px-1.5 py-0.5 bg-emerald-500/[0.08] rounded border-l-2 border-emerald-500/40">
+                          <button class="flex-shrink-0 w-3.5 h-3.5 rounded border border-emerald-500/60 bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-[10px] hover:bg-red-500/20 hover:border-red-400/60 hover:text-red-400 transition-all cursor-pointer" title="DOINGに戻す" @click="unmarkDone(item, selectedDate, board)">✓</button>
+                          <span class="leading-snug text-[#a7f3d0] text-xs">{{ item.name }}</span>
+                        </li>
+                      </ul>
+                    </template>
+                  </template>
+                </div>
+              </transition>
+            </div>
           </template>
         </section>
       </template>
     </template>
   </div>
 </template>
+
+<style scoped>
+.slide-fade-enter-active { transition: all 0.2s ease; }
+.slide-fade-leave-active { transition: all 0.15s ease; }
+.slide-fade-enter-from { opacity: 0; transform: translateX(12px); }
+.slide-fade-leave-to { opacity: 0; transform: translateX(8px); }
+</style>
