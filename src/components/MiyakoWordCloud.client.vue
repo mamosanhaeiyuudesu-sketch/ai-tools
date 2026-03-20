@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, watch, ref } from 'vue'
-
 const props = defineProps<{
   words: { word: string; score: number }[]
   height?: number
@@ -10,71 +8,62 @@ const emit = defineEmits<{
   'word-click': [word: string]
 }>()
 
-const container = ref<HTMLElement>()
-let chart: any = null
+const COLORS = [
+  '#1A237E', '#283593', '#303F9F', '#3949AB',
+  '#3F51B5', '#5C6BC0', '#7986CB', '#0D47A1',
+  '#1565C0', '#1976D2', '#1E88E5',
+]
 
-async function render() {
-  if (!container.value || !props.words.length) return
-
-  const Highcharts = (await import('highcharts')).default
-  const WordCloudModule = await import('highcharts/modules/wordcloud')
-  ;(WordCloudModule.default ?? WordCloudModule)(Highcharts)
-
-  if (chart) {
-    chart.destroy()
-    chart = null
-  }
-
-  chart = Highcharts.chart(container.value, {
-    chart: {
-      backgroundColor: 'transparent',
-      margin: [0, 0, 0, 0],
-      spacing: [0, 0, 0, 0],
-    },
-    title: { text: '' },
-    tooltip: {
-      formatter(this: any) {
-        return `<b>${this.point.name}</b><br>特徴度: ${(this.point.weight / 10000).toFixed(4)}`
-      },
-    },
-    series: [
-      {
-        type: 'wordcloud',
-        name: '特徴度',
-        data: props.words.map((w) => ({
-          name: w.word,
-          weight: Math.round(w.score * 10000),
-        })),
-        rotation: {
-          from: -30,
-          to: 30,
-          orientations: 3,
-        },
-        style: {
-          fontFamily: '"Noto Sans JP", "Hiragino Sans", sans-serif',
-          fontWeight: '600',
-        },
-        cursor: 'pointer',
-        point: {
-          events: {
-            click: (e: any) => {
-              emit('word-click', e.point.name)
-            },
-          },
-        },
-      },
-    ],
-    credits: { enabled: false },
+const items = computed(() => {
+  const sorted = [...props.words].sort((a, b) => b.score - a.score)
+  if (!sorted.length) return []
+  const maxScore = sorted[0].score
+  const minScore = sorted[sorted.length - 1].score
+  const range = maxScore - minScore || 1
+  return sorted.map((w, i) => {
+    const t = (w.score - minScore) / range
+    const size = Math.round(10 + t * t * 46)
+    return { name: w.word, score: w.score, size, color: COLORS[i % COLORS.length] }
   })
-}
-
-onMounted(render)
-watch(() => props.words, render, { deep: true })
-onBeforeUnmount(() => {
-  if (chart) chart.destroy()
 })
 </script>
 
 <template>
-  <div ref="container" :style="`width:100%; height:${height ?? 420}px`" />
+  <div
+    class="wc-wrap"
+    :style="height ? `max-height: ${height}px` : ''"
+  >
+    <span
+      v-for="item in items"
+      :key="item.name"
+      class="wc-word"
+      :style="{ fontSize: item.size + 'px', color: item.color }"
+      :title="`特徴度: ${item.score.toFixed(3)}`"
+      @click="emit('word-click', item.name)"
+    >{{ item.name }}</span>
+  </div>
 </template>
+
+<style scoped>
+.wc-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: center;
+  gap: 4px 10px;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.wc-word {
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.wc-word:hover {
+  opacity: 0.6;
+}
+</style>

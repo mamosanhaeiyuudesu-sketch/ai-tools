@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
   try {
     const data = await callOpenAi(apiKey, {
       model: 'gpt-4.1-mini',
-      input: `議事録から「${word}」に関する議論を、議会に詳しくない一般市民でも理解できるよう以下の形式のMarkdownで回答してください。前置き・説明文・締めくくりは一切不要です。約${maxChars}文字で。
+      input: `議事録から「${word}」に関する議論を、議会に詳しくない一般市民でも理解できるよう以下の形式のMarkdownで回答してください。前置き・説明文・「以上が〜」などの締めくくり文は一切不要です。約${maxChars}文字で。
 
 ## 1. ○○について
 
@@ -47,7 +47,12 @@ export default defineEventHandler(async (event) => {
       }],
     }, event, `miyako/search: ${normalizedKey} / ${word}`)
 
-    return { summary: extractText(data) }
+    const raw = extractText(data)
+    // 末尾のメタ文（「以上が〜」「上記が〜」など）を除去
+    const summary = raw
+      .replace(/\n*[以上上記]+が[^\n]*[。\.]\s*$/g, '')
+      .trimEnd()
+    return { summary }
   } catch (e: any) {
     wrapApiError(e, '議事録の検索に失敗しました。')
   }

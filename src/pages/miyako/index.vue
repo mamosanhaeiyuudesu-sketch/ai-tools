@@ -41,18 +41,130 @@ const renderedSummary = computed(() => {
   return html.replace(/<p>↓<\/p>/g, '<p class="flow-arrow">↓</p>')
 })
 
+const WC_COLORS = [
+  '#1A237E', '#283593', '#303F9F', '#3949AB',
+  '#3F51B5', '#5C6BC0', '#7986CB', '#0D47A1',
+  '#1565C0', '#1976D2', '#1E88E5',
+]
+
+const wordcloudWords = computed(() => {
+  if (!selectedSession.value) return []
+  const words = (rawData.value[selectedSession.value] ?? [])
+    .filter(w => !STOPWORDS.has(w.word))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 50)
+  if (!words.length) return []
+  const maxScore = words[0].score
+  const minScore = words[words.length - 1].score
+  const range = maxScore - minScore || 1
+  return words.map((w, i) => {
+    const t = (w.score - minScore) / range
+    const size = Math.round(11 + Math.pow(t, 0.55) * 26)  // 11px〜37px（平方根に近いカーブ）
+    return { name: w.word, score: w.score, size, color: WC_COLORS[i % WC_COLORS.length] }
+  })
+})
+
+// ── ワードクラウド螺旋レイアウト ─────────────────
+const wcContainerRef = ref<HTMLElement>()
+const wcPositions = ref<Record<string, { x: number; y: number }>>({})
+const wcReady = ref(false)
+
+// selectedSession が変わったらリセット（pre: DOM更新前）
+watch(selectedSession, () => {
+  wcReady.value = false
+  wcPositions.value = {}
+})
+
+// 単語リストが変わった後（post: DOM更新後）に配置計算
+watch(wordcloudWords, (words) => {
+  if (!words.length) return
+  layoutWordcloud()
+}, { flush: 'post' })
+
+function layoutWordcloud() {
+  const container = wcContainerRef.value
+  if (!container) return
+  const cw = container.offsetWidth
+  const ch = container.offsetHeight
+  if (!cw || !ch) return
+
+  const cx = cw / 2
+  const cy = ch / 2
+  const spans = Array.from(container.querySelectorAll<HTMLElement>('.wc-word'))
+  const words = wordcloudWords.value
+  if (!spans.length || spans.length !== words.length) return
+
+  const newPos: Record<string, { x: number; y: number }> = {}
+  const boxes: { x: number; y: number; hw: number; hh: number }[] = []
+
+  for (let i = 0; i < spans.length; i++) {
+    const el = spans[i]
+    const hw = el.offsetWidth / 2 + 1
+    const hh = el.offsetHeight / 2 + 1
+    const name = words[i].name
+
+    if (i === 0) {
+      newPos[name] = { x: cx, y: cy }
+      boxes.push({ x: cx, y: cy, hw, hh })
+      continue
+    }
+
+    let px = cx, py = cy
+    for (let step = 0; step < 2000; step++) {
+      const theta = step * 0.12
+      const r = 1.5 * theta
+      const x = cx + r * Math.cos(theta)
+      const y = cy + r * Math.sin(theta) * 0.65
+      if (x - hw < 2 || x + hw > cw - 2) continue
+      if (y - hh < 2 || y + hh > ch - 2) continue
+      if (!boxes.some(b =>
+        Math.abs(x - b.x) < hw + b.hw &&
+        Math.abs(y - b.y) < hh + b.hh
+      )) {
+        px = x; py = y
+        break
+      }
+    }
+    newPos[name] = { x: px, y: py }
+    boxes.push({ x: px, y: py, hw, hh })
+  }
+
+  // 配置済み単語の実際の占有矩形を測定してコンテナいっぱいに拡大
+  let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity
+  for (let i = 0; i < spans.length; i++) {
+    const p = newPos[words[i].name]
+    const hw = spans[i].offsetWidth / 2
+    const hh = spans[i].offsetHeight / 2
+    left   = Math.min(left,   p.x - hw)
+    right  = Math.max(right,  p.x + hw)
+    top    = Math.min(top,    p.y - hh)
+    bottom = Math.max(bottom, p.y + hh)
+  }
+  const contentCx = (left + right) / 2
+  const contentCy = (top + bottom) / 2
+  const scaleX = (cw - 8) / (right - left)
+  const scaleY = (ch - 8) / (bottom - top)
+  const scale  = Math.min(scaleX, scaleY, 2.0)  // 最大2倍まで拡大
+
+  if (scale > 1.05) {
+    for (const name in newPos) {
+      newPos[name] = {
+        x: cx + (newPos[name].x - contentCx) * scale,
+        y: cy + (newPos[name].y - contentCy) * scale,
+      }
+    }
+  }
+
+  wcPositions.value = newPos
+  wcReady.value = true
+}
+
 const heatmapRef = ref<HTMLElement>()
-const wordcloudRef = ref<HTMLElement>()
 let heatmapChart: any = null
-let wordcloudChart: any = null
-let HC: any = null
+let EC: any = null
 
 onMounted(async () => {
-  const Highcharts = (await import('highcharts')).default
-  await import('highcharts/modules/heatmap')
-  await import('highcharts/modules/wordcloud')
-  await import('highcharts/modules/accessibility')
-  HC = Highcharts
+  EC = await import('echarts')
 
   rawData.value = await $fetch<FeaturesData>('/data/miyako-features.json')
   loading.value = false
@@ -61,8 +173,7 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
-  heatmapChart?.destroy()
-  wordcloudChart?.destroy()
+  heatmapChart?.dispose()
 })
 
 function parseDate(key: string): Date {
@@ -123,127 +234,78 @@ watch(filteredSessions, (sessions) => {
 
 
 function renderHeatmap() {
-  if (!heatmapRef.value || !HC) return
+  if (!heatmapRef.value || !EC) return
   const sessions = displayedSessions.value
   const keywords = topKeywords.value
   const rowHeight = 22
-  const chartHeight = keywords.length * rowHeight + 110
+  const chartHeight = keywords.length * rowHeight + 140
   const chartWidth = sessions.length * CELL_WIDTH + 280
 
-  const data: [number, number, number | null][] = []
+  // null を -1 で表現して outOfRange カラーに割り当てる
+  const data: [number, number, number][] = []
   for (let si = 0; si < sessions.length; si++) {
     const wordMap = new Map(
       (rawData.value[sessions[si]] ?? []).map(w => [w.word, w.score])
     )
     for (let ki = 0; ki < keywords.length; ki++) {
       const s = wordMap.get(keywords[ki])
-      data.push([si, ki, s !== undefined ? s : null])
+      data.push([si, ki, s !== undefined ? s : -1])
     }
   }
 
-  heatmapChart?.destroy()
-  heatmapChart = HC.chart(heatmapRef.value, {
-    chart: {
-      type: 'heatmap',
-      width: chartWidth,
-      height: chartHeight,
-      style: { fontFamily: 'inherit' },
-      marginRight: 20,
-      marginLeft: 60,
-      marginTop: 50,
-      marginBottom: 10,
-      animation: false,
-      backgroundColor: '#FFFFFF',
-      plotBackgroundColor: '#FFFFFF',
-    },
-    title: { text: undefined },
+  heatmapChart?.dispose()
+  heatmapRef.value.style.width = chartWidth + 'px'
+  heatmapRef.value.style.height = chartHeight + 'px'
+  heatmapChart = EC.init(heatmapRef.value, null, { renderer: 'canvas' })
+
+  heatmapChart.setOption({
+    animation: false,
+    grid: { top: 80, right: 20, bottom: 10, left: 130 },
     xAxis: {
-      opposite: true,
-      categories: sessions.map(shortLabel),
-      labels: { rotation: 60, style: { fontSize: '9px' }, align: 'left', y: -15 },
-      gridLineWidth: 1,
-      gridLineColor: 'rgba(0,0,0,0.08)',
+      type: 'category',
+      data: sessions.map(shortLabel),
+      position: 'top',
+      axisLabel: { rotate: 60, fontSize: 9, align: 'left', margin: 34 },
+      splitLine: { show: true, lineStyle: { color: 'rgba(0,0,0,0.08)' } },
+      axisTick: { show: false },
+      axisLine: { show: false },
     },
     yAxis: {
-      categories: keywords,
-      title: { text: undefined },
-      labels: { style: { fontSize: '11px' }, step: 1, y: 4 },
-      reversed: true,
-      gridLineWidth: 1,
-      gridLineColor: 'rgba(0,0,0,0.08)',
+      type: 'category',
+      data: keywords,
+      inverse: true,
+      axisLabel: { fontSize: 11 },
+      splitLine: { show: true, lineStyle: { color: 'rgba(0,0,0,0.08)' } },
+      axisTick: { show: false },
+      axisLine: { show: false },
     },
-    colorAxis: {
+    visualMap: {
+      show: false,
       min: 0,
       max: 0.45,
-      stops: [
-        [0, '#EEF0FF'],
-        [0.5, '#7986CB'],
-        [1, '#1A237E'],
-      ],
-      nullColor: '#EEEEEE',
-      labels: { format: '{value:.2f}' },
+      inRange: { color: ['#EEF0FF', '#7986CB', '#1A237E'] },
+      outOfRange: { color: '#EEEEEE' },
     },
-    legend: { enabled: false },
     tooltip: {
-      formatter: function (this: any) {
-        if (this.point.value === null || this.point.value === undefined) return false
-        const label = sessions[this.point.x].replace(/〜[\d-]+$/, '〜')
-        return `<b>${label}</b><br/>${keywords[this.point.y]}: <b>${this.point.value.toFixed(3)}</b>`
+      trigger: 'item',
+      formatter: (params: any) => {
+        if (params.value[2] < 0) return ''
+        const label = sessions[params.value[0]].replace(/〜[\d-]+$/, '〜')
+        return `<b>${label}</b><br/>${keywords[params.value[1]]}: <b>${params.value[2].toFixed(3)}</b>`
       },
     },
     series: [{
       type: 'heatmap',
-      name: '特徴度',
       data,
       cursor: 'pointer',
-      borderWidth: 0.3,
-      borderColor: '#FAFAFA',
-      point: {
-        events: {
-          click: function (this: any) {
-            const sessionKey = sessions[this.x]
-            selectedSession.value = sessionKey
-            nextTick(() => renderWordcloud())
-          },
-        },
-      },
+      itemStyle: { borderWidth: 0.5, borderColor: '#FAFAFA' },
+      emphasis: { itemStyle: { shadowBlur: 6, shadowColor: 'rgba(0,0,0,0.2)' } },
     }],
-    credits: { enabled: false },
   })
 
-}
-
-function renderWordcloud() {
-  if (!wordcloudRef.value || !HC || !selectedSession.value) return
-  const words = (rawData.value[selectedSession.value] ?? [])
-    .filter(w => !STOPWORDS.has(w.word))
-    .map(w => ({ name: w.word, weight: Math.ceil(w.score * 100) }))
-
-  wordcloudChart?.destroy()
-  wordcloudChart = HC.chart(wordcloudRef.value, {
-    series: [{
-      type: 'wordcloud',
-      data: words,
-      name: '特徴度',
-      cursor: 'pointer',
-      colors: [
-        '#1A237E', '#283593', '#303F9F', '#3949AB',
-        '#3F51B5', '#5C6BC0', '#7986CB', '#9FA8DA',
-        '#C5CAE9', '#0D47A1', '#1565C0', '#1976D2',
-      ],
-      point: {
-        events: {
-          click: function (this: any) { fetchSummary(this.name) },
-        },
-      },
-    }],
-    title: { text: undefined },
-    tooltip: {
-      formatter: function (this: any) {
-        return `<b>${this.point.name}</b><br/>特徴度: ${(this.point.weight / 100).toFixed(3)}`
-      },
-    },
-    credits: { enabled: false },
+  heatmapChart.on('click', (params: any) => {
+    if (params.value[2] < 0) return
+    selectedSession.value = sessions[params.value[0]]
   })
 }
 
@@ -278,8 +340,6 @@ async function resetAndRender() {
   selectedSession.value = null
   selectedWord.value = null
   aiSummary.value = ''
-  wordcloudChart?.destroy()
-  wordcloudChart = null
   await nextTick()
   renderHeatmap()
 }
@@ -374,13 +434,26 @@ watch([sessionCount, windowEnd], resetAndRender)
 
           <!-- ワードクラウド -->
           <div class="wordcloud-wrap">
-            <div ref="wordcloudRef" class="wordcloud-container"></div>
+            <div ref="wcContainerRef" class="wordcloud-container">
+              <span
+                v-for="item in wordcloudWords"
+                :key="item.name"
+                class="wc-word"
+                :style="{
+                  fontSize: item.size + 'px',
+                  color: item.color,
+                  left: (wcPositions[item.name]?.x ?? 0) + 'px',
+                  top: (wcPositions[item.name]?.y ?? 0) + 'px',
+                  opacity: wcReady ? 1 : 0,
+                }"
+                :title="`特徴度: ${item.score.toFixed(3)}`"
+                @click="fetchSummary(item.name)"
+              >{{ item.name }}</span>
+            </div>
           </div>
 
-          <v-divider />
-
-          <!-- AI解説セクション -->
-          <div class="ai-section">
+          <!-- AI解説カード -->
+          <div class="ai-card">
             <div v-if="!selectedWord" class="ai-hint">
               <v-icon size="14" class="mr-1">mdi-cursor-default-click</v-icon>
               単語をクリックするとAI解説が表示されます
@@ -390,10 +463,12 @@ watch([sessionCount, windowEnd], resetAndRender)
                 <v-icon size="15" color="white" class="mr-2">mdi-robot-outline</v-icon>
                 「{{ selectedWord }}」の議論
               </div>
-              <div v-if="aiLoading" class="ai-loading">
-                <v-progress-circular indeterminate size="22" width="2" color="indigo-darken-3" />
+              <div class="ai-scroll">
+                <div v-if="aiLoading" class="ai-loading">
+                  <v-progress-circular indeterminate size="22" width="2" color="indigo-darken-3" />
+                </div>
+                <div v-else class="ai-body" v-html="renderedSummary" />
               </div>
-              <div v-else class="ai-body" v-html="renderedSummary" />
             </template>
           </div>
 
@@ -626,25 +701,40 @@ watch([sessionCount, windowEnd], resetAndRender)
 
 /* ── Wordcloud ─────────────────────────────────── */
 .wordcloud-wrap {
-  padding: 8px;
+  padding: 0;
 }
 
 .wordcloud-container {
+  position: relative;
   width: 100%;
-  height: 200px;
+  height: 220px;
+  overflow: hidden;
 }
 
-@media (min-width: 768px) {
-  .wordcloud-container {
-    height: 220px;
-  }
+.wc-word {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  transition: opacity 0.25s;
 }
 
-/* ── AI Section ────────────────────────────────── */
-.ai-section {
-  min-height: 100px;
-  max-height: 320px;
-  overflow-y: auto;
+.wc-word:hover {
+  opacity: 0.55 !important;
+}
+
+/* ── AI Card ───────────────────────────────────── */
+.ai-card {
+  margin: 12px 12px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 300px;
 }
 
 .ai-hint {
@@ -658,12 +748,18 @@ watch([sessionCount, windowEnd], resetAndRender)
 .ai-head {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   background: var(--navy);
   color: #ffffff;
   font-size: 13.5px;
   font-weight: 600;
   padding: 10px 14px;
   letter-spacing: 0.02em;
+}
+
+.ai-scroll {
+  overflow-y: auto;
+  flex: 1;
 }
 
 .ai-loading {
