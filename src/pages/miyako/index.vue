@@ -27,19 +27,17 @@ const selectedSession = ref<string | null>(null)
 const sessionCount = MAX_DISPLAY
 const windowEnd = ref(0)
 
+interface AiTopic {
+  title: string
+  conclusion: string
+  flow: string[]
+}
+
 const selectedWord = ref<string | null>(null)
-const aiSummary = ref<string>('')
+const aiTopics = ref<AiTopic[]>([])
 const aiLoading = ref(false)
 const maxChars = ref(1000)
 const MAX_CHARS_OPTIONS = [500, 1000, 2000]
-
-const { marked } = await import('marked')
-const renderedSummary = computed(() => {
-  if (!aiSummary.value) return ''
-  const html = marked(aiSummary.value) as string
-  // ↓ のみの段落にクラスを付与してフロー矢印として強調
-  return html.replace(/<p>↓<\/p>/g, '<p class="flow-arrow">↓</p>')
-})
 
 const WC_COLORS = [
   '#1A237E', '#283593', '#303F9F', '#3949AB',
@@ -186,7 +184,8 @@ function shortLabel(key: string): string {
   if (!m) return key
   const era = m[1] === '令和' ? '令' : '平'
   const year = m[2] === '元' ? '1' : m[2]
-  return `${era}${year}-${m[3]}`
+  const type = m[4] === '定例会' ? '定' : '臨'
+  return `${era}${year}-${m[3]}${type}`
 }
 
 const filteredSessions = computed(() =>
@@ -260,12 +259,12 @@ function renderHeatmap() {
 
   heatmapChart.setOption({
     animation: false,
-    grid: { top: 50, right: 7, bottom: 4, left: 50 },
+    grid: { top: 40, right: 7, bottom: 4, left: 50 },
     xAxis: {
       type: 'category',
       data: sessions.map(shortLabel),
       position: 'top',
-      axisLabel: { rotate: 60, fontSize: 9, align: 'left', margin: 30 },
+      axisLabel: { rotate: 60, fontSize: 9, align: 'left', margin: 35 },
       splitLine: { show: true, lineStyle: { color: 'rgba(0,0,0,0.08)' } },
       axisTick: { show: false },
       axisLine: { show: false },
@@ -312,25 +311,29 @@ function renderHeatmap() {
 async function fetchSummary(word: string) {
   if (!selectedSession.value) return
   selectedWord.value = word
-  aiSummary.value = ''
+  aiTopics.value = []
 
   const cacheKey = `miyako_summary:${selectedSession.value}:${word}:${maxChars.value}`
   const cached = localStorage.getItem(cacheKey)
   if (cached) {
-    aiSummary.value = cached
-    return
+    try {
+      aiTopics.value = JSON.parse(cached)
+      return
+    } catch {
+      localStorage.removeItem(cacheKey)
+    }
   }
 
   aiLoading.value = true
   try {
-    const data = await $fetch<{ summary: string }>('/api/miyako/search', {
+    const data = await $fetch<{ topics: AiTopic[] }>('/api/miyako/search', {
       method: 'POST',
       body: { session: selectedSession.value, word, maxChars: maxChars.value },
     })
-    aiSummary.value = data.summary
-    localStorage.setItem(cacheKey, data.summary)
+    aiTopics.value = data.topics
+    localStorage.setItem(cacheKey, JSON.stringify(data.topics))
   } catch {
-    aiSummary.value = '取得に失敗しました。'
+    aiTopics.value = [{ title: 'エラー', conclusion: '取得に失敗しました。', flow: [] }]
   } finally {
     aiLoading.value = false
   }
@@ -339,7 +342,7 @@ async function fetchSummary(word: string) {
 async function resetAndRender() {
   selectedSession.value = null
   selectedWord.value = null
-  aiSummary.value = ''
+  aiTopics.value = []
   await nextTick()
   renderHeatmap()
 }
@@ -354,63 +357,64 @@ watch([sessionCount, windowEnd], resetAndRender)
 
 <template>
   <div class="min-h-screen bg-[#f0f2f8]">
-    <!-- Page header -->
-    <header class="bg-gradient-to-br from-[#121d3e] to-[#2a3f7a] px-6 py-5">
-      <div class="max-w-[1400px] mx-auto">
-        <h1 class="m-0 mb-1 text-[clamp(17px,2.5vw,22px)] font-bold text-white tracking-[0.03em]">
-          宮古島市議会<span class="text-[#a5b4fc] ml-1.5">議事録分析</span>
-        </h1>
-        <p class="m-0 text-[11.5px] text-white/45 tracking-[0.02em]">会期ごとのキーワード出現傾向と議論内容をAIで可視化</p>
+    <!-- Page header + Controls -->
+    <header class="bg-gradient-to-br from-[#121d3e] to-[#2a3f7a] px-6 py-3.5">
+      <div class="max-w-[1400px] mx-auto flex items-center gap-4">
+        <!-- Title + subtitle -->
+        <div class="flex items-baseline gap-3 flex-shrink-0">
+          <h1 class="m-0 text-[clamp(15px,2vw,19px)] font-bold text-white tracking-[0.03em] whitespace-nowrap">
+            宮古島市議会<span class="text-[#a5b4fc] ml-1.5">議事録分析</span>
+          </h1>
+          <p class="m-0 text-[11px] text-white/40 tracking-[0.02em] whitespace-nowrap hidden sm:block">会期ごとのキーワード出現傾向と議論内容をAIで可視化</p>
+        </div>
+
+        <!-- Controls (right-aligned) -->
+        <div class="flex items-center flex-wrap gap-y-1.5 gap-x-4 ml-auto">
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10.5px] font-semibold text-white/50 whitespace-nowrap uppercase tracking-[0.04em]">会期</span>
+            <div class="flex rounded-md overflow-hidden border border-white/20">
+              <button
+                v-for="opt in ['すべて', '定例会', '臨時会']"
+                :key="opt"
+                :class="[
+                  'px-2.5 py-0.5 text-xs font-medium cursor-pointer border-none transition-colors',
+                  sessionTypeFilter === opt ? 'bg-white/25 text-white' : 'bg-transparent text-white/60 hover:bg-white/10'
+                ]"
+                @click="sessionTypeFilter = opt as 'すべて' | '定例会' | '臨時会'"
+              >{{ opt }}</button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10.5px] font-semibold text-white/50 whitespace-nowrap uppercase tracking-[0.04em]">期間</span>
+            <input
+              v-model.number="windowEnd"
+              type="range"
+              :min="windowEndMin"
+              :max="windowEndMax"
+              :step="1"
+              class="ctrl-slider"
+            />
+            <span class="text-[10.5px] text-white/50 whitespace-nowrap min-w-[110px]">{{ rangeLabel }}</span>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10.5px] font-semibold text-white/50 whitespace-nowrap uppercase tracking-[0.04em]">要約文字数</span>
+            <div class="flex rounded-md overflow-hidden border border-white/20">
+              <button
+                v-for="n in MAX_CHARS_OPTIONS"
+                :key="n"
+                :class="[
+                  'px-2.5 py-0.5 text-xs font-medium cursor-pointer border-none transition-colors',
+                  maxChars === n ? 'bg-white/25 text-white' : 'bg-transparent text-white/60 hover:bg-white/10'
+                ]"
+                @click="maxChars = n"
+              >{{ n }}</button>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
-
-    <!-- Controls bar -->
-    <div class="bg-white border-b border-[#dde2ef] px-6 py-2.5">
-      <div class="max-w-[1400px] mx-auto flex items-center flex-wrap gap-y-2 gap-x-5">
-        <div class="flex items-center gap-2">
-          <span class="text-[11px] font-semibold text-[#6878a8] whitespace-nowrap uppercase tracking-[0.04em]">会期</span>
-          <div class="flex rounded-lg overflow-hidden border border-[#3949AB]">
-            <button
-              v-for="opt in ['すべて', '定例会', '臨時会']"
-              :key="opt"
-              :class="[
-                'px-3 py-1 text-xs font-medium cursor-pointer border-none transition-colors',
-                sessionTypeFilter === opt ? 'bg-[#1A237E] text-white' : 'bg-white text-[#1A237E] hover:bg-blue-50'
-              ]"
-              @click="sessionTypeFilter = opt as 'すべて' | '定例会' | '臨時会'"
-            >{{ opt }}</button>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-1.5">
-          <span class="text-[11px] font-semibold text-[#6878a8] whitespace-nowrap uppercase tracking-[0.04em]">期間</span>
-          <input
-            v-model.number="windowEnd"
-            type="range"
-            :min="windowEndMin"
-            :max="windowEndMax"
-            :step="1"
-            class="ctrl-slider"
-          />
-          <span class="text-[11px] text-[#6878a8] whitespace-nowrap min-w-[110px]">{{ rangeLabel }}</span>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <span class="text-[11px] font-semibold text-[#6878a8] whitespace-nowrap uppercase tracking-[0.04em]">要約文字数</span>
-          <div class="flex rounded-lg overflow-hidden border border-[#3949AB]">
-            <button
-              v-for="n in MAX_CHARS_OPTIONS"
-              :key="n"
-              :class="[
-                'px-3 py-1 text-xs font-medium cursor-pointer border-none transition-colors',
-                maxChars === n ? 'bg-[#1A237E] text-white' : 'bg-white text-[#1A237E] hover:bg-blue-50'
-              ]"
-              @click="maxChars = n"
-            >{{ n }}</button>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- Loading -->
     <div v-if="loading" class="flex justify-center items-center py-[72px] px-6">
@@ -418,7 +422,7 @@ watch([sessionCount, windowEnd], resetAndRender)
     </div>
 
     <!-- Main content -->
-    <div v-else class="max-w-[1400px] mx-auto px-6 pt-4 pb-8 flex flex-col md:flex-row gap-3 items-stretch md:items-start">
+    <div v-else class="max-w-[1400px] mx-auto px-6 pt-4 pb-8 flex flex-col md:flex-row gap-3 items-start">
 
       <!-- Heatmap panel -->
       <div class="flex-1 min-w-0 bg-white border border-[#dde2ef] rounded-[10px] shadow-[0_1px_4px_rgba(28,45,90,0.07),0_0_0_1px_rgba(28,45,90,0.06)] overflow-hidden">
@@ -433,57 +437,71 @@ watch([sessionCount, windowEnd], resetAndRender)
       </div>
 
       <!-- Side panel -->
-      <div class="w-full md:w-[420px] flex-shrink-0 self-start bg-white border border-[#dde2ef] rounded-[10px] shadow-[0_1px_4px_rgba(28,45,90,0.07),0_0_0_1px_rgba(28,45,90,0.06)] overflow-hidden">
-        <template v-if="selectedSession">
-          <!-- Session header -->
-          <div class="flex items-center gap-1 px-3.5 py-2.5 bg-[#eef1fb] border-b border-[#dde2ef]">
-            <span class="opacity-70">📅</span>
-            <span class="text-xs font-semibold text-[#1c2d5a] tracking-[0.02em]">{{ selectedSession?.replace(/〜[\d-]+$/, '〜') }}</span>
-          </div>
-
-          <!-- Wordcloud -->
-          <div class="p-0">
-            <div ref="wcContainerRef" class="wordcloud-container">
-              <span
-                v-for="item in wordcloudWords"
-                :key="item.name"
-                class="wc-word"
-                :style="{
-                  fontSize: item.size + 'px',
-                  color: item.color,
-                  left: (wcPositions[item.name]?.x ?? 0) + 'px',
-                  top: (wcPositions[item.name]?.y ?? 0) + 'px',
-                  opacity: wcReady ? 1 : 0,
-                }"
-                :title="`特徴度: ${item.score.toFixed(3)}`"
-                @click="fetchSummary(item.name)"
-              >{{ item.name }}</span>
+      <div class="w-full md:w-[420px] md:h-[638px] flex-shrink-0 flex flex-col gap-3">
+        <!-- Wordcloud card -->
+        <div class="flex-shrink-0 bg-white border border-[#dde2ef] rounded-[10px] shadow-[0_1px_4px_rgba(28,45,90,0.07),0_0_0_1px_rgba(28,45,90,0.06)] overflow-hidden">
+          <template v-if="selectedSession">
+            <!-- Session header -->
+            <div class="flex items-center gap-1 px-3.5 py-2.5 bg-[#eef1fb] border-b border-[#dde2ef]">
+              <span class="opacity-70">📅</span>
+              <span class="text-xs font-semibold text-[#1c2d5a] tracking-[0.02em]">{{ selectedSession?.replace(/〜[\d-]+$/, '〜') }}</span>
             </div>
-          </div>
 
-          <!-- AI card -->
-          <div class="mx-3 mb-3 border border-[#dde2ef] rounded-[10px] shadow-[0_1px_4px_rgba(28,45,90,0.07),0_0_0_1px_rgba(28,45,90,0.06)] overflow-hidden flex flex-col max-h-[300px]">
-            <div v-if="!selectedWord" class="flex items-center px-3.5 py-3 text-xs text-[#6878a8]">
-              👆 単語をクリックするとAI解説が表示されます
-            </div>
-            <template v-else>
-              <div class="flex items-center flex-shrink-0 bg-[#1c2d5a] text-white text-[13.5px] font-semibold px-3.5 py-2.5 tracking-[0.02em]">
-                🤖 「{{ selectedWord }}」の議論
+            <!-- Wordcloud -->
+            <div class="p-0">
+              <div ref="wcContainerRef" class="wordcloud-container">
+                <span
+                  v-for="item in wordcloudWords"
+                  :key="item.name"
+                  class="wc-word"
+                  :style="{
+                    fontSize: item.size + 'px',
+                    color: item.color,
+                    left: (wcPositions[item.name]?.x ?? 0) + 'px',
+                    top: (wcPositions[item.name]?.y ?? 0) + 'px',
+                    opacity: wcReady ? 1 : 0,
+                  }"
+                  :title="`特徴度: ${item.score.toFixed(3)}`"
+                  @click="fetchSummary(item.name)"
+                >{{ item.name }}</span>
               </div>
-              <div class="overflow-y-auto flex-1">
-                <div v-if="aiLoading" class="flex items-center justify-center min-h-[80px]">
-                  <span class="w-[22px] h-[22px] rounded-full border-2 border-[#1A237E]/30 border-t-[#1A237E] animate-spin block" />
+            </div>
+          </template>
+
+          <!-- Empty state -->
+          <div v-else class="flex flex-col items-center justify-center min-h-[280px] gap-3 p-8 text-center text-[#6878a8] text-xs leading-relaxed">
+            <span class="text-4xl opacity-25">👆</span>
+            <p class="m-0">左のヒートマップの列をクリックすると<br>ワードクラウドが表示されます</p>
+          </div>
+        </div>
+
+        <!-- AI card -->
+        <div class="flex-1 min-h-0 bg-white border border-[#dde2ef] rounded-[10px] shadow-[0_1px_4px_rgba(28,45,90,0.07),0_0_0_1px_rgba(28,45,90,0.06)] overflow-hidden flex flex-col">
+          <div v-if="!selectedWord" class="flex items-center px-3.5 py-3 text-xs text-[#6878a8]">
+            👆 単語をクリックするとAI解説が表示されます
+          </div>
+          <template v-else>
+            <div class="flex items-center flex-shrink-0 bg-[#1c2d5a] text-white text-[13.5px] font-semibold px-3.5 py-2.5 tracking-[0.02em]">
+              🤖 「{{ selectedWord }}」の議論
+            </div>
+            <div class="overflow-y-auto flex-1 min-h-0">
+              <div v-if="aiLoading" class="flex items-center justify-center min-h-[80px]">
+                <span class="w-[22px] h-[22px] rounded-full border-2 border-[#1A237E]/30 border-t-[#1A237E] animate-spin block" />
+              </div>
+              <div v-else class="ai-body">
+                <div v-for="(topic, ti) in aiTopics" :key="ti" :class="ti > 0 ? 'mt-4 pt-4 border-t border-[#dde2ef]' : ''">
+                  <div class="topic-title">{{ topic.title }}</div>
+                  <div class="conclusion">{{ topic.conclusion }}</div>
+                  <div v-if="topic.flow.length" class="flow-list">
+                    <template v-for="(step, si) in topic.flow" :key="si">
+                      <div class="flow-step">{{ step }}</div>
+                      <div v-if="si < topic.flow.length - 1" class="flow-arrow">↓</div>
+                    </template>
+                  </div>
                 </div>
-                <div v-else class="ai-body" v-html="renderedSummary" />
               </div>
-            </template>
-          </div>
-        </template>
-
-        <!-- Empty state -->
-        <div v-else class="flex flex-col items-center justify-center min-h-[280px] gap-3 p-8 text-center text-[#6878a8] text-xs leading-relaxed">
-          <span class="text-4xl opacity-25">👆</span>
-          <p class="m-0">左のヒートマップの列をクリックすると<br>ワードクラウドが表示されます</p>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -494,7 +512,7 @@ watch([sessionCount, windowEnd], resetAndRender)
 .ctrl-slider {
   min-width: 110px;
   max-width: 170px;
-  accent-color: #1A237E;
+  accent-color: #a5b4fc;
 }
 
 .wordcloud-container {
@@ -525,44 +543,47 @@ watch([sessionCount, windowEnd], resetAndRender)
   line-height: 1.75;
 }
 
-.ai-body :deep(h2) {
+.topic-title {
   font-size: 13.5px;
   font-weight: 700;
-  margin: 14px 0 6px;
+  margin-bottom: 5px;
   color: #1c2d5a;
   border-left: 3px solid #3d5fc4;
   padding-left: 8px;
 }
 
-.ai-body :deep(h2:first-child) {
-  margin-top: 0;
+.conclusion {
+  font-size: 12.5px;
+  color: #3a4a72;
+  background: #f0f3fb;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  line-height: 1.7;
 }
 
-.ai-body :deep(ul) {
-  margin: 0 0 8px 16px;
-  padding: 0;
+.flow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.ai-body :deep(li) {
-  line-height: 1.75;
-  margin-bottom: 4px;
-}
-
-.ai-body :deep(strong) {
+.flow-step {
+  font-size: 12.5px;
   color: #1c2d5a;
+  background: #fff;
+  border: 1px solid #dde2ef;
+  border-radius: 6px;
+  padding: 6px 10px;
+  line-height: 1.65;
 }
 
-.ai-body :deep(p) {
-  margin: 0 0 6px;
-  line-height: 1.75;
-}
-
-.ai-body :deep(.flow-arrow) {
+.flow-arrow {
   text-align: center;
   color: #3d5fc4;
-  font-size: 16px;
+  font-size: 15px;
+  line-height: 1.4;
+  opacity: 0.6;
   margin: 1px 0;
-  line-height: 1.3;
-  opacity: .7;
 }
 </style>
