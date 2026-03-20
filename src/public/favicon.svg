@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c4b5fd"/>
+      <stop offset="100%" stop-color="#e879f9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background rounded square -->
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+
+  <!-- Antenna -->
+  <line x1="32" y1="5" x2="32" y2="14" stroke="#c4b5fd" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="32" cy="4" r="3.5" fill="url(#glow)"/>
+
+  <!-- Head panel -->
+  <rect x="9" y="14" width="46" height="40" rx="11" fill="rgba(255,255,255,0.12)"/>
+  <rect x="9" y="14" width="46" height="40" rx="11" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+
+  <!-- Eyes (big cute circles) -->
+  <circle cx="22" cy="29" r="8" fill="white" opacity="0.95"/>
+  <circle cx="42" cy="29" r="8" fill="white" opacity="0.95"/>
+
+  <!-- Pupils -->
+  <circle cx="24" cy="30" r="4.5" fill="#4f46e5"/>
+  <circle cx="44" cy="30" r="4.5" fill="#4f46e5"/>
+
+  <!-- Eye shine -->
+  <circle cx="26.5" cy="27.5" r="2" fill="white"/>
+  <circle cx="46.5" cy="27.5" r="2" fill="white"/>
+
+  <!-- Mouth (smile) -->
+  <path d="M 21 43 Q 32 51 43 43" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.9"/>
+
+  <!-- Sparkle top-right -->
+  <path d="M 52 10 L 53.5 13 L 57 14.5 L 53.5 16 L 52 19 L 50.5 16 L 47 14.5 L 50.5 13 Z" fill="#e879f9" opacity="0.8"/>
+</svg>
