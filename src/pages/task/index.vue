@@ -478,6 +478,7 @@ async function onDropCard(targetCardId: string, targetBoardId: string, targetSta
     const body: Record<string, any> = { pos: newPos }
     if (srcBoardId !== targetBoardId || srcStatus !== targetStatus) {
       body.idList = targetStatus === 'doing' ? targetBoard.doingListId : targetBoard.todoListId
+      if (srcBoardId !== targetBoardId) body.idBoard = targetBoardId
     }
     await trelloPut(`/cards/${srcCardId}`, body)
 
@@ -517,6 +518,7 @@ async function onDropEnd(targetBoardId: string, targetStatus: 'doing' | 'todo') 
     const body: Record<string, any> = { pos: newPos }
     if (srcBoardId !== targetBoardId || srcStatus !== targetStatus) {
       body.idList = targetStatus === 'doing' ? targetBoard.doingListId : targetBoard.todoListId
+      if (srcBoardId !== targetBoardId) body.idBoard = targetBoardId
     }
     await trelloPut(`/cards/${srcCardId}`, body)
 
