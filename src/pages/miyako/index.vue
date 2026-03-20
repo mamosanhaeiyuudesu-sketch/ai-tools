@@ -422,7 +422,7 @@ watch([sessionCount, windowEnd], resetAndRender)
     </div>
 
     <!-- Main content -->
-    <div v-else class="max-w-[1400px] mx-auto px-6 pt-4 pb-8 flex flex-col md:flex-row gap-3 items-start">
+    <div v-else class="max-w-[1400px] mx-auto px-6 pt-[11px] pb-8 flex flex-col md:flex-row gap-3 items-start">
 
       <!-- Heatmap panel -->
       <div class="flex-1 min-w-0 bg-white border border-[#dde2ef] rounded-[10px] shadow-[0_1px_4px_rgba(28,45,90,0.07),0_0_0_1px_rgba(28,45,90,0.06)] overflow-hidden">

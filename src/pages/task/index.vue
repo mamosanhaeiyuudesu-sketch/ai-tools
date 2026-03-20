@@ -1,9 +1,20 @@
 <script setup lang="ts">
-const LS_KEY = 'trello_key'
-const LS_TOKEN = 'trello_token'
-const LS_EXCLUDED = 'trello_excluded'
+const LS_PROFILES = 'trello_profiles'
+const LS_ACTIVE = 'trello_active_profile'
+// Legacy keys for migration
+const LS_KEY_LEGACY = 'trello_key'
+const LS_TOKEN_LEGACY = 'trello_token'
+const LS_EXCLUDED_LEGACY = 'trello_excluded'
 
 const DEFAULT_EXCLUDED = ''
+
+interface Profile {
+  id: string
+  name: string
+  key: string
+  token: string
+  excluded: string
+}
 
 const route = useRoute()
 interface Card {
@@ -28,14 +39,18 @@ interface Board {
   doneListId: string
 }
 
-const apiKey = ref('')
-const apiToken = ref('')
-const excludedText = ref(DEFAULT_EXCLUDED)
+const profiles = ref<Profile[]>([])
+const activeProfileId = ref('')
+const activeProfile = computed(() =>
+  profiles.value.find(p => p.id === activeProfileId.value) ?? profiles.value[0]
+)
+const apiKey = computed(() => activeProfile.value?.key ?? '')
+const apiToken = computed(() => activeProfile.value?.token ?? '')
+const excludedText = computed(() => activeProfile.value?.excluded ?? '')
 
 const showSettings = ref(false)
-const settingsKey = ref('')
-const settingsToken = ref('')
-const settingsExcluded = ref('')
+const settingsProfiles = ref<Profile[]>([])
+const settingsActiveTab = ref(0)
 
 const isMounted = ref(false)
 const loading = ref(false)
@@ -54,7 +69,7 @@ const endMonth = ref((route.query.end as string) || defaultEnd)
 const showTaskModal = ref(false)
 type EditTarget = { card: Card; boardId: string; status: 'doing' | 'todo' } | null
 const editTarget = ref<EditTarget>(null)
-const taskForm = ref({ name: '', desc: '', due: '', boardId: '', status: 'todo' as 'todo' | 'doing' })
+const taskForm = ref({ name: '', desc: '', due: '', boardId: '', status: 'todo' as 'todo' | 'doing' | 'done' })
 
 const isEditing = computed(() => editTarget.value !== null)
 const modalTitle = computed(() => isEditing.value ? 'タスクを編集' : 'タスクを追加')
@@ -72,9 +87,24 @@ const doingTotal = computed(() => boards.value.reduce((s, b) => s + b.doing.leng
 const todoTotal = computed(() => boards.value.reduce((s, b) => s + b.todo.length, 0))
 
 onMounted(() => {
-  apiKey.value = localStorage.getItem(LS_KEY) || ''
-  apiToken.value = localStorage.getItem(LS_TOKEN) || ''
-  excludedText.value = localStorage.getItem(LS_EXCLUDED) || DEFAULT_EXCLUDED
+  const stored = localStorage.getItem(LS_PROFILES)
+  if (stored) {
+    try { profiles.value = JSON.parse(stored) } catch {}
+  }
+  if (!profiles.value.length) {
+    const key = localStorage.getItem(LS_KEY_LEGACY) || ''
+    const token = localStorage.getItem(LS_TOKEN_LEGACY) || ''
+    const excluded = localStorage.getItem(LS_EXCLUDED_LEGACY) || DEFAULT_EXCLUDED
+    profiles.value = [{ id: '1', name: 'デフォルト', key, token, excluded }]
+    localStorage.setItem(LS_PROFILES, JSON.stringify(profiles.value))
+  }
+  const fromUrl = route.query.profile as string | undefined
+  const fromStorage = localStorage.getItem(LS_ACTIVE)
+  const preferred = fromUrl || fromStorage
+  activeProfileId.value = (preferred && profiles.value.find(p => p.id === preferred))
+    ? preferred
+    : profiles.value[0].id
+  localStorage.setItem(LS_ACTIVE, activeProfileId.value)
   isMounted.value = true
 
   if (hasCredentials.value) {
@@ -85,21 +115,43 @@ onMounted(() => {
 })
 
 function openSettings() {
-  settingsKey.value = apiKey.value
-  settingsToken.value = apiToken.value
-  settingsExcluded.value = excludedText.value
+  settingsProfiles.value = JSON.parse(JSON.stringify(profiles.value))
+  settingsActiveTab.value = Math.max(0, settingsProfiles.value.findIndex(p => p.id === activeProfileId.value))
   showSettings.value = true
 }
 
+function addSettingsProfile() {
+  const id = Date.now().toString()
+  settingsProfiles.value.push({ id, name: `アカウント${settingsProfiles.value.length + 1}`, key: '', token: '', excluded: DEFAULT_EXCLUDED })
+  settingsActiveTab.value = settingsProfiles.value.length - 1
+}
+
+function removeSettingsProfile(idx: number) {
+  if (settingsProfiles.value.length <= 1) return
+  settingsProfiles.value.splice(idx, 1)
+  settingsActiveTab.value = Math.max(0, Math.min(settingsActiveTab.value, settingsProfiles.value.length - 1))
+}
+
 function saveSettings() {
-  apiKey.value = settingsKey.value.trim()
-  apiToken.value = settingsToken.value.trim()
-  excludedText.value = settingsExcluded.value
-  localStorage.setItem(LS_KEY, apiKey.value)
-  localStorage.setItem(LS_TOKEN, apiToken.value)
-  localStorage.setItem(LS_EXCLUDED, excludedText.value)
+  const valid = settingsProfiles.value
+    .map((p, i) => ({ ...p, key: p.key.trim(), token: p.token.trim(), name: p.name.trim() || `アカウント${i + 1}` }))
+    .filter(p => p.key || p.token)
+  if (!valid.length) return
+  profiles.value = valid
+  if (!profiles.value.find(p => p.id === activeProfileId.value)) {
+    activeProfileId.value = profiles.value[0].id
+  }
+  localStorage.setItem(LS_PROFILES, JSON.stringify(profiles.value))
+  localStorage.setItem(LS_ACTIVE, activeProfileId.value)
   showSettings.value = false
   if (hasCredentials.value) load()
+}
+
+function switchProfile(id: string) {
+  if (activeProfileId.value === id) return
+  activeProfileId.value = id
+  localStorage.setItem(LS_ACTIVE, id)
+  load()
 }
 
 async function trelloGet(path: string) {
@@ -152,6 +204,7 @@ function syncUrl() {
   url.searchParams.set('start', startMonth.value)
   url.searchParams.set('end', endMonth.value)
   url.searchParams.set('view', doneView.value)
+  url.searchParams.set('profile', activeProfileId.value)
   window.history.replaceState({}, '', url.toString())
 }
 
@@ -350,6 +403,54 @@ async function saveTask() {
     if (!board) throw new Error('ボードが見つかりません')
 
     const dueIso = taskForm.value.due ? new Date(taskForm.value.due).toISOString() : ''
+
+    // DONEステータスの処理（チェックボックスと同じ挙動）
+    if (taskForm.value.status === 'done') {
+      if (!board.doneListId) throw new Error('Doneリストが見つかりません')
+
+      if (isEditing.value && editTarget.value) {
+        const { card, status } = editTarget.value
+        const effectiveDue = dueIso || card.due || ''
+
+        if (!effectiveDue) {
+          // 期限未設定 → カレンダーを表示（チェック選択時と同じ）
+          showTaskModal.value = false
+          pendingDueInput.value = toLocalDatetimeInput(new Date().toISOString())
+          pendingDone.value = { card, board }
+          return
+        }
+
+        await trelloPut(`/cards/${card.id}`, {
+          name: taskForm.value.name.trim(),
+          desc: taskForm.value.desc.trim(),
+          idList: board.doneListId,
+          dueComplete: true,
+          due: effectiveDue,
+        })
+        const srcArr = status === 'doing' ? board.doing : board.todo
+        const idx = srcArr.findIndex(c => c.id === card.id)
+        if (idx >= 0) srcArr.splice(idx, 1)
+        addToDoneTable(board, { ...card, name: taskForm.value.name.trim(), due: effectiveDue })
+      } else {
+        // 新規カード → 期限必須
+        if (!dueIso) {
+          error.value = 'DONEにするには期限を入力してください'
+          return
+        }
+        const raw = await trelloPost('/cards', {
+          name: taskForm.value.name.trim(),
+          desc: taskForm.value.desc.trim(),
+          due: dueIso,
+          dueComplete: true,
+          idList: board.doneListId,
+        })
+        addToDoneTable(board, buildCard(raw))
+      }
+
+      showTaskModal.value = false
+      return
+    }
+
     const body: Record<string, any> = {
       name: taskForm.value.name.trim(),
       desc: taskForm.value.desc.trim(),
@@ -799,6 +900,20 @@ async function deleteTask() {
     <header class="sticky top-0 z-[100] flex items-center gap-3 px-5 py-3.5 bg-[rgba(15,23,42,0.92)] backdrop-blur-[12px] border-b border-white/[0.08]">
       <h1 class="flex-none m-0 ml-2 text-xl font-bold bg-gradient-to-br from-sky-400 to-indigo-500 bg-clip-text text-transparent">タスクくん</h1>
       <div v-if="hasCredentials" class="flex items-center gap-2 ml-auto">
+        <!-- Profile selector -->
+        <div class="flex items-center gap-1 mr-1">
+          <button
+            v-for="p in profiles"
+            :key="p.id"
+            :class="[
+              'px-2.5 py-1 rounded-md text-[12px] font-medium cursor-pointer border transition-all',
+              activeProfileId === p.id
+                ? 'bg-sky-500/20 border-sky-400/50 text-sky-400'
+                : 'bg-white/[0.04] border-white/10 text-slate-500 hover:bg-white/[0.08] hover:text-slate-300',
+            ]"
+            @click="switchProfile(p.id)"
+          >{{ p.name }}</button>
+        </div>
         <!-- Start month picker -->
         <div class="relative z-50" @click.stop>
           <button
@@ -861,17 +976,47 @@ async function deleteTask() {
     <!-- Settings Modal -->
     <Teleport to="body">
       <div v-if="showSettings" class="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-5" @click.self="showSettings = false">
-        <div class="w-[min(520px,100%)] bg-[#1e293b] border border-white/10 rounded-2xl p-7 flex flex-col gap-2.5 max-h-[90vh] overflow-y-auto">
-          <h2 class="m-0 mb-2 text-lg font-bold text-slate-50">設定</h2>
+        <div class="w-[min(560px,100%)] bg-[#1e293b] border border-white/10 rounded-2xl p-7 flex flex-col gap-2.5 max-h-[90vh] overflow-y-auto">
+          <h2 class="m-0 mb-1 text-lg font-bold text-slate-50">設定</h2>
 
-          <label class="text-xs font-semibold text-slate-500 uppercase tracking-[0.05em] mt-1">Trello API Key</label>
-          <input v-model="settingsKey" class="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2.5 text-[#e2e8f0] text-[13px] font-[inherit] box-border outline-none focus:border-sky-400/50 focus:shadow-[0_0_0_3px_rgba(56,189,248,0.1)]" type="text" placeholder="API Key" />
+          <!-- Account tabs -->
+          <div class="flex items-end gap-0 border-b border-white/10 mb-2 overflow-x-auto">
+            <button
+              v-for="(p, i) in settingsProfiles"
+              :key="p.id"
+              :class="[
+                'px-3 py-1.5 text-[13px] font-medium rounded-t-lg border-b-2 transition-all cursor-pointer whitespace-nowrap flex-shrink-0',
+                settingsActiveTab === i
+                  ? 'border-sky-400 text-sky-400 bg-white/[0.04]'
+                  : 'border-transparent text-slate-500 hover:text-slate-300 bg-transparent',
+              ]"
+              @click="settingsActiveTab = i"
+            >{{ p.name || `アカウント${i + 1}` }}</button>
+            <button
+              class="px-2.5 py-1.5 text-[18px] leading-none text-slate-500 hover:text-sky-400 border-b-2 border-transparent cursor-pointer transition-all flex-shrink-0"
+              title="新しいアカウントを追加"
+              @click="addSettingsProfile"
+            >＋</button>
+          </div>
 
-          <label class="text-xs font-semibold text-slate-500 uppercase tracking-[0.05em] mt-1">Trello Token</label>
-          <input v-model="settingsToken" class="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2.5 text-[#e2e8f0] text-[13px] font-[inherit] box-border outline-none focus:border-sky-400/50 focus:shadow-[0_0_0_3px_rgba(56,189,248,0.1)]" type="text" placeholder="Token" />
+          <!-- Current tab fields -->
+          <template v-if="settingsProfiles[settingsActiveTab]">
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-[0.05em] mt-1">アカウント名</label>
+            <input v-model="settingsProfiles[settingsActiveTab].name" class="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2.5 text-[#e2e8f0] text-[13px] font-[inherit] box-border outline-none focus:border-sky-400/50 focus:shadow-[0_0_0_3px_rgba(56,189,248,0.1)]" type="text" :placeholder="`アカウント${settingsActiveTab + 1}`" />
 
-          <label class="text-xs font-semibold text-slate-500 uppercase tracking-[0.05em] mt-1">非表示ボード（カンマ区切り）</label>
-          <textarea v-model="settingsExcluded" class="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2.5 text-[#e2e8f0] text-[13px] font-[inherit] box-border outline-none focus:border-sky-400/50 focus:shadow-[0_0_0_3px_rgba(56,189,248,0.1)] resize-y min-h-[120px] font-mono text-xs leading-relaxed" rows="6" />
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-[0.05em] mt-1">Trello API Key</label>
+            <input v-model="settingsProfiles[settingsActiveTab].key" class="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2.5 text-[#e2e8f0] text-[13px] font-[inherit] box-border outline-none focus:border-sky-400/50 focus:shadow-[0_0_0_3px_rgba(56,189,248,0.1)]" type="text" placeholder="API Key" />
+
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-[0.05em] mt-1">Trello Token</label>
+            <input v-model="settingsProfiles[settingsActiveTab].token" class="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2.5 text-[#e2e8f0] text-[13px] font-[inherit] box-border outline-none focus:border-sky-400/50 focus:shadow-[0_0_0_3px_rgba(56,189,248,0.1)]" type="text" placeholder="Token" />
+
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-[0.05em] mt-1">非表示ボード（カンマ区切り）</label>
+            <textarea v-model="settingsProfiles[settingsActiveTab].excluded" class="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2.5 text-[#e2e8f0] text-[13px] font-[inherit] box-border outline-none focus:border-sky-400/50 focus:shadow-[0_0_0_3px_rgba(56,189,248,0.1)] resize-y min-h-[80px] font-mono text-xs leading-relaxed" rows="4" />
+
+            <div v-if="settingsProfiles.length > 1" class="flex justify-start mt-1">
+              <button class="px-3 py-1.5 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-[12px] cursor-pointer transition-all hover:bg-red-500/20" @click="removeSettingsProfile(settingsActiveTab)">このアカウントを削除</button>
+            </div>
+          </template>
 
           <div class="flex justify-end gap-2 mt-2">
             <button class="px-4 py-2 rounded-lg bg-white/[0.08] border border-white/10 text-slate-400 text-[13px] cursor-pointer transition-all hover:bg-white/[0.12]" @click="showSettings = false">キャンセル</button>
@@ -936,6 +1081,7 @@ async function deleteTask() {
               >
                 <option value="todo">TODO</option>
                 <option value="doing">DOING</option>
+                <option value="done">DONE</option>
               </select>
             </div>
           </div>
