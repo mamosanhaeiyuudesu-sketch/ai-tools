@@ -104,7 +104,7 @@ definePageMeta({ layout: 'therapist' })
 
 useHead({
   bodyAttrs: { class: 'home' },
-  title: '月ノ瀬 海倭さんについて | 月ノ瀬 海倭',
+  title: '月ノ瀬 海倭について | 月ノ瀬 海倭',
   meta: [{ name: 'description', content: 'セラピスト 月ノ瀬 海倭のプロフィール。セラピストになったきっかけ、想い、使命についてご紹介します。' }],
   link: [
     { rel: 'preconnect', href: 'https://fonts.googleapis.com' },

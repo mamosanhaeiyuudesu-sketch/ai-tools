@@ -7,7 +7,10 @@ const DEFAULT_EXCLUDED =
   '3.otter,8.Basic-ph2,4:インベーダーゲーム,5:LINE-bot,5:アファーメーションbot,6:執筆活動,7:家族,7:運転,8:旨,8:釣り,8:転職,9:FLSアプリ,4:tableau,6.相関-α版,2.flaskでWebアプリ,3.おすすめキーワード検証,5.クラスタリングAPI,8.新時系列キーワード,9.新検索推移,新Trend,変化アラート'
 
 interface Card {
+  id: string
   name: string
+  desc: string
+  due: string | null
   isOverdue: boolean
   isUrgent: boolean
   display: string
@@ -19,6 +22,9 @@ interface Board {
   doing: Card[]
   todo: Card[]
   done: Record<string, string[]>
+  doingListId: string
+  todoListId: string
+  doneListId: string
 }
 
 const apiKey = ref('')
@@ -31,6 +37,7 @@ const settingsToken = ref('')
 const settingsExcluded = ref('')
 
 const loading = ref(false)
+const saving = ref(false)
 const error = ref('')
 const boards = ref<Board[]>([])
 const allDates = ref<string[]>([])
@@ -38,6 +45,15 @@ const allDates = ref<string[]>([])
 const now = new Date()
 const startMonth = ref(`${now.getFullYear()}-01`)
 const endMonth = ref(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`)
+
+// --- Task modal ---
+const showTaskModal = ref(false)
+type EditTarget = { card: Card; boardId: string; status: 'doing' | 'todo' } | null
+const editTarget = ref<EditTarget>(null)
+const taskForm = ref({ name: '', desc: '', due: '', boardId: '', status: 'todo' as 'todo' | 'doing' })
+
+const isEditing = computed(() => editTarget.value !== null)
+const modalTitle = computed(() => isEditing.value ? 'タスクを編集' : 'タスクを追加')
 
 const hasCredentials = computed(() => !!(apiKey.value && apiToken.value))
 
@@ -90,6 +106,26 @@ async function trelloGet(path: string) {
   return res.json()
 }
 
+async function trelloPost(path: string, body: Record<string, any>) {
+  const res = await fetch(`https://api.trello.com/1${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...body, key: apiKey.value, token: apiToken.value }),
+  })
+  if (!res.ok) throw new Error(`Trello API Error: ${res.status}`)
+  return res.json()
+}
+
+async function trelloPut(path: string, body: Record<string, any>) {
+  const res = await fetch(`https://api.trello.com/1${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...body, key: apiKey.value, token: apiToken.value }),
+  })
+  if (!res.ok) throw new Error(`Trello API Error: ${res.status}`)
+  return res.json()
+}
+
 function timeRemaining(dueStr: string): Pick<Card, 'isOverdue' | 'isUrgent' | 'display'> {
   const diffH = (new Date(dueStr).getTime() - Date.now()) / 3_600_000
   if (diffH < 0) {
@@ -124,18 +160,39 @@ async function load() {
     const results: Board[] = await Promise.all(
       filtered.map(async (b: any) => {
         const lists = await trelloGet(`/boards/${b.id}/lists`)
-        const board: Board = { id: b.id, name: b.name, doing: [], todo: [], done: {} }
+        const board: Board = {
+          id: b.id,
+          name: b.name,
+          doing: [],
+          todo: [],
+          done: {},
+          doingListId: '',
+          todoListId: '',
+          doneListId: '',
+        }
 
         await Promise.all(
           lists.map(async (list: any) => {
             const lname = list.name.toLowerCase()
             if (!['doing', 'todo', 'done'].includes(lname)) return
 
+            if (lname === 'doing') board.doingListId = list.id
+            else if (lname === 'todo') board.todoListId = list.id
+            else if (lname === 'done') board.doneListId = list.id
+
             const cards = await trelloGet(`/lists/${list.id}/cards`)
 
             for (const card of cards) {
               if (lname === 'doing' || lname === 'todo') {
-                const c: Card = { name: card.name, isOverdue: false, isUrgent: false, display: '' }
+                const c: Card = {
+                  id: card.id,
+                  name: card.name,
+                  desc: card.desc || '',
+                  due: card.due || null,
+                  isOverdue: false,
+                  isUrgent: false,
+                  display: '',
+                }
                 if (card.due) Object.assign(c, timeRemaining(card.due))
                 lname === 'doing' ? board.doing.push(c) : board.todo.push(c)
               } else {
@@ -181,13 +238,147 @@ function formatDate(dateStr: string) {
 function doneTotal(board: Board) {
   return Object.values(board.done).reduce((s, arr) => s + arr.length, 0)
 }
+
+// --- Modal operations ---
+
+function openAddTask(boardId: string, status: 'todo' | 'doing') {
+  editTarget.value = null
+  taskForm.value = { name: '', desc: '', due: '', boardId, status }
+  showTaskModal.value = true
+}
+
+function openEditTask(card: Card, boardId: string, status: 'doing' | 'todo') {
+  editTarget.value = { card, boardId, status }
+  taskForm.value = {
+    name: card.name,
+    desc: card.desc,
+    due: card.due ? toLocalDatetimeInput(card.due) : '',
+    boardId,
+    status,
+  }
+  showTaskModal.value = true
+}
+
+function toLocalDatetimeInput(iso: string) {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function buildCard(raw: any): Card {
+  const c: Card = {
+    id: raw.id,
+    name: raw.name,
+    desc: raw.desc || '',
+    due: raw.due || null,
+    isOverdue: false,
+    isUrgent: false,
+    display: '',
+  }
+  if (raw.due) Object.assign(c, timeRemaining(raw.due))
+  return c
+}
+
+function rebuildAllDates() {
+  const dateSet = new Set<string>()
+  boards.value.forEach(b => Object.keys(b.done).forEach(d => dateSet.add(d)))
+  allDates.value = [...dateSet].sort().reverse()
+}
+
+function addToDoneTable(board: Board, card: Card) {
+  if (!card.due) return
+  const due = new Date(card.due)
+  const [sy, sm] = startMonth.value.split('-').map(Number)
+  const [ey, em] = endMonth.value.split('-').map(Number)
+  if (due < new Date(sy, sm - 1, 1) || due > new Date(ey, em, 0, 23, 59, 59)) return
+  const jst = new Date(due.getTime() + 9 * 3_600_000)
+  const key = jst.toISOString().slice(0, 10)
+  ;(board.done[key] ??= []).push(card.name)
+  rebuildAllDates()
+}
+
+async function saveTask() {
+  if (!taskForm.value.name.trim()) return
+  saving.value = true
+  error.value = ''
+  try {
+    const board = boards.value.find(b => b.id === taskForm.value.boardId)
+    if (!board) throw new Error('ボードが見つかりません')
+
+    const dueIso = taskForm.value.due ? new Date(taskForm.value.due).toISOString() : null
+    const body: Record<string, any> = {
+      name: taskForm.value.name.trim(),
+      desc: taskForm.value.desc.trim(),
+      due: dueIso,
+    }
+
+    if (isEditing.value && editTarget.value) {
+      const { card, status } = editTarget.value
+      const newStatus = taskForm.value.status
+      const newListId = newStatus === 'doing' ? board.doingListId : board.todoListId
+      const oldListId = status === 'doing' ? board.doingListId : board.todoListId
+      if (newListId && newListId !== oldListId) body.idList = newListId
+
+      const raw = await trelloPut(`/cards/${card.id}`, body)
+      const updated = buildCard(raw)
+
+      const srcArr = status === 'doing' ? board.doing : board.todo
+      const idx = srcArr.findIndex(c => c.id === card.id)
+      if (newStatus === status) {
+        if (idx >= 0) srcArr[idx] = updated
+      } else {
+        if (idx >= 0) srcArr.splice(idx, 1)
+        const dstArr = newStatus === 'doing' ? board.doing : board.todo
+        dstArr.push(updated)
+      }
+    } else {
+      const listId = taskForm.value.status === 'doing' ? board.doingListId : board.todoListId
+      if (!listId) throw new Error('対象リストが見つかりません')
+      body.idList = listId
+      const raw = await trelloPost('/cards', body)
+      const newCard = buildCard(raw)
+      const arr = taskForm.value.status === 'doing' ? board.doing : board.todo
+      arr.push(newCard)
+    }
+
+    showTaskModal.value = false
+  } catch (e: any) {
+    error.value = e.message
+  } finally {
+    saving.value = false
+  }
+}
+
+async function markDone(card: Card, board: Board) {
+  if (!board.doneListId) {
+    error.value = 'Doneリストが見つかりません'
+    return
+  }
+  saving.value = true
+  error.value = ''
+  try {
+    await trelloPut(`/cards/${card.id}`, { idList: board.doneListId })
+
+    const doingIdx = board.doing.findIndex(c => c.id === card.id)
+    if (doingIdx >= 0) board.doing.splice(doingIdx, 1)
+    else {
+      const todoIdx = board.todo.findIndex(c => c.id === card.id)
+      if (todoIdx >= 0) board.todo.splice(todoIdx, 1)
+    }
+
+    addToDoneTable(board, card)
+  } catch (e: any) {
+    error.value = e.message
+  } finally {
+    saving.value = false
+  }
+}
 </script>
 
 <template>
   <div class="min-h-screen pb-16 text-[#e2e8f0] text-sm">
     <!-- Header -->
     <header class="sticky top-0 z-[100] flex items-center gap-3 px-5 py-3.5 bg-[rgba(15,23,42,0.92)] backdrop-blur-[12px] border-b border-white/[0.08]">
-      <NuxtLink to="/" class="text-slate-500 no-underline text-[13px] whitespace-nowrap transition-colors hover:text-slate-400">← ホーム</NuxtLink>
       <h1 class="flex-none m-0 ml-2 text-xl font-bold bg-gradient-to-br from-sky-400 to-indigo-500 bg-clip-text text-transparent">タスクくん</h1>
       <div v-if="hasCredentials" class="flex items-center gap-2 ml-auto">
         <input v-model="startMonth" class="bg-white/[0.06] border border-white/10 rounded-md px-2.5 py-1.5 text-[#e2e8f0] text-[13px] [color-scheme:dark]" type="month" />
@@ -200,7 +391,8 @@ function doneTotal(board: Board) {
         >{{ loading ? '…' : '更新' }}</button>
       </div>
       <button
-        class="w-9 h-9 rounded-lg border border-white/10 bg-white/[0.06] text-slate-400 text-lg cursor-pointer flex items-center justify-center transition-all hover:bg-white/[0.12] hover:text-[#e2e8f0] ml-auto"
+        class="w-9 h-9 rounded-lg border border-white/10 bg-white/[0.06] text-slate-400 text-lg cursor-pointer flex items-center justify-center transition-all hover:bg-white/[0.12] hover:text-[#e2e8f0]"
+        :class="hasCredentials ? '' : 'ml-auto'"
         title="設定"
         @click="openSettings"
       >⚙</button>
@@ -229,6 +421,78 @@ function doneTotal(board: Board) {
       </div>
     </Teleport>
 
+    <!-- Task Add/Edit Modal -->
+    <Teleport to="body">
+      <div v-if="showTaskModal" class="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-5" @click.self="showTaskModal = false">
+        <div class="w-[min(480px,100%)] bg-[#1e293b] border border-white/10 rounded-2xl p-7 flex flex-col gap-3">
+          <h2 class="m-0 mb-1 text-lg font-bold text-slate-50">{{ modalTitle }}</h2>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-[0.05em]">タスク名 <span class="text-red-400">*</span></label>
+            <input
+              v-model="taskForm.name"
+              class="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2.5 text-[#e2e8f0] text-[13px] font-[inherit] box-border outline-none focus:border-sky-400/50 focus:shadow-[0_0_0_3px_rgba(56,189,248,0.1)]"
+              type="text"
+              placeholder="タスク名を入力"
+              autofocus
+            />
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-[0.05em]">概要</label>
+            <textarea
+              v-model="taskForm.desc"
+              class="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2.5 text-[#e2e8f0] text-[13px] font-[inherit] box-border outline-none focus:border-sky-400/50 focus:shadow-[0_0_0_3px_rgba(56,189,248,0.1)] resize-y min-h-[80px] leading-relaxed"
+              rows="3"
+              placeholder="概要・メモ"
+            />
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="text-xs font-semibold text-slate-500 uppercase tracking-[0.05em]">期限</label>
+            <input
+              v-model="taskForm.due"
+              class="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2.5 text-[#e2e8f0] text-[13px] font-[inherit] box-border outline-none focus:border-sky-400/50 focus:shadow-[0_0_0_3px_rgba(56,189,248,0.1)] [color-scheme:dark]"
+              type="datetime-local"
+            />
+          </div>
+
+          <div class="flex gap-3">
+            <div class="flex flex-col gap-1 flex-1">
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-[0.05em]">ボード</label>
+              <select
+                v-model="taskForm.boardId"
+                class="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2.5 text-[#e2e8f0] text-[13px] font-[inherit] box-border outline-none focus:border-sky-400/50 [color-scheme:dark] cursor-pointer"
+              >
+                <option v-for="b in boards" :key="b.id" :value="b.id">{{ b.name }}</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-1 flex-1">
+              <label class="text-xs font-semibold text-slate-500 uppercase tracking-[0.05em]">リスト</label>
+              <select
+                v-model="taskForm.status"
+                class="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2.5 text-[#e2e8f0] text-[13px] font-[inherit] box-border outline-none focus:border-sky-400/50 [color-scheme:dark] cursor-pointer"
+              >
+                <option value="todo">TODO</option>
+                <option value="doing">DOING</option>
+              </select>
+            </div>
+          </div>
+
+          <div v-if="error" class="px-3 py-2 bg-red-500/12 border border-red-500/30 rounded-lg text-red-300 text-[13px]">⚠ {{ error }}</div>
+
+          <div class="flex justify-end gap-2 mt-1">
+            <button class="px-4 py-2 rounded-lg bg-white/[0.08] border border-white/10 text-slate-400 text-[13px] cursor-pointer transition-all hover:bg-white/[0.12]" @click="showTaskModal = false">キャンセル</button>
+            <button
+              class="px-4 py-2 rounded-lg border-none bg-gradient-to-br from-sky-400 to-indigo-500 text-white text-[13px] font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="saving || !taskForm.name.trim()"
+              @click="saveTask"
+            >{{ saving ? '保存中…' : '保存' }}</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
     <!-- No credentials -->
     <div v-if="!hasCredentials" class="flex flex-col items-center justify-center gap-3 min-h-[60vh] text-slate-500">
       <div class="text-5xl">🔑</div>
@@ -238,7 +502,7 @@ function doneTotal(board: Board) {
 
     <template v-else>
       <!-- Error -->
-      <div v-if="error" class="mx-5 my-3 px-3.5 py-2.5 bg-red-500/12 border border-red-500/30 rounded-lg text-red-300 text-[13px]">⚠ {{ error }}</div>
+      <div v-if="error && !showTaskModal" class="mx-5 my-3 px-3.5 py-2.5 bg-red-500/12 border border-red-500/30 rounded-lg text-red-300 text-[13px]">⚠ {{ error }}</div>
 
       <!-- Loading skeleton -->
       <div v-if="loading" class="p-5 flex flex-col gap-8">
@@ -261,24 +525,42 @@ function doneTotal(board: Board) {
             <span class="inline-block px-3 py-0.5 rounded-full text-[11px] font-[800] tracking-[0.1em] bg-sky-400/15 text-sky-400 border border-sky-400/30">DOING</span>
             <span class="text-xl font-bold text-slate-600">{{ doingTotal }}</span>
           </div>
-          <div v-if="doingTotal === 0" class="px-4 py-4 text-slate-600 text-[13px]">なし</div>
-          <div v-else class="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.1)_transparent]">
-            <div v-for="board in boards" :key="board.id" class="w-[200px] flex-shrink-0 rounded-xl p-3 bg-sky-400/[0.05] border border-sky-400/15">
+          <div class="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.1)_transparent]">
+            <div v-for="board in boards" :key="board.id" class="w-[220px] flex-shrink-0 rounded-xl p-3 bg-sky-400/[0.05] border border-sky-400/15 flex flex-col">
               <div class="text-[11px] font-bold text-slate-500 uppercase tracking-[0.05em] mb-2.5">{{ board.name }}</div>
               <ul class="list-none m-0 p-0 flex flex-col gap-1.5">
                 <li
-                  v-for="(card, i) in board.doing"
-                  :key="i"
+                  v-for="card in board.doing"
+                  :key="card.id"
                   :class="[
-                    'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-2 flex flex-col gap-0.5 transition-all hover:bg-white/[0.07]',
+                    'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-2 flex flex-col gap-0.5 transition-all hover:bg-white/[0.07] group',
                     card.isOverdue ? 'border-red-500/40 bg-red-500/[0.06]' : '',
                     card.isUrgent ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
                   ]"
                 >
-                  <span class="text-[13px] leading-snug text-slate-300">{{ card.name }}</span>
-                  <span v-if="card.display" :class="['text-[11px]', card.isOverdue ? 'text-red-500 font-semibold' : card.isUrgent ? 'text-amber-500 font-semibold' : 'text-slate-500']">{{ card.display }}</span>
+                  <div class="flex items-start gap-2">
+                    <button
+                      class="mt-0.5 flex-shrink-0 w-4 h-4 rounded border border-white/20 bg-white/[0.04] hover:border-emerald-400/60 hover:bg-emerald-400/10 transition-all cursor-pointer flex items-center justify-center"
+                      title="DONEにする"
+                      @click="markDone(card, board)"
+                    />
+                    <div class="flex-1 min-w-0">
+                      <span class="text-[13px] leading-snug text-slate-300 block">{{ card.name }}</span>
+                      <span v-if="card.desc" class="text-[11px] text-slate-500 block mt-0.5 truncate">{{ card.desc }}</span>
+                    </div>
+                    <button
+                      class="flex-shrink-0 opacity-0 group-hover:opacity-100 text-slate-500 hover:text-sky-400 text-[13px] transition-all cursor-pointer px-1"
+                      title="編集"
+                      @click="openEditTask(card, board.id, 'doing')"
+                    >✏</button>
+                  </div>
+                  <span v-if="card.display" :class="['text-[11px] ml-6', card.isOverdue ? 'text-red-500 font-semibold' : card.isUrgent ? 'text-amber-500 font-semibold' : 'text-slate-500']">{{ card.display }}</span>
                 </li>
               </ul>
+              <button
+                class="mt-2 w-full py-1.5 rounded-lg border border-dashed border-sky-400/20 text-sky-400/40 hover:border-sky-400/50 hover:text-sky-400/70 hover:bg-sky-400/[0.04] text-[13px] cursor-pointer transition-all"
+                @click="openAddTask(board.id, 'doing')"
+              >＋</button>
             </div>
           </div>
         </section>
@@ -289,24 +571,42 @@ function doneTotal(board: Board) {
             <span class="inline-block px-3 py-0.5 rounded-full text-[11px] font-[800] tracking-[0.1em] bg-amber-500/15 text-amber-500 border border-amber-500/30">TODO</span>
             <span class="text-xl font-bold text-slate-600">{{ todoTotal }}</span>
           </div>
-          <div v-if="todoTotal === 0" class="px-4 py-4 text-slate-600 text-[13px]">なし</div>
-          <div v-else class="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.1)_transparent]">
-            <div v-for="board in boards" :key="board.id" class="w-[200px] flex-shrink-0 rounded-xl p-3 bg-amber-500/[0.05] border border-amber-500/15">
+          <div class="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.1)_transparent]">
+            <div v-for="board in boards" :key="board.id" class="w-[220px] flex-shrink-0 rounded-xl p-3 bg-amber-500/[0.05] border border-amber-500/15 flex flex-col">
               <div class="text-[11px] font-bold text-slate-500 uppercase tracking-[0.05em] mb-2.5">{{ board.name }}</div>
               <ul class="list-none m-0 p-0 flex flex-col gap-1.5">
                 <li
-                  v-for="(card, i) in board.todo"
-                  :key="i"
+                  v-for="card in board.todo"
+                  :key="card.id"
                   :class="[
-                    'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-2 flex flex-col gap-0.5 transition-all hover:bg-white/[0.07]',
+                    'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-2 flex flex-col gap-0.5 transition-all hover:bg-white/[0.07] group',
                     card.isOverdue ? 'border-red-500/40 bg-red-500/[0.06]' : '',
                     card.isUrgent ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
                   ]"
                 >
-                  <span class="text-[13px] leading-snug text-slate-300">{{ card.name }}</span>
-                  <span v-if="card.display" :class="['text-[11px]', card.isOverdue ? 'text-red-500 font-semibold' : card.isUrgent ? 'text-amber-500 font-semibold' : 'text-slate-500']">{{ card.display }}</span>
+                  <div class="flex items-start gap-2">
+                    <button
+                      class="mt-0.5 flex-shrink-0 w-4 h-4 rounded border border-white/20 bg-white/[0.04] hover:border-emerald-400/60 hover:bg-emerald-400/10 transition-all cursor-pointer flex items-center justify-center"
+                      title="DONEにする"
+                      @click="markDone(card, board)"
+                    />
+                    <div class="flex-1 min-w-0">
+                      <span class="text-[13px] leading-snug text-slate-300 block">{{ card.name }}</span>
+                      <span v-if="card.desc" class="text-[11px] text-slate-500 block mt-0.5 truncate">{{ card.desc }}</span>
+                    </div>
+                    <button
+                      class="flex-shrink-0 opacity-0 group-hover:opacity-100 text-slate-500 hover:text-amber-400 text-[13px] transition-all cursor-pointer px-1"
+                      title="編集"
+                      @click="openEditTask(card, board.id, 'todo')"
+                    >✏</button>
+                  </div>
+                  <span v-if="card.display" :class="['text-[11px] ml-6', card.isOverdue ? 'text-red-500 font-semibold' : card.isUrgent ? 'text-amber-500 font-semibold' : 'text-slate-500']">{{ card.display }}</span>
                 </li>
               </ul>
+              <button
+                class="mt-2 w-full py-1.5 rounded-lg border border-dashed border-amber-500/20 text-amber-500/40 hover:border-amber-500/50 hover:text-amber-500/70 hover:bg-amber-500/[0.04] text-[13px] cursor-pointer transition-all"
+                @click="openAddTask(board.id, 'todo')"
+              >＋</button>
             </div>
           </div>
         </section>
