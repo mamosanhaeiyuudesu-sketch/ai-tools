@@ -349,15 +349,34 @@ async function saveTask() {
   }
 }
 
-async function markDone(card: Card, board: Board) {
-  if (!board.doneListId) {
-    error.value = 'Doneリストが見つかりません'
+// --- 期限なしDONE確認 ---
+const pendingDone = ref<{ card: Card; board: Board } | null>(null)
+const pendingDueInput = ref('')
+
+function markDone(card: Card, board: Board) {
+  if (!board.doneListId) { error.value = 'Doneリストが見つかりません'; return }
+  if (!card.due) {
+    // 期限未設定 → カレンダーを表示
+    pendingDueInput.value = toLocalDatetimeInput(new Date().toISOString())
+    pendingDone.value = { card, board }
     return
   }
+  execMarkDone(card, board, card.due)
+}
+
+async function confirmMarkDone() {
+  if (!pendingDone.value || !pendingDueInput.value) return
+  const { card, board } = pendingDone.value
+  const dueIso = new Date(pendingDueInput.value).toISOString()
+  pendingDone.value = null
+  execMarkDone(card, board, dueIso)
+}
+
+async function execMarkDone(card: Card, board: Board, dueIso: string) {
   saving.value = true
   error.value = ''
   try {
-    await trelloPut(`/cards/${card.id}`, { idList: board.doneListId })
+    await trelloPut(`/cards/${card.id}`, { idList: board.doneListId, dueComplete: true, due: dueIso })
 
     const doingIdx = board.doing.findIndex(c => c.id === card.id)
     if (doingIdx >= 0) board.doing.splice(doingIdx, 1)
@@ -366,7 +385,32 @@ async function markDone(card: Card, board: Board) {
       if (todoIdx >= 0) board.todo.splice(todoIdx, 1)
     }
 
-    addToDoneTable(board, card)
+    addToDoneTable(board, { ...card, due: dueIso })
+  } catch (e: any) {
+    error.value = e.message
+  } finally {
+    saving.value = false
+  }
+}
+
+async function deleteTask() {
+  if (!editTarget.value) return
+  if (!confirm(`「${editTarget.value.card.name}」を削除しますか？`)) return
+  saving.value = true
+  error.value = ''
+  try {
+    const { card, boardId, status } = editTarget.value
+    const sep = `/cards/${card.id}?key=${apiKey.value}&token=${apiToken.value}`
+    const res = await fetch(`https://api.trello.com/1${sep}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error(`Trello API Error: ${res.status}`)
+
+    const board = boards.value.find(b => b.id === boardId)
+    if (board) {
+      const arr = status === 'doing' ? board.doing : board.todo
+      const idx = arr.findIndex(c => c.id === card.id)
+      if (idx >= 0) arr.splice(idx, 1)
+    }
+    showTaskModal.value = false
   } catch (e: any) {
     error.value = e.message
   } finally {
@@ -481,13 +525,45 @@ async function markDone(card: Card, board: Board) {
 
           <div v-if="error" class="px-3 py-2 bg-red-500/12 border border-red-500/30 rounded-lg text-red-300 text-[13px]">⚠ {{ error }}</div>
 
-          <div class="flex justify-end gap-2 mt-1">
+          <div class="flex items-center gap-2 mt-1">
+            <button
+              v-if="isEditing"
+              class="px-4 py-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400 text-[13px] cursor-pointer transition-all hover:bg-red-500/20 disabled:opacity-40"
+              :disabled="saving"
+              @click="deleteTask"
+            >削除</button>
+            <div class="flex-1" />
             <button class="px-4 py-2 rounded-lg bg-white/[0.08] border border-white/10 text-slate-400 text-[13px] cursor-pointer transition-all hover:bg-white/[0.12]" @click="showTaskModal = false">キャンセル</button>
             <button
               class="px-4 py-2 rounded-lg border-none bg-gradient-to-br from-sky-400 to-indigo-500 text-white text-[13px] font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               :disabled="saving || !taskForm.name.trim()"
               @click="saveTask"
             >{{ saving ? '保存中…' : '保存' }}</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Due date picker for DONE (no due date) -->
+    <Teleport to="body">
+      <div v-if="pendingDone" class="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-5" @click.self="pendingDone = null">
+        <div class="w-[min(360px,100%)] bg-[#1e293b] border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
+          <div>
+            <h2 class="m-0 text-base font-bold text-slate-50">期限を設定してDONEにする</h2>
+            <p class="m-0 mt-1 text-[13px] text-slate-500 truncate">{{ pendingDone.card.name }}</p>
+          </div>
+          <input
+            v-model="pendingDueInput"
+            class="w-full bg-white/[0.06] border border-white/10 rounded-lg px-3 py-2.5 text-[#e2e8f0] text-[13px] font-[inherit] box-border outline-none focus:border-sky-400/50 focus:shadow-[0_0_0_3px_rgba(56,189,248,0.1)] [color-scheme:dark]"
+            type="datetime-local"
+          />
+          <div class="flex justify-end gap-2">
+            <button class="px-4 py-2 rounded-lg bg-white/[0.08] border border-white/10 text-slate-400 text-[13px] cursor-pointer hover:bg-white/[0.12]" @click="pendingDone = null">キャンセル</button>
+            <button
+              class="px-4 py-2 rounded-lg border-none bg-emerald-500/80 text-white text-[13px] font-semibold cursor-pointer hover:bg-emerald-500 disabled:opacity-40"
+              :disabled="!pendingDueInput || saving"
+              @click="confirmMarkDone"
+            >{{ saving ? '…' : 'DONEにする' }}</button>
           </div>
         </div>
       </div>
@@ -533,26 +609,22 @@ async function markDone(card: Card, board: Board) {
                   v-for="card in board.doing"
                   :key="card.id"
                   :class="[
-                    'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-2 flex flex-col gap-0.5 transition-all hover:bg-white/[0.07] group',
+                    'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-2 flex flex-col gap-0.5 transition-all hover:bg-white/[0.07] cursor-pointer',
                     card.isOverdue ? 'border-red-500/40 bg-red-500/[0.06]' : '',
                     card.isUrgent ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
                   ]"
+                  @click="openEditTask(card, board.id, 'doing')"
                 >
                   <div class="flex items-start gap-2">
                     <button
                       class="mt-0.5 flex-shrink-0 w-4 h-4 rounded border border-white/20 bg-white/[0.04] hover:border-emerald-400/60 hover:bg-emerald-400/10 transition-all cursor-pointer flex items-center justify-center"
                       title="DONEにする"
-                      @click="markDone(card, board)"
+                      @click.stop="markDone(card, board)"
                     />
                     <div class="flex-1 min-w-0">
                       <span class="text-[13px] leading-snug text-slate-300 block">{{ card.name }}</span>
                       <span v-if="card.desc" class="text-[11px] text-slate-500 block mt-0.5 truncate">{{ card.desc }}</span>
                     </div>
-                    <button
-                      class="flex-shrink-0 opacity-0 group-hover:opacity-100 text-slate-500 hover:text-sky-400 text-[13px] transition-all cursor-pointer px-1"
-                      title="編集"
-                      @click="openEditTask(card, board.id, 'doing')"
-                    >✏</button>
                   </div>
                   <span v-if="card.display" :class="['text-[11px] ml-6', card.isOverdue ? 'text-red-500 font-semibold' : card.isUrgent ? 'text-amber-500 font-semibold' : 'text-slate-500']">{{ card.display }}</span>
                 </li>
@@ -579,26 +651,22 @@ async function markDone(card: Card, board: Board) {
                   v-for="card in board.todo"
                   :key="card.id"
                   :class="[
-                    'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-2 flex flex-col gap-0.5 transition-all hover:bg-white/[0.07] group',
+                    'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-2 flex flex-col gap-0.5 transition-all hover:bg-white/[0.07] cursor-pointer',
                     card.isOverdue ? 'border-red-500/40 bg-red-500/[0.06]' : '',
                     card.isUrgent ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
                   ]"
+                  @click="openEditTask(card, board.id, 'todo')"
                 >
                   <div class="flex items-start gap-2">
                     <button
                       class="mt-0.5 flex-shrink-0 w-4 h-4 rounded border border-white/20 bg-white/[0.04] hover:border-emerald-400/60 hover:bg-emerald-400/10 transition-all cursor-pointer flex items-center justify-center"
                       title="DONEにする"
-                      @click="markDone(card, board)"
+                      @click.stop="markDone(card, board)"
                     />
                     <div class="flex-1 min-w-0">
                       <span class="text-[13px] leading-snug text-slate-300 block">{{ card.name }}</span>
                       <span v-if="card.desc" class="text-[11px] text-slate-500 block mt-0.5 truncate">{{ card.desc }}</span>
                     </div>
-                    <button
-                      class="flex-shrink-0 opacity-0 group-hover:opacity-100 text-slate-500 hover:text-amber-400 text-[13px] transition-all cursor-pointer px-1"
-                      title="編集"
-                      @click="openEditTask(card, board.id, 'todo')"
-                    >✏</button>
                   </div>
                   <span v-if="card.display" :class="['text-[11px] ml-6', card.isOverdue ? 'text-red-500 font-semibold' : card.isUrgent ? 'text-amber-500 font-semibold' : 'text-slate-500']">{{ card.display }}</span>
                 </li>

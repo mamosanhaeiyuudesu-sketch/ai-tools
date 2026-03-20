@@ -98,7 +98,7 @@
           </p>
           <div class="cta-grid">
             <NuxtLink class="cta-card" to="/kaito/services"><span>サービス内容</span></NuxtLink>
-            <NuxtLink class="cta-card" to="/kaito/profile"><span>月ノ瀬 海倭さんについて</span></NuxtLink>
+            <NuxtLink class="cta-card" to="/kaito/profile"><span>月ノ瀬 海倭について</span></NuxtLink>
             <NuxtLink class="cta-card" to="/kaito/testimonials"><span>お客様の声</span></NuxtLink>
           </div>
         </div>
