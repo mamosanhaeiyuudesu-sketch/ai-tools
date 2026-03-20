@@ -377,6 +377,142 @@ async function saveTask() {
   }
 }
 
+// --- DONE chart ---
+type DoneView = 'table' | 'line' | 'stacked' | 'total'
+const doneView = ref<DoneView>('table')
+const chartRef = ref<HTMLElement>()
+let doneChart: any = null
+let EC: any = null
+
+const BOARD_COLORS = ['#38bdf8', '#818cf8', '#34d399', '#fb923c', '#f472b6', '#a78bfa', '#4ade80', '#facc15']
+
+const doneViewOptions: { key: DoneView; label: string }[] = [
+  { key: 'table', label: '表' },
+  { key: 'line', label: '折れ線' },
+  { key: 'stacked', label: '積み上げ' },
+  { key: 'total', label: '合計棒' },
+]
+
+async function renderDoneChart() {
+  if (!chartRef.value || doneView.value === 'table') return
+  if (!EC) EC = await import('echarts')
+  if (!doneChart) doneChart = EC.init(chartRef.value, 'dark')
+
+  const sortedDates = [...allDates.value].reverse()
+  const baseOpts = {
+    backgroundColor: 'transparent',
+    grid: { left: 10, right: 20, top: 16, bottom: 56, containLabel: true },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#1e293b',
+      borderColor: 'rgba(255,255,255,0.1)',
+      textStyle: { color: '#e2e8f0', fontSize: 12 },
+    },
+    legend: {
+      bottom: 0,
+      textStyle: { color: '#94a3b8', fontSize: 11 },
+      itemWidth: 12,
+      itemHeight: 8,
+    },
+  }
+
+  if (doneView.value === 'line') {
+    doneChart.setOption({
+      ...baseOpts,
+      xAxis: {
+        type: 'category',
+        data: sortedDates.map(d => formatDate(d)),
+        axisLabel: { color: '#64748b', fontSize: 11, rotate: sortedDates.length > 10 ? 45 : 0 },
+        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } },
+      },
+      yAxis: {
+        type: 'value',
+        minInterval: 1,
+        axisLabel: { color: '#64748b', fontSize: 11 },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
+      },
+      series: boards.value.map((board, i) => ({
+        name: board.name,
+        type: 'line',
+        smooth: true,
+        data: sortedDates.map(d => board.done[d]?.length ?? 0),
+        color: BOARD_COLORS[i % BOARD_COLORS.length],
+        lineStyle: { width: 2 },
+        symbol: 'circle',
+        symbolSize: 6,
+      })),
+    }, true)
+  } else if (doneView.value === 'stacked') {
+    doneChart.setOption({
+      ...baseOpts,
+      xAxis: {
+        type: 'category',
+        data: sortedDates.map(d => formatDate(d)),
+        axisLabel: { color: '#64748b', fontSize: 11, rotate: sortedDates.length > 10 ? 45 : 0 },
+        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } },
+      },
+      yAxis: {
+        type: 'value',
+        minInterval: 1,
+        axisLabel: { color: '#64748b', fontSize: 11 },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
+      },
+      series: boards.value.map((board, i) => ({
+        name: board.name,
+        type: 'bar',
+        stack: 'total',
+        data: sortedDates.map(d => board.done[d]?.length ?? 0),
+        color: BOARD_COLORS[i % BOARD_COLORS.length],
+        barMaxWidth: 40,
+      })),
+    }, true)
+  } else if (doneView.value === 'total') {
+    doneChart.setOption({
+      ...baseOpts,
+      legend: { show: false },
+      xAxis: {
+        type: 'category',
+        data: boards.value.map(b => b.name),
+        axisLabel: { color: '#64748b', fontSize: 11, rotate: 30 },
+        axisLine: { lineStyle: { color: 'rgba(255,255,255,0.08)' } },
+      },
+      yAxis: {
+        type: 'value',
+        minInterval: 1,
+        axisLabel: { color: '#64748b', fontSize: 11 },
+        splitLine: { lineStyle: { color: 'rgba(255,255,255,0.06)' } },
+      },
+      series: [{
+        type: 'bar',
+        data: boards.value.map((board, i) => ({
+          value: doneTotal(board),
+          itemStyle: { color: BOARD_COLORS[i % BOARD_COLORS.length], borderRadius: [4, 4, 0, 0] },
+        })),
+        barMaxWidth: 60,
+        label: { show: true, position: 'top', color: '#94a3b8', fontSize: 12, formatter: '{c}' },
+      }],
+    }, true)
+  }
+}
+
+watch(doneView, async (v) => {
+  if (v === 'table') {
+    doneChart?.dispose()
+    doneChart = null
+    return
+  }
+  await nextTick()
+  renderDoneChart()
+})
+
+watch(allDates, () => {
+  if (doneView.value !== 'table') renderDoneChart()
+})
+
+onUnmounted(() => {
+  doneChart?.dispose()
+})
+
 // --- 期限なしDONE確認 ---
 const pendingDone = ref<{ card: Card; board: Board } | null>(null)
 const pendingDueInput = ref('')
@@ -745,7 +881,7 @@ async function deleteTask() {
           </div>
           <div class="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.1)_transparent]">
             <div v-for="board in boards" :key="board.id" class="w-[220px] flex-shrink-0 rounded-xl p-3 bg-sky-400/[0.05] border border-sky-400/15 flex flex-col">
-              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-[0.05em] mb-2.5">{{ board.name }}</div>
+              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-[0.05em] mb-2.5">{{ board.name }}<span v-if="board.doing.length" class="ml-1 text-sky-400/70">({{ board.doing.length }})</span></div>
               <ul class="list-none m-0 p-0 flex flex-col gap-1.5 max-h-[290px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.1)_transparent]">
                 <li
                   v-for="card in board.doing"
@@ -801,7 +937,7 @@ async function deleteTask() {
           </div>
           <div class="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.1)_transparent]">
             <div v-for="board in boards" :key="board.id" class="w-[220px] flex-shrink-0 rounded-xl p-3 bg-amber-500/[0.05] border border-amber-500/15 flex flex-col">
-              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-[0.05em] mb-2.5">{{ board.name }}</div>
+              <div class="text-[11px] font-bold text-slate-500 uppercase tracking-[0.05em] mb-2.5">{{ board.name }}<span v-if="board.todo.length" class="ml-1 text-amber-500/70">({{ board.todo.length }})</span></div>
               <ul class="list-none m-0 p-0 flex flex-col gap-1.5 max-h-[290px] overflow-y-auto [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.1)_transparent]">
                 <li
                   v-for="card in board.todo"
@@ -854,39 +990,57 @@ async function deleteTask() {
           <div class="flex items-center gap-2.5 mb-3.5">
             <span class="inline-block px-3 py-0.5 rounded-full text-[11px] font-[800] tracking-[0.1em] bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">DONE</span>
             <span class="text-xl font-bold text-slate-600">{{ boards.reduce((s, b) => s + doneTotal(b), 0) }}</span>
+            <div class="ml-auto flex items-center gap-1">
+              <button
+                v-for="opt in doneViewOptions"
+                :key="opt.key"
+                :class="[
+                  'px-2.5 py-1 rounded-md text-[11px] font-semibold border transition-all cursor-pointer',
+                  doneView === opt.key
+                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                    : 'bg-white/[0.04] border-white/10 text-slate-500 hover:bg-white/[0.08] hover:text-slate-300',
+                ]"
+                @click="doneView = opt.key"
+              >{{ opt.label }}</button>
+            </div>
           </div>
           <div v-if="allDates.length === 0" class="px-4 py-4 text-slate-600 text-[13px]">期間内の完了タスクなし</div>
-          <div v-else class="overflow-x-auto rounded-xl border border-white/[0.07]">
-            <table class="border-collapse text-[13px]">
-              <thead>
-                <tr>
-                  <th class="border border-white/[0.06] px-2.5 py-2 text-left text-slate-500 text-[11px] font-bold whitespace-nowrap w-[90px] min-w-[90px] bg-emerald-500/[0.08]">日付</th>
-                  <th v-for="board in boards" :key="board.id" class="border border-white/[0.06] px-2.5 py-2 text-left text-slate-500 text-[11px] font-bold whitespace-nowrap bg-emerald-500/[0.08]">{{ board.name }}</th>
-                </tr>
-                <tr>
-                  <td class="border border-white/[0.06] px-2.5 py-2 text-slate-400 font-bold bg-white/[0.03]">合計</td>
-                  <td v-for="board in boards" :key="board.id" class="border border-white/[0.06] px-2.5 py-2 text-slate-400 font-bold bg-white/[0.03]">{{ doneTotal(board) }}</td>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="date in allDates" :key="date">
-                  <td class="border border-white/[0.06] px-2.5 py-2 whitespace-nowrap text-slate-500 text-xs">{{ formatDate(date) }}</td>
-                  <td v-for="board in boards" :key="board.id" class="border border-white/[0.06] px-2.5 py-2 min-w-[140px] align-top">
-                    <ul v-if="board.done[date]" class="list-none m-0 p-0 flex flex-col gap-1">
-                      <li v-for="item in board.done[date]" :key="item.id" class="flex items-center gap-1.5 px-1.5 py-0.5 bg-emerald-500/[0.08] rounded border-l-2 border-emerald-500/40">
-                        <button
-                          class="flex-shrink-0 w-3.5 h-3.5 rounded border border-emerald-500/60 bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-[10px] hover:bg-red-500/20 hover:border-red-400/60 hover:text-red-400 transition-all cursor-pointer"
-                          title="DOINGに戻す"
-                          @click="unmarkDone(item, date, board)"
-                        >✓</button>
-                        <span class="leading-snug text-[#a7f3d0] text-xs">{{ item.name }}</span>
-                      </li>
-                    </ul>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          <template v-else>
+            <!-- Table -->
+            <div v-if="doneView === 'table'" class="overflow-x-auto rounded-xl border border-white/[0.07]">
+              <table class="border-collapse text-[13px]">
+                <thead>
+                  <tr>
+                    <th class="border border-white/[0.06] px-2.5 py-2 text-left text-slate-500 text-[11px] font-bold whitespace-nowrap w-[90px] min-w-[90px] bg-emerald-500/[0.08]">日付</th>
+                    <th v-for="board in boards" :key="board.id" class="border border-white/[0.06] px-2.5 py-2 text-left text-slate-500 text-[11px] font-bold whitespace-nowrap bg-emerald-500/[0.08]">{{ board.name }}</th>
+                  </tr>
+                  <tr>
+                    <td class="border border-white/[0.06] px-2.5 py-2 text-slate-400 font-bold bg-white/[0.03]">合計</td>
+                    <td v-for="board in boards" :key="board.id" class="border border-white/[0.06] px-2.5 py-2 text-slate-400 font-bold bg-white/[0.03]">{{ doneTotal(board) }}</td>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="date in allDates" :key="date">
+                    <td class="border border-white/[0.06] px-2.5 py-2 whitespace-nowrap text-slate-500 text-xs">{{ formatDate(date) }}</td>
+                    <td v-for="board in boards" :key="board.id" class="border border-white/[0.06] px-2.5 py-2 min-w-[140px] align-top">
+                      <ul v-if="board.done[date]" class="list-none m-0 p-0 flex flex-col gap-1">
+                        <li v-for="item in board.done[date]" :key="item.id" class="flex items-center gap-1.5 px-1.5 py-0.5 bg-emerald-500/[0.08] rounded border-l-2 border-emerald-500/40">
+                          <button
+                            class="flex-shrink-0 w-3.5 h-3.5 rounded border border-emerald-500/60 bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-[10px] hover:bg-red-500/20 hover:border-red-400/60 hover:text-red-400 transition-all cursor-pointer"
+                            title="DOINGに戻す"
+                            @click="unmarkDone(item, date, board)"
+                          >✓</button>
+                          <span class="leading-snug text-[#a7f3d0] text-xs">{{ item.name }}</span>
+                        </li>
+                      </ul>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- Chart -->
+            <div v-else ref="chartRef" class="w-full h-[320px] rounded-xl border border-white/[0.07]" />
+          </template>
         </section>
       </template>
     </template>
