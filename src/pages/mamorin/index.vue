@@ -186,7 +186,7 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({ layout: 'therapist' })
+definePageMeta({ layout: 'mamorin' })
 
 useHead({
   title: '自分を許す — カウンセリング & 感情フォーカス・セラピー',
