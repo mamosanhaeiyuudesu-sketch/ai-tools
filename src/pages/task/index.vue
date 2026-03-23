@@ -1434,23 +1434,23 @@ async function deleteTask() {
           <template v-else>
             <!-- Table -->
             <div v-if="doneView === 'table'" class="overflow-x-auto rounded-xl border border-white/[0.07]">
-              <table class="border-collapse text-[13px]">
+              <table class="border-collapse text-[13px] w-full table-fixed">
                 <thead>
                   <tr>
-                    <th class="border border-white/[0.06] px-2.5 py-2 text-left text-slate-500 text-[11px] font-bold whitespace-nowrap w-[90px] min-w-[90px] bg-emerald-500/[0.08]">日付</th>
+                    <th class="border border-white/[0.06] pl-2.5 pr-1 py-2 text-left text-slate-500 text-[11px] font-bold whitespace-nowrap w-[72px] min-w-[72px] bg-emerald-500/[0.08]">日付</th>
                     <th v-for="board in boards" :key="board.id" class="border border-white/[0.06] px-2.5 py-2 text-left text-[11px] font-bold whitespace-nowrap" :style="{ backgroundColor: boardColor(board) + '1a', color: boardColor(board) }">
                       <span class="inline-block w-2 h-2 rounded-full mr-1.5 align-middle" :style="{ backgroundColor: boardColor(board) }" />{{ board.name }}
                     </th>
                   </tr>
                   <tr>
-                    <td class="border border-white/[0.06] px-2.5 py-2 text-slate-400 font-bold bg-white/[0.03]">合計</td>
+                    <td class="border border-white/[0.06] pl-2.5 pr-1 py-2 text-slate-400 font-bold bg-white/[0.03]">合計</td>
                     <td v-for="board in boards" :key="board.id" class="border border-white/[0.06] px-2.5 py-2 text-slate-400 font-bold bg-white/[0.03]">{{ doneTotal(board) }}</td>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="date in allDates" :key="date">
-                    <td class="border border-white/[0.06] px-2.5 py-2 whitespace-nowrap text-slate-500 text-xs">{{ formatDate(date) }}</td>
-                    <td v-for="board in boards" :key="board.id" class="border border-white/[0.06] px-2.5 py-2 min-w-[140px] align-top">
+                    <td class="border border-white/[0.06] pl-2.5 pr-1 py-2 whitespace-nowrap text-slate-500 text-xs w-[72px] min-w-[72px]">{{ formatDate(date) }}</td>
+                    <td v-for="board in boards" :key="board.id" class="border border-white/[0.06] px-2.5 py-2 align-top">
                       <ul v-if="board.done[date]" class="list-none m-0 p-0 flex flex-col gap-1">
                         <li v-for="item in board.done[date]" :key="item.id" class="flex items-center gap-1.5 px-1.5 py-1 rounded bg-white/[0.03]">
                           <button
