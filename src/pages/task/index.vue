@@ -1437,13 +1437,13 @@ async function deleteTask() {
                     <td class="border border-white/[0.06] px-2.5 py-2 whitespace-nowrap text-slate-500 text-xs">{{ formatDate(date) }}</td>
                     <td v-for="board in boards" :key="board.id" class="border border-white/[0.06] px-2.5 py-2 min-w-[140px] align-top">
                       <ul v-if="board.done[date]" class="list-none m-0 p-0 flex flex-col gap-1">
-                        <li v-for="item in board.done[date]" :key="item.id" class="flex items-center gap-1.5 px-1.5 py-0.5 bg-emerald-500/[0.08] rounded border-l-2 border-emerald-500/40">
+                        <li v-for="item in board.done[date]" :key="item.id" class="flex items-center gap-1.5 px-1.5 py-1 rounded bg-white/[0.03]">
                           <button
-                            class="flex-shrink-0 w-3.5 h-3.5 rounded border border-emerald-500/60 bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-[10px] hover:bg-red-500/20 hover:border-red-400/60 hover:text-red-400 transition-all cursor-pointer"
+                            class="flex-shrink-0 w-3.5 h-3.5 rounded border border-white/40 bg-white/10 flex items-center justify-center text-white text-[10px] hover:bg-red-500/20 hover:border-red-400/60 hover:text-red-400 transition-all cursor-pointer"
                             title="DOINGに戻す"
                             @click="unmarkDone(item, date, board)"
                           >✓</button>
-                          <span class="leading-snug text-white text-xs">{{ item.name }}</span>
+                          <span class="leading-snug text-white text-[13px]">{{ item.name }}</span>
                         </li>
                       </ul>
                     </td>
@@ -1466,7 +1466,7 @@ async function deleteTask() {
                       <p class="m-0 mb-1 text-[11px] font-bold uppercase tracking-wide" :style="{ color: boardColor(board) }">{{ board.name }}</p>
                       <ul class="list-none m-0 p-0 mb-2.5 flex flex-col gap-1">
                         <li v-for="item in board.done[selectedDate]" :key="item.id" class="flex items-center gap-1.5 px-1.5 py-0.5 rounded border-l-2" :style="{ backgroundColor: boardColor(board) + '14', borderColor: boardColor(board) + '60' }">
-                          <button class="flex-shrink-0 w-3.5 h-3.5 rounded border border-emerald-500/60 bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-[10px] hover:bg-red-500/20 hover:border-red-400/60 hover:text-red-400 transition-all cursor-pointer" title="DOINGに戻す" @click="unmarkDone(item, selectedDate, board)">✓</button>
+                          <button class="flex-shrink-0 w-3.5 h-3.5 rounded border border-white/40 bg-white/10 flex items-center justify-center text-white text-[10px] hover:bg-red-500/20 hover:border-red-400/60 hover:text-red-400 transition-all cursor-pointer" title="DOINGに戻す" @click="unmarkDone(item, selectedDate, board)">✓</button>
                           <span class="leading-snug text-white text-xs">{{ item.name }}</span>
                         </li>
                       </ul>
@@ -1499,7 +1499,7 @@ async function deleteTask() {
             <div class="grid grid-cols-2 gap-1.5">
               <!-- TODO (左) -->
               <div class="rounded-xl p-2 border flex flex-col" :style="boardBorderStyle(board)">
-                <div class="text-[11px] font-bold mb-1 text-amber-400/80">TODO<span v-if="board.todo.length" class="ml-1">{{ board.todo.length }}</span></div>
+                <div class="text-[11px] font-bold mb-1 text-white/80">TODO<span v-if="board.todo.length" class="ml-1">{{ board.todo.length }}</span></div>
                 <ul class="list-none m-0 p-0 flex flex-col gap-1 min-h-[28px]">
                   <li
                     v-for="card in board.todo"
@@ -1526,7 +1526,7 @@ async function deleteTask() {
               </div>
               <!-- DOING (右) -->
               <div class="rounded-xl p-2 border flex flex-col" :style="boardBorderStyle(board)">
-                <div class="text-[11px] font-bold mb-1 text-sky-400/80">DOING<span v-if="board.doing.length" class="ml-1">{{ board.doing.length }}</span></div>
+                <div class="text-[11px] font-bold mb-1 text-white/80">DOING<span v-if="board.doing.length" class="ml-1">{{ board.doing.length }}</span></div>
                 <ul class="list-none m-0 p-0 flex flex-col gap-1 min-h-[28px]">
                   <li
                     v-for="card in board.doing"
@@ -1574,14 +1574,14 @@ async function deleteTask() {
                         <li
                           v-for="item in dayItem.cards"
                           :key="item.id"
-                          class="flex items-center gap-1 px-1.5 py-0.5 bg-emerald-500/[0.08] rounded border-l-2 border-emerald-500/40"
+                          class="flex items-center gap-1 px-1.5 py-1 rounded bg-white/[0.03]"
                         >
                           <button
-                            class="flex-shrink-0 w-3.5 h-3.5 rounded border border-emerald-500/60 bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-[10px] hover:bg-red-500/20 hover:border-red-400/60 hover:text-red-400 transition-all cursor-pointer"
+                            class="flex-shrink-0 w-3.5 h-3.5 rounded border border-white/40 bg-white/10 flex items-center justify-center text-white text-[10px] hover:bg-red-500/20 hover:border-red-400/60 hover:text-red-400 transition-all cursor-pointer"
                             title="DOINGに戻す"
                             @click="unmarkDone(item, dayItem.date, row.board)"
                           >✓</button>
-                          <span class="text-[12px] leading-snug text-white truncate">{{ item.name }}</span>
+                          <span class="text-[14px] leading-snug text-white truncate">{{ item.name }}</span>
                         </li>
                       </ul>
                     </div>
