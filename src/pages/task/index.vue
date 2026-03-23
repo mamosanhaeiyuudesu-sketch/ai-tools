@@ -505,6 +505,23 @@ function formatMonthLabel(val: string) {
   return `${y}年${m}月`
 }
 
+function formatMonthShort(val: string) {
+  const [y, m] = val.split('-').map(Number)
+  return `${y}年${m}月`
+}
+
+// モバイル用統合期間ピッカー
+const showMobilePeriod = ref(false)
+function toggleMobilePeriod() {
+  if (showMobilePeriod.value) {
+    showMobilePeriod.value = false
+  } else {
+    pickerYearStart.value = parseInt(startMonth.value.split('-')[0])
+    pickerYearEnd.value = parseInt(endMonth.value.split('-')[0])
+    showMobilePeriod.value = true
+  }
+}
+
 function togglePicker(t: PickerTarget) {
   if (pickerOpen.value === t) {
     pickerOpen.value = null
@@ -968,7 +985,7 @@ async function deleteTask() {
 
 <template>
   <!-- Month picker backdrop -->
-  <div v-if="pickerOpen" class="fixed inset-0 z-40" @click="pickerOpen = null" />
+  <div v-if="pickerOpen || showMobilePeriod" class="fixed inset-0 z-40" @click="pickerOpen = null; showMobilePeriod = false" />
 
   <div class="min-h-screen pb-16 text-[#e2e8f0] text-sm">
     <!-- Header -->
@@ -1047,65 +1064,62 @@ async function deleteTask() {
         >⚙</button>
       </div>
       <!-- モバイル用コントロール行 -->
-      <div v-if="hasCredentials" class="md:hidden flex items-center gap-1.5 flex-wrap px-3 pb-2">
-        <div class="flex items-center gap-1 flex-wrap">
+      <div v-if="hasCredentials" class="md:hidden flex items-center gap-2 px-3 pb-2">
+        <!-- プロファイル選択 -->
+        <select
+          v-if="profiles.length > 1"
+          :value="activeProfileId"
+          class="bg-white/[0.06] border border-white/10 rounded-md px-2 py-1 text-[12px] text-[#e2e8f0] cursor-pointer flex-shrink-0 max-w-[110px]"
+          @change="switchProfile(($event.target as HTMLSelectElement).value)"
+        >
+          <option v-for="p in profiles" :key="p.id" :value="p.id" class="bg-[#1e293b] text-[#e2e8f0]">{{ p.name }}</option>
+        </select>
+        <!-- 統合期間ピッカー -->
+        <div class="relative flex-1 min-w-0 z-50" @click.stop>
           <button
-            v-for="p in profiles"
-            :key="p.id"
-            :class="[
-              'px-2 py-1 rounded-md text-[11px] font-medium cursor-pointer border transition-all',
-              activeProfileId === p.id
-                ? 'bg-sky-500/20 border-sky-400/50 text-sky-400'
-                : 'bg-white/[0.04] border-white/10 text-slate-500 hover:bg-white/[0.08] hover:text-slate-300',
-            ]"
-            @click="switchProfile(p.id)"
-          >{{ p.name }}</button>
-        </div>
-        <div class="relative z-50" @click.stop>
-          <button
-            class="bg-white/[0.06] border border-white/10 rounded-md px-2 py-1 text-[#e2e8f0] text-[12px] cursor-pointer hover:bg-white/[0.1] transition-colors min-w-[80px] text-left"
-            @click="togglePicker('start')"
-          >{{ formatMonthLabel(startMonth) }}</button>
-          <div v-if="pickerOpen === 'start'" class="absolute top-full left-0 mt-1 bg-[#1e293b] border border-white/10 rounded-xl p-3 shadow-xl w-44 z-50">
-            <div class="flex items-center justify-between mb-2">
-              <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors text-sm" @click="prevYear('start')">‹</button>
-              <span class="text-[13px] font-semibold text-slate-200">{{ pickerYearStart }}年</span>
-              <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors text-sm" @click="nextYear('start')">›</button>
+            class="w-full bg-white/[0.06] border border-white/10 rounded-md px-2 py-1 text-[#e2e8f0] text-[12px] cursor-pointer hover:bg-white/[0.1] transition-colors text-left whitespace-nowrap"
+            @click="toggleMobilePeriod"
+          >{{ formatMonthShort(startMonth) }}〜{{ formatMonthShort(endMonth) }}</button>
+          <div v-if="showMobilePeriod" class="absolute top-full left-0 mt-1 bg-[#1e293b] border border-white/10 rounded-xl p-3 shadow-xl z-50 flex gap-4">
+            <!-- 開始月 -->
+            <div>
+              <div class="text-[11px] text-slate-400 mb-1.5 font-semibold">開始</div>
+              <div class="flex items-center justify-between mb-2">
+                <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors text-sm cursor-pointer" @click="prevYear('start')">‹</button>
+                <span class="text-[12px] font-semibold text-slate-200">{{ pickerYearStart }}年</span>
+                <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors text-sm cursor-pointer" @click="nextYear('start')">›</button>
+              </div>
+              <div class="grid grid-cols-3 gap-1">
+                <button
+                  v-for="m in 12" :key="m"
+                  class="py-1 rounded-md text-[12px] transition-colors cursor-pointer"
+                  :class="isSelectedMonth('start', m) ? 'bg-sky-500 text-white font-semibold' : 'text-slate-300 hover:bg-white/10'"
+                  @click="selectMonth('start', m)"
+                >{{ m }}月</button>
+              </div>
             </div>
-            <div class="grid grid-cols-3 gap-1">
-              <button
-                v-for="m in 12" :key="m"
-                class="py-1 rounded-md text-[12px] transition-colors cursor-pointer"
-                :class="isSelectedMonth('start', m) ? 'bg-sky-500 text-white font-semibold' : 'text-slate-300 hover:bg-white/10'"
-                @click="selectMonth('start', m)"
-              >{{ m }}月</button>
+            <!-- 終了月 -->
+            <div>
+              <div class="text-[11px] text-slate-400 mb-1.5 font-semibold">終了</div>
+              <div class="flex items-center justify-between mb-2">
+                <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors text-sm cursor-pointer" @click="prevYear('end')">‹</button>
+                <span class="text-[12px] font-semibold text-slate-200">{{ pickerYearEnd }}年</span>
+                <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors text-sm cursor-pointer" @click="nextYear('end')">›</button>
+              </div>
+              <div class="grid grid-cols-3 gap-1">
+                <button
+                  v-for="m in 12" :key="m"
+                  class="py-1 rounded-md text-[12px] transition-colors cursor-pointer"
+                  :class="isSelectedMonth('end', m) ? 'bg-sky-500 text-white font-semibold' : 'text-slate-300 hover:bg-white/10'"
+                  @click="selectMonth('end', m)"
+                >{{ m }}月</button>
+              </div>
             </div>
           </div>
         </div>
-        <span class="text-slate-600 text-[12px]">〜</span>
-        <div class="relative z-50" @click.stop>
-          <button
-            class="bg-white/[0.06] border border-white/10 rounded-md px-2 py-1 text-[#e2e8f0] text-[12px] cursor-pointer hover:bg-white/[0.1] transition-colors min-w-[80px] text-left"
-            @click="togglePicker('end')"
-          >{{ formatMonthLabel(endMonth) }}</button>
-          <div v-if="pickerOpen === 'end'" class="absolute top-full left-0 mt-1 bg-[#1e293b] border border-white/10 rounded-xl p-3 shadow-xl w-44 z-50">
-            <div class="flex items-center justify-between mb-2">
-              <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors text-sm" @click="prevYear('end')">‹</button>
-              <span class="text-[13px] font-semibold text-slate-200">{{ pickerYearEnd }}年</span>
-              <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-white/10 text-slate-400 hover:text-slate-200 transition-colors text-sm" @click="nextYear('end')">›</button>
-            </div>
-            <div class="grid grid-cols-3 gap-1">
-              <button
-                v-for="m in 12" :key="m"
-                class="py-1 rounded-md text-[12px] transition-colors cursor-pointer"
-                :class="isSelectedMonth('end', m) ? 'bg-sky-500 text-white font-semibold' : 'text-slate-300 hover:bg-white/10'"
-                @click="selectMonth('end', m)"
-              >{{ m }}月</button>
-            </div>
-          </div>
-        </div>
+        <!-- 更新 -->
         <button
-          class="px-3 py-1 rounded-lg border-none bg-gradient-to-br from-sky-400 to-indigo-500 text-white text-[12px] font-semibold cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex-shrink-0 px-3 py-1 rounded-lg border-none bg-gradient-to-br from-sky-400 to-indigo-500 text-white text-[12px] font-semibold cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="loading"
           @click="load"
         >{{ loading ? '…' : '更新' }}</button>

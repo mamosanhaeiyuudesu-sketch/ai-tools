@@ -39,11 +39,11 @@
     <!-- Mobile menu -->
     <nav
       v-if="isMobileMenuOpen"
-      class="fixed inset-0 bg-black/50 flex z-40 animate-[fadeIn_0.2s_ease]"
+      class="fixed top-[61px] inset-x-0 bottom-0 bg-black/50 flex z-[200] animate-[fadeIn_0.2s_ease]"
       @click="isMobileMenuOpen = false"
     >
       <div
-        class="bg-[#0f172a] border-r border-white/[0.08] py-4 max-w-[250px] w-full mt-14 flex flex-col animate-[slideIn_0.2s_ease]"
+        class="bg-[#0f172a] border-r border-white/[0.08] py-4 max-w-[250px] w-full flex flex-col animate-[slideIn_0.2s_ease]"
         @click.stop
       >
         <NuxtLink
