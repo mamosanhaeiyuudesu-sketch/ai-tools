@@ -1598,34 +1598,34 @@ async function deleteTask() {
               <!-- 右半分: 今週 vs 先週比較 -->
               <div class="flex-1 min-w-0">
                 <div class="text-[11px] font-bold text-slate-500 mb-2 uppercase tracking-wider">今週 vs 先週</div>
-                <table class="w-full border-collapse text-[12px]">
+                <table class="w-full border-collapse text-[14px]">
                   <thead>
                     <tr>
-                      <th class="text-left py-1 px-1 text-slate-500 text-[11px] font-bold border-b border-white/[0.06]"></th>
-                      <th class="text-right py-1 px-1 text-emerald-500/70 text-[11px] font-bold border-b border-white/[0.06]">今週</th>
-                      <th class="text-right py-1 px-1 text-slate-500 text-[11px] font-bold border-b border-white/[0.06]">先週</th>
+                      <th class="text-left py-1 px-1 text-slate-500 text-[14px] font-bold border-b border-white/[0.06]"></th>
+                      <th class="text-right py-1 px-1 text-slate-500 text-[14px] font-bold border-b border-white/[0.06]">先週</th>
+                      <th class="text-right py-1 px-1 text-emerald-500/70 text-[14px] font-bold border-b border-white/[0.06]">今週</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr class="border-b border-white/[0.05]">
-                      <td class="py-1 px-1 text-slate-400 font-bold text-[12px]">合計</td>
+                      <td class="py-1 px-1 text-slate-400 font-bold text-[14px]">合計</td>
+                      <td class="py-1 px-1 text-right text-slate-500">{{ weekCompTotal.prevWeek }}</td>
                       <td
                         class="py-1 px-1 text-right font-bold"
                         :class="weekCompTotal.thisWeek > weekCompTotal.prevWeek ? 'text-emerald-400' : weekCompTotal.thisWeek < weekCompTotal.prevWeek ? 'text-red-400' : 'text-slate-400'"
                       >{{ weekCompTotal.thisWeek }}<span v-if="weekCompTotal.thisWeek > weekCompTotal.prevWeek">↑</span><span v-else-if="weekCompTotal.thisWeek < weekCompTotal.prevWeek">↓</span></td>
-                      <td class="py-1 px-1 text-right text-slate-500">{{ weekCompTotal.prevWeek }}</td>
                     </tr>
                     <tr
                       v-for="(row, ri) in weekComparison"
                       :key="row.name"
                       class="border-b border-white/[0.03]"
                     >
-                      <td class="py-1 px-1 text-[11px] truncate max-w-0 w-1/2" :style="{ color: BOARD_COLORS[ri % BOARD_COLORS.length] }">{{ row.name }}</td>
+                      <td class="py-1 px-1 text-[14px] truncate max-w-0 w-1/2" :style="{ color: BOARD_COLORS[ri % BOARD_COLORS.length] }">{{ row.name }}</td>
+                      <td class="py-1 px-1 text-right text-slate-500">{{ row.prevWeek }}</td>
                       <td
                         class="py-1 px-1 text-right"
                         :class="row.thisWeek > row.prevWeek ? 'text-emerald-400' : row.thisWeek < row.prevWeek ? 'text-red-400' : 'text-slate-400'"
                       >{{ row.thisWeek }}<span v-if="row.thisWeek > row.prevWeek">↑</span><span v-else-if="row.thisWeek < row.prevWeek">↓</span></td>
-                      <td class="py-1 px-1 text-right text-slate-500">{{ row.prevWeek }}</td>
                     </tr>
                   </tbody>
                 </table>
