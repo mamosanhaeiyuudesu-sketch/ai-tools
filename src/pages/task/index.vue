@@ -1715,15 +1715,22 @@ async function deleteTask() {
               <!-- TODO (左) -->
               <div class="rounded-xl p-2 border flex flex-col" :style="boardBorderStyle(board)">
                 <div class="text-[11px] font-bold mb-1 text-white/80">TODO<span v-if="board.todo.length" class="ml-1">({{ board.todo.length }})</span></div>
-                <ul class="list-none m-0 p-0 flex flex-col gap-1 min-h-[28px] max-h-[168px] overflow-y-auto">
+                <ul class="list-none m-0 p-0 flex flex-col gap-1 min-h-[28px] max-h-[240px] overflow-y-auto">
                   <li
-                    v-for="card in board.todo.slice(0, 5)"
+                    v-for="card in board.todo"
                     :key="card.id"
                     :class="[
-                      'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2 py-1.5 flex items-start gap-1.5 cursor-pointer active:bg-white/[0.07]',
+                      'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2 py-1.5 flex items-start gap-1.5 cursor-grab active:bg-white/[0.07] select-none',
                       card.isOverdue ? 'border-red-500/40 bg-red-500/[0.06]' : '',
                       card.isUrgent ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
+                      dragging?.cardId === card.id ? 'opacity-40' : '',
+                      dragOverCardId === card.id ? 'border-t-2 border-t-amber-400' : '',
                     ]"
+                    draggable="true"
+                    @dragstart="onDragStart($event, card, board.id, 'todo')"
+                    @dragend="onDragEnd"
+                    @dragover="onDragOverCard($event, card.id)"
+                    @drop.prevent="onDropCard(card.id, board.id, 'todo')"
                     @click="openEditTask(card, board.id, 'todo')"
                   >
                     <button
@@ -1737,20 +1744,29 @@ async function deleteTask() {
                   class="mt-1.5 w-full py-1 rounded-lg border border-dashed text-[13px] cursor-pointer transition-all opacity-40 hover:opacity-80"
                   :style="{ borderColor: boardColor(board), color: boardColor(board) }"
                   @click="openAddTask(board.id, 'todo')"
+                  @dragover="onDragOverEnd($event, `${board.id}:todo`)"
+                  @drop.prevent="onDropEnd(board.id, 'todo')"
                 >＋</button>
               </div>
               <!-- DOING (右) -->
               <div class="rounded-xl p-2 border flex flex-col" :style="boardBorderStyle(board)">
                 <div class="text-[11px] font-bold mb-1 text-white/80">DOING<span v-if="board.doing.length" class="ml-1">({{ board.doing.length }})</span></div>
-                <ul class="list-none m-0 p-0 flex flex-col gap-1 min-h-[28px] max-h-[168px] overflow-y-auto">
+                <ul class="list-none m-0 p-0 flex flex-col gap-1 min-h-[28px] max-h-[240px] overflow-y-auto">
                   <li
-                    v-for="card in board.doing.slice(0, 5)"
+                    v-for="card in board.doing"
                     :key="card.id"
                     :class="[
-                      'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2 py-1.5 flex items-start gap-1.5 cursor-pointer active:bg-white/[0.07]',
+                      'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2 py-1.5 flex items-start gap-1.5 cursor-grab active:bg-white/[0.07] select-none',
                       card.isOverdue ? 'border-red-500/40 bg-red-500/[0.06]' : '',
                       card.isUrgent ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
+                      dragging?.cardId === card.id ? 'opacity-40' : '',
+                      dragOverCardId === card.id ? 'border-t-2 border-t-sky-400' : '',
                     ]"
+                    draggable="true"
+                    @dragstart="onDragStart($event, card, board.id, 'doing')"
+                    @dragend="onDragEnd"
+                    @dragover="onDragOverCard($event, card.id)"
+                    @drop.prevent="onDropCard(card.id, board.id, 'doing')"
                     @click="openEditTask(card, board.id, 'doing')"
                   >
                     <button
@@ -1764,6 +1780,8 @@ async function deleteTask() {
                   class="mt-1.5 w-full py-1 rounded-lg border border-dashed text-[13px] cursor-pointer transition-all opacity-40 hover:opacity-80"
                   :style="{ borderColor: boardColor(board), color: boardColor(board) }"
                   @click="openAddTask(board.id, 'doing')"
+                  @dragover="onDragOverEnd($event, `${board.id}:doing`)"
+                  @drop.prevent="onDropEnd(board.id, 'doing')"
                 >＋</button>
               </div>
             </div>
