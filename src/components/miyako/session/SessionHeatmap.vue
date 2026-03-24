@@ -114,9 +114,9 @@ defineExpose({ render })
     <div class="flex items-center gap-1 px-3.5 py-2.5 border-b border-[#dde2ef] bg-[#fafbff]">
       <span class="text-[11.5px] font-bold text-[#1c2d5a] tracking-[0.03em]">■ キーワード分布</span>
       <slot name="label" />
-      <span class="text-[10.5px] text-[#6878a8] ml-auto opacity-70">列をクリックでワードクラウドを表示</span>
+      <span class="hidden md:inline text-[10.5px] text-[#6878a8] ml-auto opacity-70">列をクリックでワードクラウドを表示</span>
     </div>
-    <div class="overflow-auto max-h-[600px] p-1.5">
+    <div class="overflow-auto max-h-[600px] p-0.5 md:p-1.5">
       <div ref="heatmapRef" class="inline-block" />
     </div>
   </div>
