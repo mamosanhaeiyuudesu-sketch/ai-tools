@@ -18,4 +18,9 @@ export default defineNuxtConfig({
   nitro: {
     preset: 'cloudflare_module',
   },
+  vite: {
+    server: {
+      allowedHosts: true,
+    },
+  },
 });

@@ -41,6 +41,24 @@
 3) 画像をアップロードまたはカメラで撮影し、「要約を依頼する」を押下。  
 4) 要約がカード内に表示されること、エラー時にメッセージが出ることを確認。
 
+## Claude Code リモートコントロール
+
+スマホなど外部デバイスから Claude Code を操作したい場合、以下の手順でローカル開発サーバーを外部公開できます。
+
+1. **トンネルを張る**（cloudflared でローカルを外部公開）
+   ```bash
+   cloudflared tunnel --url http://localhost:3000
+   ```
+   実行すると `https://xxxx.trycloudflare.com` のような一時 URL が発行されます。
+
+2. **Claude Code をリモートコントロールモードで起動**
+   ```bash
+   claude remote-control
+   ```
+   発行された URL をスマホのブラウザで開くと、外部から Claude Code に指示を送れます。
+
+> `nuxt.config.ts` の `vite.server.allowedHosts: true` は、cloudflared 経由のホスト名を Vite が受け付けるために必要な設定です。
+
 ## Cloudflare Workers デプロイ
 
 - Nitro は `preset: 'cloudflare'`。ビルドで `.output/` を生成し、Wrangler でデプロイします。
