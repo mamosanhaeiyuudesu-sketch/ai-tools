@@ -1,5 +1,5 @@
--- APP_DB マイグレーション
--- 実行: wrangler d1 execute app-db --file src/server/db/001_auth.sql
+-- WHISPER_DB マイグレーション
+-- 実行: wrangler d1 execute whisper-db --file src/server/db/001_auth.sql
 
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,

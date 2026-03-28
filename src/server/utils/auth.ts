@@ -33,7 +33,7 @@ export async function verifyPassword(password: string, stored: string): Promise<
 }
 
 export function getAppDb(event: any): any {
-  return event.context.cloudflare?.env?.APP_DB ?? null
+  return event.context.cloudflare?.env?.WHISPER_DB ?? null
 }
 
 export async function getSessionUser(event: any): Promise<{ id: string; username: string } | null> {
