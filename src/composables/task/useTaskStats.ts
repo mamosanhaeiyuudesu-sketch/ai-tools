@@ -217,6 +217,7 @@ export function useTaskStats(
   // --- Mobile stats ---
   const thisWeekKeys = computed(() => Array.from({ length: 7 }, (_, i) => getJstKey(i)))
   const prevWeekKeys = computed(() => Array.from({ length: 7 }, (_, i) => getJstKey(i + 7)))
+  const lastMonthWeekKeys = computed(() => Array.from({ length: 7 }, (_, i) => getJstKey(i + 14)))
 
   const thisWeekDone = computed(() =>
     boards.value.map(board => ({
@@ -252,6 +253,18 @@ export function useTaskStats(
     prevWeek: weekComparison.value.reduce((s, r) => s + r.prevWeek, 0),
   }))
 
+  const lastMonthWeekDoneFlat = computed(() => {
+    const items: { card: any; board: any; date: string }[] = []
+    for (const date of lastMonthWeekKeys.value) {
+      for (const board of boards.value) {
+        for (const card of board.done[date] ?? []) {
+          items.push({ card, board, date })
+        }
+      }
+    }
+    return items
+  })
+
   onUnmounted(() => {
     doneChart?.dispose()
     compChart?.dispose()
@@ -262,6 +275,6 @@ export function useTaskStats(
     chartRef, selectedDate, renderDoneChart,
     compPeriod, compChartRef, renderCompChart,
     compPeriodData, compPeriodTotal,
-    thisWeekDone, thisWeekDoneFlat, weekComparison, weekCompTotal,
+    thisWeekDone, thisWeekDoneFlat, weekComparison, weekCompTotal, lastMonthWeekDoneFlat,
   }
 }

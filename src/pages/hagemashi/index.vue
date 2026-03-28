@@ -74,16 +74,6 @@
       <HistoryTable :history="history" :copiedId="copiedHistoryId" @copy="copyHistory" @delete="deleteHistory" />
     </div>
 
-    <!-- Word cloud -->
-    <div v-if="themes.length" class="w-full max-w-[640px] h-[100px] lg:h-[180px] flex flex-wrap items-center justify-center gap-y-2.5 gap-x-[22px] px-3 pt-8 pb-2 overflow-hidden" aria-hidden="true">
-      <span
-        v-for="(theme, i) in themes"
-        :key="i"
-        class="font-bold tracking-[0.04em] cursor-default select-none inline-block transition-[opacity,transform] duration-[250ms] opacity-0 [animation:cloud-in_0.7s_ease_forwards] hover:opacity-100 hover:brightness-[1.3] hover:scale-110"
-        :style="wordStyle(i)"
-      >{{ theme }}</span>
-    </div>
-
     <!-- Settings Modal -->
     <div v-if="settingsOpen" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]" @click.self="settingsOpen = false">
       <div class="w-full max-w-[480px] bg-[#1e293b] border border-white/10 rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.5)] flex flex-col max-h-[90vh]">
@@ -168,44 +158,6 @@ const isEncouraging = ref(false)
 
 const { history, copiedHistoryId, addHistory, updateHistory, deleteHistory, copyHistory } = useHistory('hagemashi-history')
 
-// --- テーマ ワードクラウド ---
-const themes = ref<string[]>([])
-
-const WORD_STYLES = [
-  { size: 24, rotate: -4, color: '#f97316' },
-  { size: 15, rotate:  5, color: '#ec4899' },
-  { size: 28, rotate: -7, color: '#fb923c' },
-  { size: 18, rotate:  3, color: '#f472b6' },
-  { size: 13, rotate: -2, color: '#f97316' },
-  { size: 21, rotate:  6, color: '#ec4899' },
-  { size: 17, rotate: -5, color: '#fb923c' },
-  { size: 26, rotate:  4, color: '#f472b6' },
-]
-
-const wordStyle = (i: number) => {
-  const s = WORD_STYLES[i % WORD_STYLES.length]
-  return {
-    fontSize: `${s.size}px`,
-    color: s.color,
-    transform: `rotate(${s.rotate}deg)`,
-    animationDelay: `${i * 0.12}s`,
-  }
-}
-
-const generateThemes = async () => {
-  const texts = history.value.slice(0, 10).map(h => h.text)
-  if (texts.length < 2) return
-  try {
-    const res = await $fetch<{ themes: string[] }>('/api/hagemashi/themes', {
-      method: 'POST',
-      body: { texts },
-    })
-    themes.value = res.themes ?? []
-  } catch {
-    // テーマ生成失敗は無視
-  }
-}
-
 // --- 設定 ---
 const defaultSettings = {
   period: 'all',
@@ -220,7 +172,6 @@ onMounted(() => {
   if (stored) {
     try { settings.value = { ...defaultSettings, dictionary: [], ...JSON.parse(stored) } } catch {}
   }
-  generateThemes()
 })
 
 const addDictEntry = () => settings.value.dictionary.push({ input: '', output: '' })
@@ -290,9 +241,3 @@ const { isRecording, isPaused, isProcessing, duration, formatTime, startRecordin
 })
 </script>
 
-<style>
-@keyframes cloud-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.88); }
-  to { opacity: 0.65; transform: translateY(0) scale(1); }
-}
-</style>

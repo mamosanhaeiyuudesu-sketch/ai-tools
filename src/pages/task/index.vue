@@ -51,8 +51,39 @@ const {
   chartRef, selectedDate, renderDoneChart,
   compPeriod, compChartRef, renderCompChart,
   compPeriodData, compPeriodTotal,
-  thisWeekDoneFlat, weekComparison, weekCompTotal,
+  thisWeekDoneFlat, weekComparison, weekCompTotal, lastMonthWeekDoneFlat,
 } = useTaskStats(boards, allDates, route.query.view as DoneView)
+
+const praiseFeedback = ref('')
+const praiseLoading = ref(false)
+const praiseError = ref('')
+const praiseSentences = computed(() =>
+  praiseFeedback.value
+    .split('。')
+    .map(s => s.trim())
+    .filter(s => s.length > 0)
+    .map(s => s + '。')
+)
+
+async function generatePraise() {
+  praiseLoading.value = true
+  praiseFeedback.value = ''
+  praiseError.value = ''
+  try {
+    const res = await $fetch<{ feedback: string }>('/api/task/praise', {
+      method: 'POST',
+      body: {
+        thisWeek: thisWeekDoneFlat.value.map(r => r.card.name),
+        lastMonthWeek: lastMonthWeekDoneFlat.value.map(r => r.card.name),
+      },
+    })
+    praiseFeedback.value = res.feedback
+  } catch (e: any) {
+    praiseError.value = e?.data?.statusMessage || 'エラーが発生しました'
+  } finally {
+    praiseLoading.value = false
+  }
+}
 
 // --- Page-level orchestration ---
 function syncUrl() {
@@ -468,14 +499,14 @@ onMounted(() => {
               <div ref="chartRef" class="flex-1 min-w-0 h-[480px] rounded-xl border border-white/[0.07]" style="cursor:pointer" />
               <transition name="slide-fade">
                 <div v-if="selectedDate && (doneView === 'line' || doneView === 'stacked')" class="w-80 flex-none bg-white/[0.04] border border-white/[0.08] rounded-xl p-3 self-stretch overflow-y-auto max-h-[480px]">
-                  <div class="flex items-center justify-between mb-2.5">
+                  <div class="flex items-center justify-between mb-1">
                     <span class="text-[13px] font-bold text-white">{{ formatDate(selectedDate) }}</span>
                     <button class="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-300 text-xs cursor-pointer" @click="selectedDate = null">✕</button>
                   </div>
                   <template v-for="board in boards" :key="board.id">
                     <template v-if="board.done[selectedDate]?.length">
                       <p class="m-0 mb-1 text-[11px] font-bold uppercase tracking-wide" :style="{ color: boardColor(board) }">{{ board.name }}</p>
-                      <ul class="list-none m-0 p-0 mb-2.5 flex flex-col gap-1">
+                      <ul class="list-none m-0 p-0 mb-1 flex flex-col gap-1">
                         <li v-for="item in board.done[selectedDate]" :key="item.id" class="flex items-center gap-1.5 px-1.5 py-0.5 rounded border-l-2 cursor-pointer hover:brightness-125" :style="{ backgroundColor: boardColor(board) + '14', borderColor: boardColor(board) + '60' }" @click="openEditDoneTask(item, selectedDate, board)">
                           <button class="flex-shrink-0 w-3.5 h-3.5 rounded border border-white/40 bg-white/10 flex items-center justify-center text-white text-[10px] hover:bg-red-500/20 hover:border-red-400/60 hover:text-red-400 transition-all cursor-pointer" title="DOINGに戻す" @click.stop="unmarkDone(item, selectedDate, board)">✓</button>
                           <span class="leading-snug text-white text-xs">{{ item.name }}</span>
@@ -487,6 +518,27 @@ onMounted(() => {
               </transition>
             </div>
           </template>
+        </section>
+
+        <!-- 称賛フィードバック (PC only) -->
+        <section class="hidden md:block px-5 mt-6">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-[13px] font-bold text-slate-400">今週の称賛フィードバック</span>
+            <span class="text-[11px] text-slate-600">直近7日 vs 2週間前の7日</span>
+            <button
+              class="ml-auto px-3.5 py-1.5 rounded-lg border-none bg-gradient-to-br from-violet-500 to-indigo-500 text-white text-[12px] font-semibold cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:opacity-90 hover:enabled:-translate-y-px"
+              :disabled="praiseLoading"
+              @click="generatePraise"
+            >{{ praiseLoading ? '生成中…' : 'AIに称賛してもらう' }}</button>
+          </div>
+          <div v-if="praiseError" class="px-3.5 py-2.5 bg-red-500/12 border border-red-500/30 rounded-lg text-red-300 text-[13px]">⚠ {{ praiseError }}</div>
+          <div v-else-if="praiseLoading" class="h-[56px] rounded-xl bg-white/[0.04] border border-white/[0.07] animate-pulse" />
+          <div v-else-if="praiseFeedback" class="px-4 py-3.5 bg-violet-500/[0.08] border border-violet-400/25 rounded-xl text-[14px] leading-relaxed text-slate-200 flex flex-col gap-1">
+            <p v-for="(s, i) in praiseSentences" :key="i" class="m-0">{{ s }}</p>
+          </div>
+          <div v-else class="px-4 py-3 text-[13px] text-slate-600 bg-white/[0.02] border border-white/[0.06] rounded-xl">
+            今週({{ thisWeekDoneFlat.length }}件) と2週間前の同期間({{ lastMonthWeekDoneFlat.length }}件) を比較して、AIが称賛コメントを生成します。
+          </div>
         </section>
 
         <!-- DONE 期間比較 (PC only) -->
@@ -686,6 +738,24 @@ onMounted(() => {
                 </table>
               </div>
             </div>
+          </div>
+
+          <!-- スマホ版 称賛フィードバック -->
+          <div class="mt-4 pt-4 border-t border-white/[0.06]">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-[11px] font-bold text-slate-400">今週の称賛フィードバック</span>
+              <button
+                class="ml-auto px-3 py-1 rounded-lg border-none bg-gradient-to-br from-violet-500 to-indigo-500 text-white text-[11px] font-semibold cursor-pointer disabled:opacity-50"
+                :disabled="praiseLoading"
+                @click="generatePraise"
+              >{{ praiseLoading ? '…' : 'AIに称賛してもらう' }}</button>
+            </div>
+            <div v-if="praiseError" class="px-2.5 py-2 bg-red-500/12 border border-red-500/30 rounded-lg text-red-300 text-[12px]">⚠ {{ praiseError }}</div>
+            <div v-else-if="praiseLoading" class="h-12 rounded-xl bg-white/[0.04] border border-white/[0.07] animate-pulse" />
+            <div v-else-if="praiseFeedback" class="px-3 py-2.5 bg-violet-500/[0.08] border border-violet-400/25 rounded-xl text-[13px] leading-relaxed text-slate-200 flex flex-col gap-1">
+              <p v-for="(s, i) in praiseSentences" :key="i" class="m-0">{{ s }}</p>
+            </div>
+            <div v-else class="text-[12px] text-slate-600">今週({{ thisWeekDoneFlat.length }}件) vs 2週間前({{ lastMonthWeekDoneFlat.length }}件)</div>
           </div>
         </div>
       </template>
