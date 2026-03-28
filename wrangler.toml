@@ -13,6 +13,14 @@ binding = "MIYAKO_DB"
 database_name = "miyako-gijiroku"
 database_id = "07376f0e-60c5-4124-b363-a135d0c8821b"
 
+[[d1_databases]]
+binding = "APP_DB"
+database_name = "app-db"
+database_id = "e3f398b3-1a5c-487a-adb5-8dba8b52fcda"
+# 初回セットアップ:
+#   wrangler d1 create app-db
+#   wrangler d1 execute app-db --file src/server/db/001_auth.sql
+
 [build]
 command = "npm run build"
 
