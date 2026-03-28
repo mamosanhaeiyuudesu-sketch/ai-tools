@@ -1,10 +1,5 @@
 import { ref } from 'vue'
 
-export interface DictEntry {
-  input: string
-  output: string
-}
-
 interface AudioRecorderOptions {
   onTranscribed: (text: string) => Promise<void> | void
   onError: (message: string) => void
@@ -183,21 +178,3 @@ export const fetchTitle = async (text: string): Promise<string> => {
   }
 }
 
-export const proofreadInBackground = async (
-  id: string,
-  text: string,
-  dictionary: DictEntry[],
-  updateHistory: (id: string, text: string) => void,
-): Promise<void> => {
-  const entries = dictionary.filter((d) => d.input)
-  if (!entries.length) return
-  try {
-    const res = await $fetch<{ text: string }>('/api/whisper/proofread', {
-      method: 'POST',
-      body: { text, dictionary: entries },
-    })
-    if (res.text && res.text !== text) updateHistory(id, res.text)
-  } catch {
-    // 校正失敗は無視
-  }
-}
