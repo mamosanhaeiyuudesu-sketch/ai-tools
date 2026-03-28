@@ -9,17 +9,13 @@
           <p class="mt-2 mb-0 text-slate-400 text-base">話して、励ましてもらおう</p>
         </div>
         <div class="flex flex-col gap-1.5 flex-shrink-0 pt-1">
-          <template v-if="!$dev && user">
-            <span class="text-xs text-slate-500 text-right px-1">{{ user.username }}</span>
-            <button class="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/15 bg-white/[0.06] text-slate-400 text-xs font-medium cursor-pointer transition-all whitespace-nowrap hover:bg-white/[0.12] hover:text-slate-50" @click="logout">
-              <span>🚪</span>
-              <span class="hidden lg:inline">ログアウト</span>
-            </button>
-          </template>
-          <button class="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-white/15 bg-white/[0.06] text-slate-300 text-xs font-medium cursor-pointer transition-all whitespace-nowrap hover:bg-white/[0.12] hover:border-white/25 hover:text-slate-50" data-label="設定" @click="settingsOpen = true">
-            <span>⚙️</span>
-            <span class="hidden lg:inline">設定</span>
-          </button>
+          <UserMenu
+            v-if="!$dev && user"
+            :username="user.username"
+            :items="menuItems"
+            accentFrom="#f97316"
+            accentTo="#ec4899"
+          />
           <button
             class="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-orange-500/40 bg-orange-500/[0.08] text-orange-200 text-xs font-medium cursor-pointer transition-all whitespace-nowrap hover:bg-orange-500/[0.18] hover:border-orange-500/70 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
             data-label="励ます"
@@ -84,27 +80,14 @@
     <!-- Auth Modal -->
     <AuthModal v-if="!$dev && checked && !isLoggedIn" accent="orange" />
 
-    <!-- Settings Modal -->
+    <!-- Settings Modal（励まし方） -->
     <div v-if="settingsOpen" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]" @click.self="settingsOpen = false">
       <div class="w-full max-w-[480px] bg-[#1e293b] border border-white/10 rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.5)] flex flex-col max-h-[90vh]">
         <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/[0.08]">
-          <h2 class="m-0 text-lg text-slate-50 font-semibold">設定</h2>
+          <h2 class="m-0 text-lg text-slate-50 font-semibold">励まし方の設定</h2>
           <button class="bg-transparent border-none text-slate-500 text-lg cursor-pointer px-2 py-1 rounded-md hover:text-slate-50 transition-colors" @click="settingsOpen = false">✕</button>
         </div>
         <div class="px-6 py-5 overflow-y-auto flex flex-col gap-3">
-          <div class="text-[13px] font-semibold text-slate-300">辞書（校正）</div>
-          <p class="m-0 text-xs text-slate-500">文字起こし後にAIがこの辞書を使って自動校正します。</p>
-          <div v-for="(entry, i) in settings.dictionary" :key="i" class="flex items-center gap-1.5">
-            <input v-model="entry.input" class="flex-1 min-w-0 bg-white/[0.05] border border-white/[0.12] rounded-lg text-slate-50 text-sm px-3 py-2 outline-none focus:border-orange-500 transition-colors font-[inherit]" placeholder="入力" />
-            <span class="text-slate-500 text-sm flex-shrink-0">→</span>
-            <input v-model="entry.output" class="flex-1 min-w-0 bg-white/[0.05] border border-white/[0.12] rounded-lg text-slate-50 text-sm px-3 py-2 outline-none focus:border-orange-500 transition-colors font-[inherit]" placeholder="変換" />
-            <button class="bg-transparent border-none text-slate-500 text-[13px] cursor-pointer p-1 px-1.5 rounded flex-shrink-0 hover:text-red-400 transition-colors" @click="removeDictEntry(i)">✕</button>
-          </div>
-          <button class="self-start bg-transparent border border-dashed border-white/20 rounded-md text-slate-500 text-xs px-3 py-1 cursor-pointer hover:border-white/35 hover:text-slate-400 transition-all" @click="addDictEntry">＋ 追加</button>
-
-          <hr class="border-none border-t border-white/[0.08] my-1" />
-
-          <div class="text-[13px] font-semibold text-slate-300">励まし方</div>
           <div class="flex flex-col gap-1.5">
             <label class="text-[13px] font-medium text-slate-400">ベース知識（Vector Store ID）</label>
             <input v-model="settings.vectorStoreId" class="bg-white/[0.05] border border-white/[0.12] rounded-lg text-slate-50 text-sm px-3 py-2 outline-none focus:border-orange-500 transition-colors font-[inherit]" placeholder="vs_xxxxxxxxxxxx（省略可）" />
@@ -158,7 +141,7 @@ import { ref, computed, onMounted } from 'vue'
 import { marked } from 'marked'
 import { useHistory } from '~/composables/useHistory'
 import { useAuth } from '~/composables/useAuth'
-import { useAudioRecorder, fetchTitle, proofreadInBackground, type DictEntry } from '~/composables/useAudioRecorder'
+import { useAudioRecorder, fetchTitle } from '~/composables/useAudioRecorder'
 
 const $dev = import.meta.dev
 
@@ -175,26 +158,27 @@ if (!$dev) {
   onMounted(checkAuth)
 }
 
-const { history, copiedHistoryId, addHistory, updateHistory, deleteHistory, copyHistory } = useHistory('hagemashi-history', 'hagemashi')
+const { history, copiedHistoryId, addHistory, deleteHistory, copyHistory } = useHistory('hagemashi-history', 'hagemashi')
+
+const menuItems = [
+  { icon: '💬', label: '励まし方の設定', action: () => { settingsOpen.value = true } },
+  { icon: '🚪', label: 'ログアウト', action: logout },
+]
 
 // --- 設定 ---
 const defaultSettings = {
   period: 'all',
   encouragePrompt: '話した内容を踏まえて、温かく励ましてください。',
-  dictionary: [] as DictEntry[],
   vectorStoreId: '',
 }
-const settings = ref<typeof defaultSettings>({ ...defaultSettings, dictionary: [] })
+const settings = ref<typeof defaultSettings>({ ...defaultSettings })
 
 onMounted(() => {
   const stored = localStorage.getItem('hagemashi-settings')
   if (stored) {
-    try { settings.value = { ...defaultSettings, dictionary: [], ...JSON.parse(stored) } } catch {}
+    try { settings.value = { ...defaultSettings, ...JSON.parse(stored) } } catch {}
   }
 })
-
-const addDictEntry = () => settings.value.dictionary.push({ input: '', output: '' })
-const removeDictEntry = (i: number) => settings.value.dictionary.splice(i, 1)
 
 const saveSettings = () => {
   localStorage.setItem('hagemashi-settings', JSON.stringify(settings.value))
@@ -249,8 +233,7 @@ const copyResult = async () => {
 // --- 文字起こし後処理 ---
 const handleTranscribed = async (text: string) => {
   const title = await fetchTitle(text)
-  const id = addHistory(text, title)
-  proofreadInBackground(id, text, settings.value.dictionary, updateHistory)
+  addHistory(text, title)
 }
 
 // --- 録音 ---
@@ -259,4 +242,3 @@ const { isRecording, isPaused, isProcessing, duration, formatTime, startRecordin
   onError: (msg) => { error.value = msg },
 })
 </script>
-
