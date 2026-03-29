@@ -1,7 +1,7 @@
 import { wrapApiError } from '~/server/utils/openai'
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody<{ texts: string[]; encouragePrompt: string }>(event)
+  const body = await readBody<{ texts: string[]; encouragePrompt: string; charLimit?: number }>(event)
 
   if (!body?.texts?.length) {
     throw createError({ statusCode: 400, statusMessage: 'texts are required' })
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 1024,
-        system: body.encouragePrompt || '話した内容を踏まえて、温かく励ましてください。',
+        system: `${body.encouragePrompt || '話した内容を踏まえて、温かく励ましてください。'}\n\n返答は日本語で${body.charLimit ?? 500}文字程度にまとめること。`,
         messages: [{ role: 'user', content: userContent }],
       }),
     })

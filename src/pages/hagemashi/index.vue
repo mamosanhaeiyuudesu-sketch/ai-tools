@@ -103,6 +103,7 @@
           :history="encourageHistory"
           :copiedId="copiedEncourageId"
           :hideHeader="true"
+          :markdown="true"
           @copy="copyEncourageHistory"
           @delete="deleteEncourageHistory"
         />
@@ -155,18 +156,34 @@
             <span class="text-sm text-slate-200 truncate">{{ item.title || item.text.slice(0, 40) }}</span>
           </label>
         </div>
-        <div class="flex items-center justify-between gap-2 px-6 py-4 pb-5 border-t border-white/[0.08]">
-          <div class="flex gap-2">
-            <button class="px-3 py-1.5 rounded-lg border border-white/15 bg-transparent text-slate-400 text-xs cursor-pointer hover:bg-white/[0.06] hover:text-slate-50 transition-all" @click="selectedIds = history.map(i => i.id)">全選択</button>
-            <button class="px-3 py-1.5 rounded-lg border border-white/15 bg-transparent text-slate-400 text-xs cursor-pointer hover:bg-white/[0.06] hover:text-slate-50 transition-all" @click="selectedIds = []">全解除</button>
+        <div class="px-6 pt-3 pb-4 border-t border-white/[0.08] flex flex-col gap-3">
+          <!-- 文字数選択 -->
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-500 whitespace-nowrap">文字数</span>
+            <div class="flex gap-1.5">
+              <button
+                v-for="n in [200, 500, 1000]"
+                :key="n"
+                class="px-3 py-1 rounded-full text-xs font-medium border transition-all cursor-pointer"
+                :class="charLimit === n ? 'border-orange-500 bg-orange-500/20 text-orange-300' : 'border-white/15 bg-transparent text-slate-400 hover:border-white/30 hover:text-slate-300'"
+                @click="charLimit = n"
+              >{{ n }}</button>
+            </div>
           </div>
-          <div class="flex gap-2">
-            <button class="px-5 py-2 rounded-lg border border-white/15 bg-transparent text-slate-400 text-sm cursor-pointer hover:bg-white/[0.06] hover:text-slate-50 transition-all" @click="selectOpen = false">キャンセル</button>
-            <button
-              class="px-5 py-2 rounded-lg border-none bg-gradient-to-br from-orange-500 to-pink-500 text-slate-50 text-sm font-medium cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-              :disabled="selectedIds.length === 0"
-              @click="confirmSelect"
-            >💪 励ます</button>
+          <!-- アクションボタン -->
+          <div class="flex items-center justify-between">
+            <div class="flex gap-2">
+              <button class="px-3 py-1.5 rounded-lg border border-white/15 bg-transparent text-slate-400 text-xs cursor-pointer hover:bg-white/[0.06] hover:text-slate-50 transition-all" @click="selectedIds = history.map(i => i.id)">全選択</button>
+              <button class="px-3 py-1.5 rounded-lg border border-white/15 bg-transparent text-slate-400 text-xs cursor-pointer hover:bg-white/[0.06] hover:text-slate-50 transition-all" @click="selectedIds = []">全解除</button>
+            </div>
+            <div class="flex gap-2">
+              <button class="px-5 py-2 rounded-lg border border-white/15 bg-transparent text-slate-400 text-sm cursor-pointer hover:bg-white/[0.06] hover:text-slate-50 transition-all" @click="selectOpen = false">キャンセル</button>
+              <button
+                class="px-5 py-2 rounded-lg border-none bg-gradient-to-br from-orange-500 to-pink-500 text-slate-50 text-sm font-medium cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                :disabled="selectedIds.length === 0"
+                @click="confirmSelect"
+              >💪 励ます</button>
+            </div>
           </div>
         </div>
       </div>
@@ -213,6 +230,7 @@ const encourageResult = ref('')
 const resultCopied = ref(false)
 const isEncouraging = ref(false)
 const activeTab = ref<'transcription' | 'encourage'>('transcription')
+const charLimit = ref(500)
 
 const { user, isLoggedIn, checked, checkAuth, logout } = useAuth()
 
@@ -312,6 +330,7 @@ const runEncourage = async () => {
       body: {
         texts,
         encouragePrompt: settings.value.encouragePrompt,
+        charLimit: charLimit.value,
       },
     })
     encourageResult.value = res.result
