@@ -76,7 +76,37 @@
         <button class="w-full py-3 px-6 border-none bg-gradient-to-br from-orange-500 to-pink-500 text-slate-50 rounded-lg text-sm font-medium cursor-pointer hover:opacity-90 transition-opacity" @click="error = ''">閉じる</button>
       </div>
 
-      <HistoryTable :history="history" :copiedId="copiedHistoryId" @copy="copyHistory" @delete="deleteHistory" />
+      <!-- History tabs -->
+      <div v-if="history.length > 0 || encourageHistory.length > 0" class="mt-1 min-w-0">
+        <div class="flex items-center gap-0 mb-3 border-b border-white/[0.08]">
+          <button
+            class="px-3 pb-2 text-sm font-medium border-b-2 -mb-px transition-colors"
+            :class="activeTab === 'transcription' ? 'border-orange-500 text-slate-50' : 'border-transparent text-slate-400 hover:text-slate-300'"
+            @click="activeTab = 'transcription'"
+          >文字起こし</button>
+          <button
+            class="px-3 pb-2 text-sm font-medium border-b-2 -mb-px transition-colors"
+            :class="activeTab === 'encourage' ? 'border-orange-500 text-slate-50' : 'border-transparent text-slate-400 hover:text-slate-300'"
+            @click="activeTab = 'encourage'"
+          >励まし</button>
+        </div>
+        <HistoryTable
+          v-if="activeTab === 'transcription'"
+          :history="history"
+          :copiedId="copiedHistoryId"
+          :hideHeader="true"
+          @copy="copyHistory"
+          @delete="deleteHistory"
+        />
+        <HistoryTable
+          v-else
+          :history="encourageHistory"
+          :copiedId="copiedEncourageId"
+          :hideHeader="true"
+          @copy="copyEncourageHistory"
+          @delete="deleteEncourageHistory"
+        />
+      </div>
     </div>
 
     <!-- Auth Modal -->
@@ -182,6 +212,7 @@ const encourageOpen = ref(false)
 const encourageResult = ref('')
 const resultCopied = ref(false)
 const isEncouraging = ref(false)
+const activeTab = ref<'transcription' | 'encourage'>('transcription')
 
 const { user, isLoggedIn, checked, checkAuth, logout } = useAuth()
 
@@ -190,6 +221,13 @@ if (!$dev) {
 }
 
 const { history, copiedHistoryId, addHistory, deleteHistory, copyHistory } = useHistory('hagemashi-history', 'hagemashi')
+const {
+  history: encourageHistory,
+  copiedHistoryId: copiedEncourageId,
+  addHistory: addEncourageHistory,
+  deleteHistory: deleteEncourageHistory,
+  copyHistory: copyEncourageHistory,
+} = useHistory('hagemashi-encourage-history', 'hagemashi-encourage')
 
 const menuItems = [
   { icon: '💬', label: '励まし方の設定', action: () => { settingsOpen.value = true } },
@@ -250,6 +288,15 @@ const formatSelectDate = (iso: string): string => {
   return `${mo}/${day} ${h}:${mi}`
 }
 
+const fetchEncourageTitle = async (text: string): Promise<string> => {
+  try {
+    const res = await $fetch<{ title: string }>('/api/hagemashi/title', { method: 'POST', body: { text } })
+    return res.title
+  } catch {
+    return ''
+  }
+}
+
 // --- 励まし実行 ---
 const runEncourage = async () => {
   const texts = history.value
@@ -268,6 +315,9 @@ const runEncourage = async () => {
       },
     })
     encourageResult.value = res.result
+    const title = await fetchEncourageTitle(res.result)
+    addEncourageHistory(res.result, title)
+    activeTab.value = 'encourage'
   } catch (err) {
     encourageResult.value = err instanceof Error ? err.message : '励ましの生成に失敗しました'
   } finally {
