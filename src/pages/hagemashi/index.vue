@@ -92,7 +92,7 @@
         <div class="px-6 py-5 overflow-y-auto flex flex-col gap-3">
           <div class="flex flex-col gap-1.5">
             <label class="text-[13px] font-medium text-slate-400">励まし方の指示</label>
-            <textarea v-model="settings.encouragePrompt" class="bg-white/[0.05] border border-white/[0.12] rounded-lg text-slate-50 text-sm px-3 py-2 outline-none focus:border-orange-500 transition-colors font-[inherit] resize-y leading-relaxed" rows="4" placeholder="話した内容を踏まえて、温かく励ましてください。" />
+            <textarea v-model="settings.encouragePrompt" class="bg-white/[0.05] border border-white/[0.12] rounded-lg text-slate-50 text-sm px-3 py-2 outline-none focus:border-orange-500 transition-colors font-[inherit] resize-y leading-relaxed" rows="4" placeholder="励まし方の指示を入力..." />
           </div>
         </div>
         <div class="flex justify-end gap-2 px-6 py-4 pb-5 border-t border-white/[0.08]">
@@ -198,7 +198,15 @@ const menuItems = [
 
 // --- 設定 ---
 const defaultSettings = {
-  encouragePrompt: '話した内容を踏まえて、温かく励ましてください。',
+  encouragePrompt: `あなたは相手のことを深く理解したうえで励ます存在です。以下の観点を踏まえ、的を絞った一言で励ましてください。
+
+- 具体的・事実ベース：話の内容から具体的な事実を拾い、抽象的な激励に終わらせない
+- 論理的根拠あり：なぜそれが強みや前進なのか、筋道を立てて示す
+- 意外性・新しい切り口：本人がまだ気づいていない視点や解釈を提示する
+- 深い文脈理解：その人の状況・背景を理解していることが伝わる言葉を選ぶ
+- 量を絞る：あれもこれも言わず、最も刺さる一点に集中する
+- 自己一致感：薄々感じていたことを言語化し「そうそう、それだ」と思わせる
+- 差分・成長の可視化：以前と比べてどう変わったか、何が積み上がっているかを示す`,
 }
 const settings = ref<typeof defaultSettings>({ ...defaultSettings })
 
