@@ -81,10 +81,13 @@
             class="px-3 py-1.5 rounded-lg border border-white/15 bg-transparent text-slate-400 text-xs cursor-pointer hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-all"
             @click="confirmingDelete = true"
           >🗑️ 削除</button>
-          <button
-            class="px-5 py-2 rounded-lg border border-white/15 bg-transparent text-slate-400 text-sm cursor-pointer hover:bg-white/[0.06] hover:text-slate-50 transition-all"
-            @click="copyFromModal"
-          >{{ modalCopied ? 'コピーしました' : '📋 コピー' }}</button>
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-slate-500">{{ selectedItem.text.length.toLocaleString() }}文字</span>
+            <button
+              class="px-5 py-2 rounded-lg border border-white/15 bg-transparent text-slate-400 text-sm cursor-pointer hover:bg-white/[0.06] hover:text-slate-50 transition-all"
+              @click="copyFromModal"
+            >{{ modalCopied ? 'コピーしました' : '📋 コピー' }}</button>
+          </div>
         </div>
       </div>
     </div>
