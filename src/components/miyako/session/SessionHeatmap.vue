@@ -15,7 +15,7 @@ const emit = defineEmits<{
   'session-click': [session: string]
 }>()
 
-const CELL_WIDTH = 28
+const CELL_WIDTH = 38
 
 const heatmapRef = ref<HTMLElement>()
 let heatmapChart: any = null
@@ -57,12 +57,12 @@ function render() {
 
   heatmapChart.setOption({
     animation: false,
-    grid: { top: 40, right: 7, bottom: 4, left: 50 },
+    grid: { top: 40, right: 7, bottom: 4, left: 80 },
     xAxis: {
       type: 'category',
       data: sessions.map(shortLabel),
       position: 'top',
-      axisLabel: { rotate: 60, fontSize: 9, align: 'left', margin: 35 },
+      axisLabel: { rotate: 45, fontSize: 10, align: 'left', margin: 10, padding: [0, 0, 0, -20] },
       splitLine: { show: true, lineStyle: { color: 'rgba(0,0,0,0.08)' } },
       axisTick: { show: false },
       axisLine: { show: false },

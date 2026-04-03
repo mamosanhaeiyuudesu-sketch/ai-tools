@@ -17,7 +17,6 @@ interface AiTopic {
 }
 
 const TOP_KEYWORDS = 100
-const MAX_DISPLAY = 30
 const WC_COLORS = [
   '#1A237E', '#283593', '#303F9F', '#3949AB',
   '#3F51B5', '#5C6BC0', '#7986CB', '#0D47A1',
@@ -26,11 +25,7 @@ const WC_COLORS = [
 
 const loading = ref(true)
 const rawData = ref<FeaturesData>({})
-const sessionTypeFilter = ref<'すべて' | '定例会' | '臨時会'>('すべて')
 const selectedSession = ref<string | null>(null)
-const isMobile = ref(false)
-const sessionCount = computed(() => isMobile.value ? 10 : MAX_DISPLAY)
-const windowEnd = ref(0)
 
 const selectedWord = ref<string | null>(null)
 const aiTopics = ref<AiTopic[]>([])
@@ -40,43 +35,51 @@ const MAX_CHARS_OPTIONS = [500, 1000, 2000]
 const selectedCategory = ref<string>('すべて')
 const CATEGORY_OPTIONS = ['すべて', ...Object.keys(CATEGORY_WORDS)]
 
-// ── セッション計算 ─────────────────────────────
+// ── 年グループ計算 ─────────────────────────────
 
-function parseDate(key: string): Date {
-  const m = key.match(/(\d{4}-\d{2}-\d{2})/)
-  return m ? new Date(m[1]) : new Date(0)
+function getYear(key: string): string {
+  const m = key.match(/(\d{4})-\d{2}-\d{2}/)
+  return m ? m[1] : '不明'
 }
 
-function shortLabel(key: string): string {
-  const m = key.match(/(令和|平成)(元|\d+)年\s+第(\d+)回\s+(定例会|臨時会)/)
-  if (!m) return key
-  const era = m[1] === '令和' ? '令' : '平'
-  const year = m[2] === '元' ? '1' : m[2]
-  const type = m[4] === '定例会' ? '定' : '臨'
-  return `${era}${year}-${m[3]}${type}`
+function yearLabel(key: string): string {
+  return key
 }
 
-const filteredSessions = computed(() =>
-  Object.keys(rawData.value)
-    .filter(k => sessionTypeFilter.value === 'すべて' || k.includes(sessionTypeFilter.value))
-    .sort((a, b) => parseDate(a).getTime() - parseDate(b).getTime())
-)
+const yearKeys = computed(() => {
+  const years = new Set<string>()
+  for (const key of Object.keys(rawData.value)) {
+    const y = getYear(key)
+    if (y !== '不明') years.add(y)
+  }
+  return [...years].sort()
+})
 
-const windowEndMax = computed(() => filteredSessions.value.length)
-const windowEndMin = computed(() => Math.min(sessionCount.value, filteredSessions.value.length))
-
-const displayedSessions = computed(() => {
-  const sessions = filteredSessions.value
-  if (!sessions.length) return []
-  const end = Math.min(windowEnd.value, sessions.length)
-  const start = Math.max(0, end - sessionCount.value)
-  return sessions.slice(start, end)
+const yearAggregatedData = computed(() => {
+  const yearSessions = new Map<string, string[]>()
+  for (const key of Object.keys(rawData.value)) {
+    const y = getYear(key)
+    if (y === '不明') continue
+    if (!yearSessions.has(y)) yearSessions.set(y, [])
+    yearSessions.get(y)!.push(key)
+  }
+  const result: Record<string, WordScore[]> = {}
+  for (const [year, sessions] of yearSessions.entries()) {
+    const wordMax = new Map<string, number>()
+    for (const session of sessions) {
+      for (const { word, score } of (rawData.value[session] ?? [])) {
+        if ((wordMax.get(word) ?? 0) < score) wordMax.set(word, score)
+      }
+    }
+    result[year] = [...wordMax.entries()].map(([word, score]) => ({ word, score }))
+  }
+  return result
 })
 
 const topKeywords = computed(() => {
   const maxScore = new Map<string, number>()
-  for (const key of displayedSessions.value) {
-    for (const { word, score } of (rawData.value[key] ?? [])) {
+  for (const year of yearKeys.value) {
+    for (const { word, score } of (yearAggregatedData.value[year] ?? [])) {
       if (!STOPWORDS.has(word) && (maxScore.get(word) ?? 0) < score) {
         maxScore.set(word, score)
       }
@@ -90,21 +93,11 @@ const topKeywords = computed(() => {
   return entries.slice(0, TOP_KEYWORDS).map(([w]) => w)
 })
 
-const rangeLabel = computed(() => {
-  const s = displayedSessions.value
-  if (!s.length) return ''
-  return `${shortLabel(s[0])} 〜 ${shortLabel(s[s.length - 1])}`
-})
-
-watch(filteredSessions, (sessions) => {
-  windowEnd.value = sessions.length
-}, { immediate: true })
-
 // ── ワードクラウド ─────────────────────────────
 
 const wordcloudWords = computed(() => {
   if (!selectedSession.value) return []
-  const words = (rawData.value[selectedSession.value] ?? [])
+  const words = (yearAggregatedData.value[selectedSession.value] ?? [])
     .filter(w => !STOPWORDS.has(w.word))
     .sort((a, b) => b.score - a.score)
     .slice(0, 50)
@@ -164,63 +157,25 @@ async function resetAndRender() {
   heatmapRef.value?.render()
 }
 
-function updateMobile() {
-  isMobile.value = window.innerWidth < 768
-}
-
 onMounted(async () => {
-  updateMobile()
-  window.addEventListener('resize', updateMobile)
   rawData.value = await $fetch<FeaturesData>('/data/miyako-features.json')
   loading.value = false
   await nextTick()
   heatmapRef.value?.render()
 })
 
-onUnmounted(() => {
-  window.removeEventListener('resize', updateMobile)
-})
-
-watch(sessionTypeFilter, async () => {
-  await nextTick()
-  resetAndRender()
-})
-watch(windowEnd, resetAndRender)
 watch(selectedCategory, resetAndRender)
-watch(sessionCount, () => {
-  windowEnd.value = filteredSessions.value.length
-})
 </script>
 
 <template>
   <div class="min-h-screen bg-[#f0f2f8]">
     <MiyakoHeader active-page="session">
-      <div class="grid grid-cols-2 gap-x-3 gap-y-1.5 md:flex md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1.5">
-        <div class="flex items-center gap-1.5">
-          <span class="text-[10.5px] font-semibold text-white/50 whitespace-nowrap uppercase tracking-[0.04em]">会期</span>
-          <select v-model="sessionTypeFilter" class="ctrl-select">
-            <option v-for="opt in ['すべて', '定例会', '臨時会']" :key="opt" :value="opt">{{ opt }}</option>
-          </select>
-        </div>
-
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5">
         <div class="flex items-center gap-1.5">
           <span class="text-[10.5px] font-semibold text-white/50 whitespace-nowrap uppercase tracking-[0.04em]">カテゴリ</span>
           <select v-model="selectedCategory" class="ctrl-select">
             <option v-for="opt in CATEGORY_OPTIONS" :key="opt" :value="opt">{{ opt }}</option>
           </select>
-        </div>
-
-        <div class="flex items-center gap-1.5">
-          <span class="text-[10.5px] font-semibold text-white/50 whitespace-nowrap uppercase tracking-[0.04em]">期間</span>
-          <input
-            v-model.number="windowEnd"
-            type="range"
-            :min="windowEndMin"
-            :max="windowEndMax"
-            :step="1"
-            class="ctrl-slider"
-          />
-          <span class="hidden md:inline text-[10.5px] text-white/50 whitespace-nowrap min-w-[110px]">{{ rangeLabel }}</span>
         </div>
 
         <div class="flex items-center gap-1.5">
@@ -244,10 +199,10 @@ watch(sessionCount, () => {
       <div class="flex-1 min-w-0">
         <MiyakoSessionHeatmap
           ref="heatmapRef"
-          :sessions="displayedSessions"
+          :sessions="yearKeys"
           :keywords="topKeywords"
-          :raw-data="rawData"
-          :short-label="shortLabel"
+          :raw-data="yearAggregatedData"
+          :short-label="yearLabel"
           @session-click="selectedSession = $event"
         />
       </div>
@@ -271,19 +226,6 @@ watch(sessionCount, () => {
 </template>
 
 <style scoped>
-.ctrl-slider {
-  min-width: 70px;
-  max-width: 170px;
-  width: 100%;
-  accent-color: #a5b4fc;
-}
-
-@media (min-width: 768px) {
-  .ctrl-slider {
-    min-width: 110px;
-  }
-}
-
 .ctrl-select {
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
