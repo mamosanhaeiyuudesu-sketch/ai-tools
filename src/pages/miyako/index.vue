@@ -32,7 +32,6 @@ const selectedWord = ref<string | null>(null)
 const aiTopics = ref<AiTopic[]>([])
 const aiLoading = ref(false)
 const maxChars = ref(1000)
-const MAX_CHARS_OPTIONS = [500, 1000, 2000]
 const selectedCategory = ref<string>('暮らし・福祉')
 const CATEGORY_OPTIONS = [...CATEGORIES]
 
@@ -174,14 +173,7 @@ watch(selectedCategory, resetAndRender)
 
 <template>
   <div class="min-h-screen bg-[#f0f2f8]">
-    <MiyakoHeader active-page="session">
-      <div class="flex items-center gap-1.5">
-        <span class="text-[10.5px] font-semibold text-white/50 whitespace-nowrap uppercase tracking-[0.04em]">要約文字数</span>
-        <select v-model.number="maxChars" class="ctrl-select">
-          <option v-for="n in MAX_CHARS_OPTIONS" :key="n" :value="n">{{ n }}</option>
-        </select>
-      </div>
-    </MiyakoHeader>
+    <MiyakoHeader active-page="session" />
 
     <!-- Loading -->
     <div v-if="loading" class="flex justify-center items-center py-[72px] px-6">

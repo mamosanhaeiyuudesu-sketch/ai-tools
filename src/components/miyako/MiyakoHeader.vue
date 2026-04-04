@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  activePage: 'session' | 'member'
+  activePage: 'session' | 'member' | 'keyword'
 }>()
 </script>
 
@@ -11,11 +11,11 @@ defineProps<{
         <h1 class="m-0 text-[clamp(15px,2vw,19px)] font-bold text-white tracking-[0.03em] whitespace-nowrap">
           宮古島市議会バズワード
         </h1>
-        <div class="flex rounded overflow-hidden border border-white/20">
+        <div class="flex rounded overflow-hidden border border-white/50">
           <NuxtLink
             v-if="activePage !== 'session'"
             to="/miyako"
-            class="px-3 py-1 text-[12px] font-medium bg-white/10 text-white/70 hover:bg-white/20 whitespace-nowrap transition-colors"
+            class="px-3 py-1 text-[12px] font-medium bg-white/10 text-white/70 hover:bg-white/25 whitespace-nowrap transition-colors"
           >年で見る</NuxtLink>
           <span
             v-else
@@ -25,12 +25,22 @@ defineProps<{
           <NuxtLink
             v-if="activePage !== 'member'"
             to="/miyako/member"
-            class="px-3 py-1 text-[12px] font-medium bg-white/10 text-white/70 hover:bg-white/20 whitespace-nowrap transition-colors"
+            class="px-3 py-1 text-[12px] font-medium bg-white/10 text-white/70 hover:bg-white/25 whitespace-nowrap transition-colors border-l border-white/50"
           >議員で見る</NuxtLink>
           <span
             v-else
-            class="px-3 py-1 text-[12px] font-semibold bg-[#a5b4fc] text-[#121d3e] whitespace-nowrap"
+            class="px-3 py-1 text-[12px] font-semibold bg-[#a5b4fc] text-[#121d3e] whitespace-nowrap border-l border-white/50"
           >議員で見る</span>
+
+          <NuxtLink
+            v-if="activePage !== 'keyword'"
+            to="/miyako/keyword"
+            class="px-3 py-1 text-[12px] font-medium bg-white/10 text-white/70 hover:bg-white/25 whitespace-nowrap transition-colors border-l border-white/50"
+          >キーワードで見る</NuxtLink>
+          <span
+            v-else
+            class="px-3 py-1 text-[12px] font-semibold bg-[#a5b4fc] text-[#121d3e] whitespace-nowrap border-l border-white/50"
+          >キーワードで見る</span>
         </div>
       </div>
 
