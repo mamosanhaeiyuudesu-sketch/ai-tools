@@ -8,12 +8,21 @@ export default defineEventHandler(async (event) => {
   if (!db) throw createError({ statusCode: 503, message: 'データベースが利用できません' })
 
   const id = getRouterParam(event, 'id')
-  const { text } = await readBody<{ text: string }>(event)
+  const body = await readBody<{ text?: string; notes?: string }>(event)
 
-  await db
-    .prepare('UPDATE app_history SET text = ? WHERE id = ? AND user_id = ?')
-    .bind(text, id, user.id)
-    .run()
+  if (body.text !== undefined) {
+    await db
+      .prepare('UPDATE app_history SET text = ? WHERE id = ? AND user_id = ?')
+      .bind(body.text, id, user.id)
+      .run()
+  }
+
+  if (body.notes !== undefined) {
+    await db
+      .prepare('UPDATE app_history SET notes = ? WHERE id = ? AND user_id = ?')
+      .bind(body.notes, id, user.id)
+      .run()
+  }
 
   return { ok: true }
 })

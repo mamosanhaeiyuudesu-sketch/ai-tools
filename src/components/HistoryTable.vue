@@ -59,13 +59,34 @@
           </div>
           <button class="shrink-0 bg-transparent border-none text-slate-500 text-lg cursor-pointer px-2 py-1 rounded-md hover:text-slate-50 transition-colors" @click="selectedItem = null">✕</button>
         </div>
-        <div class="px-6 py-5 overflow-y-auto flex-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent]">
+        <div class="px-6 py-5 overflow-y-auto flex-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent] flex flex-col gap-4">
           <div
             v-if="markdown"
             class="text-[#e2e8f0] text-sm leading-relaxed [&_h1]:text-slate-50 [&_h2]:text-slate-50 [&_h3]:text-slate-50 [&_h2]:text-[15px] [&_h2]:my-4 [&_p]:m-0 [&_p]:mb-2.5 [&_ul]:m-0 [&_ul]:mb-2.5 [&_ul]:pl-5 [&_li]:mb-1 [&_strong]:text-slate-50 [&_strong]:font-semibold [&_hr]:border-none [&_hr]:border-t [&_hr]:border-white/[0.08] [&_hr]:my-3"
             v-html="parsedText"
           />
           <pre v-else class="m-0 text-[#e2e8f0] text-sm leading-relaxed whitespace-pre-wrap font-[inherit]">{{ selectedItem.text }}</pre>
+
+          <!-- 要約メモ -->
+          <template v-if="summarizable">
+            <div class="border-t border-white/[0.08] pt-4">
+              <div v-if="selectedItem.notes" class="flex flex-col gap-2">
+                <p class="m-0 text-[11px] font-medium text-slate-500 uppercase tracking-wide">要点メモ</p>
+                <pre class="m-0 text-slate-300 text-xs leading-relaxed whitespace-pre-wrap font-[inherit]">{{ selectedItem.notes }}</pre>
+              </div>
+              <div v-else class="flex items-center gap-3">
+                <p class="m-0 text-xs text-slate-500">要点メモがありません</p>
+                <button
+                  class="px-3 py-1.5 rounded-lg border border-white/15 bg-transparent text-slate-400 text-xs cursor-pointer hover:bg-white/[0.06] hover:text-slate-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                  :disabled="summarizingId === selectedItem.id"
+                  @click="$emit('summarize', selectedItem.id)"
+                >
+                  <span v-if="summarizingId === selectedItem.id" class="w-3 h-3 rounded-full border border-slate-400/30 border-t-slate-400 animate-spin block" />
+                  {{ summarizingId === selectedItem.id ? '要約中...' : '📝 要約' }}
+                </button>
+              </div>
+            </div>
+          </template>
         </div>
         <div class="flex justify-between items-center gap-2 px-6 py-4 pb-5 border-t border-white/[0.08]">
           <button
@@ -104,11 +125,14 @@ const props = defineProps<{
   copiedId: string | null
   hideHeader?: boolean
   markdown?: boolean
+  summarizable?: boolean
+  summarizingId?: string | null
 }>()
 
 const emit = defineEmits<{
   copy: [item: HistoryItem]
   delete: [id: string]
+  summarize: [id: string]
 }>()
 
 const confirmingId = ref<string | null>(null)

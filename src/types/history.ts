@@ -3,4 +3,5 @@ export interface HistoryItem {
   timestamp: string
   title: string
   text: string
+  notes?: string
 }
