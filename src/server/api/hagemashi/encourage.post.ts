@@ -19,16 +19,11 @@ export default defineEventHandler(async (event) => {
   try {
     if (body.vectorStoreId) {
       const apiKey = getOpenAiKey()
-      const ragInstructions = `${body.encouragePrompt || '話した内容を踏まえて、温かく励ましてください。'}
-
-ナレッジベース（添付の知識ベース）を必ず参照し、ユーザーの状況に関連する情報・事例・アドバイスを検索したうえで励ましてください。
-返答は日本語で${body.charLimit ?? 500}文字程度にまとめること。`
+      const prompt = body.encouragePrompt || '話した内容を踏まえて、温かく励ましてください。'
       const data = await callOpenAi(apiKey, {
         model: 'gpt-4o',
-        instructions: ragInstructions,
-        input: `以下のユーザーの記録を踏まえて励ましてください。\n\n${userContent}`,
+        input: `${prompt}\n\nナレッジベースから関連する情報・事例・アドバイスを検索し、それを活かして励ましてください。返答は日本語で${body.charLimit ?? 500}文字程度にまとめること。\n\n${userContent}`,
         tools: [{ type: 'file_search', vector_store_ids: [body.vectorStoreId] }],
-        tool_choice: 'required',
       }, event, 'hagemashi/encourage (RAG)')
       const text = extractText(data)
       return { result: text }
