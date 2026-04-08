@@ -143,7 +143,6 @@ export const useAudioRecorder = ({ onTranscribed, onError }: AudioRecorderOption
 
   const transcribeRecording = () => {
     if (!mediaRecorder) return
-    mediaRecorder.stop()
     isPaused.value = false
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
 
@@ -161,9 +160,23 @@ export const useAudioRecorder = ({ onTranscribed, onError }: AudioRecorderOption
         mediaRecorder!.stream.getTracks().forEach(track => track.stop())
       }
     }
+    mediaRecorder.stop()
   }
 
-  return { isRecording, isPaused, isProcessing, duration, formatTime, startRecording, pauseRecording, resumeRecording, transcribeRecording }
+  const cancelRecording = () => {
+    if (!mediaRecorder) return
+    isPaused.value = false
+    isRecording.value = false
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null }
+    mediaRecorder.onstop = () => {
+      duration.value = 0
+      audioChunks = []
+      mediaRecorder!.stream.getTracks().forEach(track => track.stop())
+    }
+    mediaRecorder.stop()
+  }
+
+  return { isRecording, isPaused, isProcessing, duration, formatTime, startRecording, pauseRecording, resumeRecording, transcribeRecording, cancelRecording }
 }
 
 export const fetchTitle = async (text: string): Promise<string> => {

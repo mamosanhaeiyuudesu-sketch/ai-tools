@@ -45,6 +45,14 @@
               </button>
               <div class="w-px bg-sky-400/40 self-stretch" />
               <button
+                class="flex flex-col items-center justify-center gap-1 w-20 bg-red-500/10 border-none text-slate-50 cursor-pointer transition-colors hover:bg-red-500/25 p-0"
+                @click="cancelRecording"
+              >
+                <span class="text-xl leading-none">✕</span>
+                <span class="text-[10px] font-medium">中止</span>
+              </button>
+              <div class="w-px bg-sky-400/40 self-stretch" />
+              <button
                 class="flex flex-col items-center justify-center gap-1 w-20 bg-green-400/10 border-none text-slate-50 cursor-pointer transition-colors hover:bg-green-400/25 p-0"
                 @click="transcribeRecording"
               >
@@ -136,7 +144,7 @@ const handleTranscribed = async (text: string) => {
 }
 
 // --- 録音 ---
-const { isRecording, isPaused, isProcessing, duration, formatTime, startRecording, pauseRecording, resumeRecording, transcribeRecording } = useAudioRecorder({
+const { isRecording, isPaused, isProcessing, duration, formatTime, startRecording, pauseRecording, resumeRecording, transcribeRecording, cancelRecording } = useAudioRecorder({
   onTranscribed: handleTranscribed,
   onError: (msg) => { error.value = msg },
 })

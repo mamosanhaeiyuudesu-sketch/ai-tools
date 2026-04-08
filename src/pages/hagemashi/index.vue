@@ -35,6 +35,11 @@
                 <span class="text-[10px] font-medium">再開</span>
               </button>
               <div class="w-px bg-orange-500/40 self-stretch" />
+              <button class="flex flex-col items-center justify-center gap-1 w-20 bg-red-500/10 border-none text-slate-50 cursor-pointer transition-colors hover:bg-red-500/25 p-0" @click="cancelRecording">
+                <span class="text-xl leading-none">✕</span>
+                <span class="text-[10px] font-medium">中止</span>
+              </button>
+              <div class="w-px bg-orange-500/40 self-stretch" />
               <button class="flex flex-col items-center justify-center gap-1 w-20 bg-green-400/10 border-none text-slate-50 cursor-pointer transition-colors hover:bg-green-400/25 p-0" @click="transcribeRecording">
                 <span class="text-xl leading-none">✍️</span>
                 <span class="text-[10px] font-medium">文字起こし</span>
@@ -56,6 +61,7 @@
 
           <!-- 励ます button -->
           <button
+            v-if="!isRecording && !isPaused"
             class="w-20 h-20 rounded-full border-2 border-orange-500/50 bg-orange-500/[0.08] text-slate-50 flex flex-col items-center justify-center gap-1 transition-all disabled:opacity-35 disabled:cursor-not-allowed"
             :class="history.length > 0 && !isEncouraging ? 'cursor-pointer hover:bg-orange-500/[0.20] hover:border-orange-500/80 hover:scale-105' : ''"
             :disabled="history.length === 0 || isEncouraging"
@@ -95,11 +101,8 @@
           :history="history"
           :copiedId="copiedHistoryId"
           :hideHeader="true"
-          :summarizable="true"
-          :summarizingId="summarizingId"
           @copy="copyHistory"
           @delete="deleteHistory"
-          @summarize="summarizeHistory"
         />
         <HistoryTable
           v-else
@@ -309,7 +312,6 @@ const makeDefaultProfile = (): HagemashiProfile => ({
 })
 
 const error = ref('')
-const summarizingId = ref<string | null>(null)
 const settingsOpen = ref(false)
 const selectOpen = ref(false)
 const selectedIds = ref<string[]>([])
@@ -335,7 +337,7 @@ if (!$dev) {
   onMounted(checkAuth)
 }
 
-const { history, copiedHistoryId, addHistory, updateHistoryNotes, deleteHistory, copyHistory } = useHistory('hagemashi-history', 'hagemashi')
+const { history, copiedHistoryId, addHistory, deleteHistory, copyHistory } = useHistory('hagemashi-history', 'hagemashi')
 const {
   history: encourageHistory,
   copiedHistoryId: copiedEncourageId,
@@ -508,34 +510,14 @@ const copyResult = async () => {
   setTimeout(() => { resultCopied.value = false }, 2000)
 }
 
-// --- 箇条書き要約 ---
-const fetchBullets = async (text: string): Promise<string> => {
-  try {
-    const res = await $fetch<{ notes: string }>('/api/hagemashi/bullets', { method: 'POST', body: { text } })
-    return res.notes
-  } catch {
-    return ''
-  }
-}
-
-const summarizeHistory = async (id: string) => {
-  const item = history.value.find(h => h.id === id)
-  if (!item) return
-  summarizingId.value = id
-  const notes = await fetchBullets(item.text)
-  if (notes) updateHistoryNotes(id, notes)
-  summarizingId.value = null
-}
-
 // --- 文字起こし後処理 ---
 const handleTranscribed = async (text: string) => {
-  const [title, notes] = await Promise.all([fetchTitle(text), fetchBullets(text)])
-  const id = addHistory(text, title)
-  if (notes) updateHistoryNotes(id, notes)
+  const title = await fetchTitle(text)
+  addHistory(text, title)
 }
 
 // --- 録音 ---
-const { isRecording, isPaused, isProcessing, duration, formatTime, startRecording, pauseRecording, resumeRecording, transcribeRecording } = useAudioRecorder({
+const { isRecording, isPaused, isProcessing, duration, formatTime, startRecording, pauseRecording, resumeRecording, transcribeRecording, cancelRecording } = useAudioRecorder({
   onTranscribed: handleTranscribed,
   onError: (msg) => { error.value = msg },
 })
