@@ -13,7 +13,8 @@ interface OpenAiMessage {
 
 export interface OpenAiPayload {
   model: string
-  input: OpenAiMessage[]
+  input: OpenAiMessage[] | string
+  instructions?: string
   max_output_tokens?: number
   tools?: unknown[]
   tool_choice?: unknown

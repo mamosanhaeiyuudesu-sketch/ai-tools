@@ -11,7 +11,8 @@ const route = useRoute()
 const isMounted = ref(false)
 
 const now = new Date()
-const defaultStart = `${now.getFullYear()}-01`
+const startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1)
+const defaultStart = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`
 const defaultEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 const startMonth = ref((route.query.start as string) || defaultStart)
 const endMonth = ref((route.query.end as string) || defaultEnd)

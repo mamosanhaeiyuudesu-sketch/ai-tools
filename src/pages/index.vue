@@ -33,6 +33,5 @@ const tools = [
   { path: '/hagemashi', icon: '💪', name: 'はげまし', desc: '話して、AIに励ましてもらおう' },
   { path: '/miyako', icon: '🏝️', name: '宮古島市議会バズワード', desc: '会期別キーワード特徴度ヒートマップ' },
   { path: '/task', icon: '📋', name: 'タスクくん', desc: 'Trello の DOING / TODO / DONE をまとめて確認' },
-  { path: '/ai-consultant', icon: '💡', name: 'AI Consultant', desc: 'データ可視化・プロトタイプ開発の相談窓口' },
 ]
 </script>
