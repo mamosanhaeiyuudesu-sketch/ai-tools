@@ -103,14 +103,14 @@
           </template>
         </div>
         <div class="flex justify-between items-center gap-2 px-6 py-4 pb-5 border-t border-white/[0.08]">
-          <button
+          <div
             v-if="confirmingDelete"
             class="flex items-center gap-2"
           >
             <span class="text-xs text-slate-400">削除しますか？</span>
             <button class="px-3 py-1.5 rounded-lg border-none bg-red-500/20 text-red-400 text-xs cursor-pointer hover:bg-red-500/30 transition-colors" @click="deleteFromModal">削除</button>
             <button class="px-3 py-1.5 rounded-lg border border-white/15 bg-transparent text-slate-400 text-xs cursor-pointer hover:bg-white/[0.06] transition-colors" @click="confirmingDelete = false">キャンセル</button>
-          </button>
+          </div>
           <button
             v-else
             class="px-3 py-1.5 rounded-lg border border-white/15 bg-transparent text-slate-400 text-xs cursor-pointer hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 transition-all"
