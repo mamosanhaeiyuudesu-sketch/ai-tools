@@ -48,13 +48,25 @@ export default defineEventHandler(async (event) => {
 
       // Step 2: 要点でRAG検索 → 取得した文脈を活かして励ます
       const prompt = body.encouragePrompt || '話した内容を踏まえて、温かく励ましてください。'
+      const ragInput = `${prompt}\n\nナレッジベースから以下の要点に関連する情報・事例・アドバイスを検索し、それを活かして励ましてください。返答は日本語で${body.charLimit ?? 500}文字程度にまとめること。\n\n【要点】\n${keyPoints}\n\n【記録全文】\n${userContent}`
+
       const data = await callOpenAi(apiKey, {
         model: 'gpt-4o',
-        input: `${prompt}\n\nナレッジベースから以下の要点に関連する情報・事例・アドバイスを検索し、それを活かして励ましてください。返答は日本語で${body.charLimit ?? 500}文字程度にまとめること。\n\n【要点】\n${keyPoints}\n\n【記録全文】\n${userContent}`,
+        input: ragInput,
         tools: [{ type: 'file_search', vector_store_ids: [body.vectorStoreId] }],
       }, event, 'hagemashi/encourage (RAG)')
+
       const text = extractText(data)
-      return { result: text }
+      return {
+        result: text,
+        _debug: {
+          vectorStoreId: body.vectorStoreId,
+          userContent,
+          keyPoints,
+          ragInput,
+          rawResponse: data,
+        },
+      }
     }
 
     const { anthropicApiKey } = useRuntimeConfig()

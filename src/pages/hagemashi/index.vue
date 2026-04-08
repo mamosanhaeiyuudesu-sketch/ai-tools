@@ -490,7 +490,7 @@ const runEncourage = async () => {
   encourageOpen.value = true
   isEncouraging.value = true
   try {
-    const res = await $fetch<{ result: string }>('/api/hagemashi/encourage', {
+    const res = await $fetch<{ result: string; _debug?: Record<string, unknown> }>('/api/hagemashi/encourage', {
       method: 'POST',
       body: {
         texts,
@@ -499,6 +499,15 @@ const runEncourage = async () => {
         ...(profile.vectorStoreId ? { vectorStoreId: profile.vectorStoreId } : {}),
       },
     })
+    if (res._debug) {
+      console.group('[hagemashi/encourage RAG debug]')
+      console.log('vectorStoreId:', res._debug.vectorStoreId)
+      console.log('userContent:', res._debug.userContent)
+      console.log('keyPoints (Step1):', res._debug.keyPoints)
+      console.log('ragInput (Step2):', res._debug.ragInput)
+      console.log('rawResponse (Step2):', res._debug.rawResponse)
+      console.groupEnd()
+    }
     encourageResult.value = res.result
     const title = await fetchEncourageTitle(res.result)
     addEncourageHistory(res.result, title)
