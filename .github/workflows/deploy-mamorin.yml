@@ -1,6 +1,7 @@
 name: Deploy mamorin (Pages)
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
