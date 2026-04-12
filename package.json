@@ -1,24 +1,27 @@
 {
-  "name": "ai-tools",
+  "name": "ai-tools-monorepo",
   "private": true,
-  "type": "module",
+  "workspaces": [
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "nuxt dev",
-    "build": "nuxt build",
-    "start": "nuxt start"
+    "dev": "yarn workspace ai-tools dev",
+    "dev:all": "concurrently \"NUXT_DEVTOOLS_PORT=24670 yarn workspace ai-tools dev\" \"NUXT_DEVTOOLS_PORT=24671 yarn workspace homepages dev --port 3001\" \"NUXT_DEVTOOLS_PORT=24672 yarn workspace prototyper dev --port 3002\" \"NUXT_DEVTOOLS_PORT=24673 yarn workspace mamorin dev --port 3003\" \"NUXT_DEVTOOLS_PORT=24674 yarn workspace kaito dev --port 3004\" \"NUXT_DEVTOOLS_PORT=24675 yarn workspace ai-consultant dev --port 3005\"",
+    "dev:tools": "yarn workspace ai-tools dev",
+    "dev:homepages": "yarn workspace homepages dev --port 3001",
+    "dev:prototyper": "yarn workspace prototyper dev --port 3002",
+    "dev:mamorin": "yarn workspace mamorin dev --port 3003",
+    "dev:kaito": "yarn workspace kaito dev --port 3004",
+    "dev:ai-consultant": "yarn workspace ai-consultant dev --port 3005",
+    "build:tools": "yarn workspace ai-tools build",
+    "build:homepages": "yarn workspace homepages build",
+    "build:prototyper": "yarn workspace prototyper build",
+    "build:mamorin": "yarn workspace mamorin build",
+    "build:kaito": "yarn workspace kaito build",
+    "build:ai-consultant": "yarn workspace ai-consultant build"
   },
-  "dependencies": {
-    "echarts": "^5",
-    "marked": "^17.0.4",
-    "nuxt": "^3.13.2",
-    "vite-plugin-vuetify": "^2.1.2",
-    "vuetify": "^3.11.6"
-  },
-  "packageManager": "yarn@4.9.1+sha512.f95ce356460e05be48d66401c1ae64ef84d163dd689964962c6888a9810865e39097a5e9de748876c2e0bf89b232d583c33982773e9903ae7a76257270986538",
   "devDependencies": {
-    "@nuxtjs/tailwindcss": "^6.14.0",
-    "@types/marked": "^6.0.0",
-    "@vite-pwa/nuxt": "^1.1.1",
-    "wrangler": "^4.75.0"
-  }
+    "concurrently": "^9.1.2"
+  },
+  "packageManager": "yarn@4.9.1+sha512.f95ce356460e05be48d66401c1ae64ef84d163dd689964962c6888a9810865e39097a5e9de748876c2e0bf89b232d583c33982773e9903ae7a76257270986538"
 }
