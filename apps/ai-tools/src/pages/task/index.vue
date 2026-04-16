@@ -61,10 +61,10 @@ const {
 } = useTaskStats(boards, allDates, route.query.view as DoneView)
 
 // 全件表示
-const showAll = ref(route.query.showAll === '1')
+const showAll = ref(route.query.showAll !== '0')
 watch(showAll, v => {
   const url = new URL(window.location.href)
-  if (v) url.searchParams.set('showAll', '1')
+  if (!v) url.searchParams.set('showAll', '0')
   else url.searchParams.delete('showAll')
   window.history.replaceState({}, '', url.toString())
 })
