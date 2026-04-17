@@ -74,9 +74,7 @@ import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const isMobileMenuOpen = ref(false)
-const showNav = computed(() =>
-  !route.path.startsWith('/miyako_gijiroku') && route.query.embed !== '1'
-)
+const showNav = true
 
 const tools = [
   { path: '/', name: 'ホーム', icon: '🏠' },
