@@ -488,7 +488,7 @@ const fetchEncourageTitle = async (text: string): Promise<string> => {
 const runEncourage = async () => {
   const texts = history.value
     .filter(item => selectedIds.value.includes(item.id))
-    .map(item => item.text)
+    .map(item => item.notes || item.text)
   if (!texts.length) return
   const profile = selectedProfile.value ?? profiles.value[0]
   encourageResult.value = ''
