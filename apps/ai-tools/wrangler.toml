@@ -17,6 +17,18 @@ database_id = "a89cb679-8a17-4d46-9c90-dada3e35691b"
 #   wrangler d1 create whisper-db
 #   wrangler d1 execute whisper-db --file src/server/db/001_auth.sql
 
+[[d1_databases]]
+binding = "MLB_DB"
+database_name = "mlb-db"
+database_id = "7698b7b5-b0c8-4289-b19e-a99c669ca75f"
+# 初回セットアップ:
+#   wrangler d1 create mlb-db
+#   wrangler d1 execute mlb-db --file src/server/db/mlb-schema.sql
+
+# Cron Trigger（毎日6:00 JST = UTC 21:00前日）
+[triggers]
+crons = ["0 21 * * *"]
+
 [build]
 command = "npm run build"
 

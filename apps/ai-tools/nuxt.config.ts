@@ -64,6 +64,12 @@ export default defineNuxtConfig({
   },
   nitro: {
     preset: 'cloudflare_module',
+    experimental: {
+      tasks: true,
+    },
+    scheduledTasks: {
+      '0 21 * * *': ['mlb:sync'],
+    },
     devServer: {
       // @ts-ignore — Nitro の型定義に maxBodySize がないが、h3 dev server では有効
       maxBodySize: 100 * 1024 * 1024, // 100MB（大きな音声ファイルの並列アップロード対応）
