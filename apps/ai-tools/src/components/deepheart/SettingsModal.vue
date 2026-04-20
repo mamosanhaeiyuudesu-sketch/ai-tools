@@ -2,11 +2,17 @@
   <div class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[150]" @click.self="$emit('close')">
     <div class="w-full max-w-[520px] bg-[#1e293b] border border-white/10 rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.5)] flex flex-col max-h-[90vh]">
       <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/[0.08]">
-        <h2 class="m-0 text-lg text-slate-50 font-semibold">カウンセラー設定</h2>
+        <h2 class="m-0 text-lg text-slate-50 font-semibold">設定</h2>
         <button class="bg-transparent border-none text-slate-500 text-lg cursor-pointer px-2 py-1 rounded-md hover:text-slate-50 transition-colors" @click="$emit('close')">✕</button>
       </div>
 
       <div class="px-6 py-5 overflow-y-auto flex flex-col gap-6 flex-1">
+
+        <!-- ユーザー名 -->
+        <div class="flex flex-col gap-1">
+          <label class="text-[13px] font-medium text-slate-400">ユーザー名</label>
+          <div class="bg-white/[0.04] border border-white/[0.10] rounded-lg px-3 py-2.5 text-slate-300 text-sm select-all">{{ username }}</div>
+        </div>
 
         <!-- アプローチ -->
         <div class="flex flex-col gap-2.5">
@@ -107,6 +113,7 @@
 import { ref, watch } from 'vue'
 
 const props = defineProps<{
+  username: string
   tone: string
   systemPrompt: string
   responseLength: number

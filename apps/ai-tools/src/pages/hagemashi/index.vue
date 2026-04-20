@@ -258,6 +258,41 @@
       </div>
     </div>
 
+    <!-- エクスポートモーダル -->
+    <div v-if="exportOpen" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]" @click.self="exportOpen = false">
+      <div class="w-full max-w-[400px] bg-[#1e293b] border border-white/10 rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.5)] flex flex-col max-h-[90vh]">
+        <div class="flex items-center justify-between px-6 pt-5 pb-4 border-b border-white/[0.08]">
+          <h2 class="m-0 text-lg text-slate-50 font-semibold">📤 エクスポート</h2>
+          <button class="bg-transparent border-none text-slate-500 text-lg cursor-pointer px-2 py-1 rounded-md hover:text-slate-50 transition-colors" @click="exportOpen = false">✕</button>
+        </div>
+        <div class="px-4 py-3 overflow-y-auto flex flex-col gap-1 flex-1 [scrollbar-width:thin] [scrollbar-color:rgba(249,115,22,0.3)_transparent]">
+          <p class="px-3 text-xs text-slate-500 mb-2">ダウンロードする日付を選択してください</p>
+          <label
+            v-for="date in exportDates"
+            :key="date"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors"
+            :class="exportSelectedDates.includes(date) ? 'bg-orange-500/15' : 'hover:bg-white/[0.05]'"
+          >
+            <input
+              type="checkbox"
+              class="w-4 h-4 shrink-0 accent-orange-500 cursor-pointer"
+              :checked="exportSelectedDates.includes(date)"
+              @change="toggleExportDate(date)"
+            />
+            <span class="text-sm text-slate-200">{{ date }}</span>
+          </label>
+        </div>
+        <div class="flex justify-end gap-2 px-6 py-4 pb-5 border-t border-white/[0.08]">
+          <button class="px-5 py-2 rounded-lg border border-white/15 bg-transparent text-slate-400 text-sm cursor-pointer hover:bg-white/[0.06] hover:text-slate-50 transition-all" @click="exportOpen = false">キャンセル</button>
+          <button
+            class="px-5 py-2 rounded-lg border-none bg-gradient-to-br from-orange-500 to-pink-500 text-slate-50 text-sm font-medium cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+            :disabled="exportSelectedDates.length === 0"
+            @click="downloadExport"
+          >ダウンロード</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Encourage result modal -->
     <div v-if="encourageOpen" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]" @click.self="encourageOpen = false">
       <div class="w-full max-w-[600px] bg-[#1e293b] border border-white/10 rounded-2xl shadow-[0_24px_80px_rgba(0,0,0,0.5)] flex flex-col max-h-[90vh]">
@@ -327,6 +362,8 @@ const selectOpen = ref(false)
 const selectedIds = ref<string[]>([])
 const encourageOpen = ref(false)
 const encourageResult = ref('')
+const exportOpen = ref(false)
+const exportSelectedDates = ref<string[]>([])
 const resultCopied = ref(false)
 const isEncouraging = ref(false)
 const summarizingId = ref<string | null>(null)
@@ -358,6 +395,7 @@ const {
 } = useHistory('hagemashi-encourage-history', 'hagemashi-encourage')
 
 const menuItems = [
+  { icon: '📤', label: 'エクスポート', action: openExportModal },
   { icon: '💬', label: '励まし方の設定', action: openSettingsModal },
   { icon: '🚪', label: 'ログアウト', action: logout },
 ]
@@ -422,6 +460,65 @@ const saveSettings = () => {
 }
 
 const parsedResult = computed(() => marked.parse(encourageResult.value || '') as string)
+
+// --- エクスポート ---
+const formatExportDate = (iso: string): string => {
+  const d = new Date(iso)
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`
+}
+
+const exportDates = computed(() => {
+  const seen = new Set<string>()
+  const dates: string[] = []
+  for (const item of history.value) {
+    const d = formatExportDate(item.timestamp)
+    if (!seen.has(d)) { seen.add(d); dates.push(d) }
+  }
+  return dates
+})
+
+function openExportModal() {
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
+  const recentDates = new Set<string>()
+  for (const item of history.value) {
+    if (new Date(item.timestamp).getTime() >= oneDayAgo) {
+      recentDates.add(formatExportDate(item.timestamp))
+    }
+  }
+  if (recentDates.size === 0 && history.value.length > 0) {
+    recentDates.add(formatExportDate(history.value[0].timestamp))
+  }
+  exportSelectedDates.value = [...recentDates]
+  exportOpen.value = true
+}
+
+function toggleExportDate(date: string) {
+  const idx = exportSelectedDates.value.indexOf(date)
+  if (idx === -1) exportSelectedDates.value.push(date)
+  else exportSelectedDates.value.splice(idx, 1)
+}
+
+function downloadExport() {
+  const grouped = new Map<string, string[]>()
+  for (const item of history.value) {
+    const dateKey = formatExportDate(item.timestamp)
+    if (!exportSelectedDates.value.includes(dateKey)) continue
+    if (!grouped.has(dateKey)) grouped.set(dateKey, [])
+    grouped.get(dateKey)!.push(item.text)
+  }
+  const content = exportDates.value
+    .filter(d => grouped.has(d))
+    .map(d => `${d}\n${grouped.get(d)!.join('\n\n')}`)
+    .join('\n\n')
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'output.txt'
+  a.click()
+  URL.revokeObjectURL(url)
+  exportOpen.value = false
+}
 
 // --- 励ます起点 ---
 function onEncourageClick() {

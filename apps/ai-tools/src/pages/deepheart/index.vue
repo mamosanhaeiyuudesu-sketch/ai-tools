@@ -75,6 +75,7 @@
 
     <SettingsModal
       v-if="settingsOpen"
+      :username="user?.username ?? ''"
       :tone="personality.tone"
       :systemPrompt="personality.systemPrompt"
       :responseLength="personality.responseLength"
