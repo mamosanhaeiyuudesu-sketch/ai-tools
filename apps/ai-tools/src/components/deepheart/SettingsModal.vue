@@ -14,56 +14,6 @@
           <div class="bg-white/[0.04] border border-white/[0.10] rounded-lg px-3 py-2.5 text-slate-300 text-sm select-all">{{ username }}</div>
         </div>
 
-        <!-- アプローチ -->
-        <div class="flex flex-col gap-2.5">
-          <div class="flex items-center gap-1.5">
-            <label class="text-[13px] font-medium text-slate-400">アプローチ</label>
-            <Tooltip text="今の気持ちに合った関わり方を選んでください。いつでも変更できます。" />
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <button
-              v-for="a in APPROACHES"
-              :key="a.value"
-              type="button"
-              class="px-3 py-3 rounded-xl border text-sm text-left transition-all duration-150"
-              :class="localTone === a.value
-                ? 'border-rose-400 bg-gradient-to-br from-rose-500/20 to-indigo-500/10 text-slate-50 shadow-[0_0_0_1px_rgba(251,113,133,0.3)]'
-                : 'border-white/[0.10] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-slate-200'"
-              @click="localTone = a.value"
-            >
-              <div class="flex items-center justify-between gap-1.5">
-                <div class="flex items-center gap-1.5">
-                  <span>{{ a.icon }}</span>
-                  <span class="font-medium text-[13px]">{{ a.label }}</span>
-                </div>
-                <span v-if="localTone === a.value" class="text-rose-400 text-xs">✓</span>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        <!-- 返答の長さ -->
-        <div class="flex flex-col gap-2.5">
-          <div class="flex items-center gap-1.5">
-            <label class="text-[13px] font-medium text-slate-400">返答の長さ</label>
-            <Tooltip text="気持ちを吐き出したいときは短め、じっくり整理したいときは長めがおすすめです。" />
-          </div>
-          <div class="flex gap-2">
-            <button
-              v-for="l in LENGTHS"
-              :key="l.value"
-              type="button"
-              class="flex-1 py-2 rounded-lg border text-xs font-medium transition-colors"
-              :class="localLength === l.value
-                ? 'border-rose-400 bg-rose-500/10 text-slate-50'
-                : 'border-white/[0.10] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-slate-300'"
-              @click="localLength = l.value"
-            >
-              {{ l.label }}
-            </button>
-          </div>
-        </div>
-
         <!-- 追加の指示 -->
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center gap-1.5">
@@ -117,43 +67,23 @@ import { ref, watch } from 'vue'
 
 const props = defineProps<{
   username: string
-  tone: string
   systemPrompt: string
-  responseLength: number
   saving?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'save', payload: { tone: string; systemPrompt: string; responseLength: number }): void
+  (e: 'save', payload: { systemPrompt: string }): void
   (e: 'clearHistory'): void
   (e: 'logout'): void
 }>()
 
-const APPROACHES = [
-  { value: 'explore', icon: '🔍', label: '原因を深堀る' },
-  { value: 'reframe', icon: '🔄', label: '見方を変える' },
-]
-
-const LENGTHS = [
-  { value: 1, label: '一言' },
-  { value: 2, label: '短め' },
-  { value: 3, label: '普通' },
-  { value: 4, label: '長め' },
-  { value: 5, label: '詳しく' },
-]
-
-const VALID_TONES = APPROACHES.map((a) => a.value)
-const localTone = ref(VALID_TONES.includes(props.tone) ? props.tone : 'explore')
 const localPrompt = ref(props.systemPrompt || '')
-const localLength = ref(props.responseLength || 3)
 
-watch(() => props.tone, (v) => { localTone.value = VALID_TONES.includes(v) ? v : 'explore' })
 watch(() => props.systemPrompt, (v) => { localPrompt.value = v || '' })
-watch(() => props.responseLength, (v) => { localLength.value = v || 3 })
 
 const save = () => {
-  emit('save', { tone: localTone.value, systemPrompt: localPrompt.value, responseLength: localLength.value })
+  emit('save', { systemPrompt: localPrompt.value })
 }
 
 // インラインツールチップコンポーネント

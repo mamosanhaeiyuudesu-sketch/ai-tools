@@ -1,4 +1,4 @@
-import { getDeepheartDb, getDeepheartUser, getDeepheartEncryptionKey, encryptMessage, buildSystemPrompt, DEEPHEART_TONES, RESPONSE_LENGTH_TOKENS, type DeepheartTone } from '~/server/utils/deepheart'
+import { getDeepheartDb, getDeepheartUser, getDeepheartEncryptionKey, encryptMessage, buildSystemPrompt, DEEPHEART_MAX_TOKENS } from '~/server/utils/deepheart'
 import { appendLog } from '~/server/utils/openai'
 
 type ChatMessage = {
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, message: '未ログイン' })
   }
 
-  const body = await readBody<{ messages?: ChatMessage[]; tone?: string; systemPrompt?: string; responseLength?: number }>(event)
+  const body = await readBody<{ messages?: ChatMessage[]; systemPrompt?: string }>(event)
   const rawMessages = Array.isArray(body?.messages) ? body!.messages! : []
   const messages = rawMessages.filter(
     (m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim()
@@ -40,28 +40,22 @@ export default defineEventHandler(async (event) => {
 
   const latestUser = messages[messages.length - 1]
 
-  let tone: DeepheartTone = 'listen'
   let systemPromptExtra = ''
-  let responseLength = 3
 
   if (db && user) {
     const persona = await db
-      .prepare('SELECT tone, system_prompt, response_length FROM deepheart_personalities WHERE user_id = ?')
+      .prepare('SELECT system_prompt FROM deepheart_personalities WHERE user_id = ?')
       .bind(user.id)
-      .first<{ tone: string; system_prompt: string; response_length: number }>()
+      .first<{ system_prompt: string }>()
     if (persona) {
-      if ((DEEPHEART_TONES as readonly string[]).includes(persona.tone)) tone = persona.tone as DeepheartTone
       systemPromptExtra = persona.system_prompt ?? ''
-      responseLength = persona.response_length ?? 3
     }
   } else {
-    if ((DEEPHEART_TONES as readonly string[]).includes(body?.tone ?? '')) tone = body!.tone as DeepheartTone
     systemPromptExtra = (body?.systemPrompt ?? '').slice(0, 2000)
-    responseLength = Math.min(5, Math.max(1, Number(body?.responseLength) || 3))
   }
 
-  const systemPrompt = buildSystemPrompt(tone, systemPromptExtra)
-  const maxTokens = RESPONSE_LENGTH_TOKENS[responseLength] ?? 400
+  const systemPrompt = buildSystemPrompt(systemPromptExtra)
+  const maxTokens = DEEPHEART_MAX_TOKENS
 
   const trimmed = messages.slice(-24)
 

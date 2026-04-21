@@ -15,7 +15,6 @@
             class="flex items-center gap-2 p-1.5 rounded-xl border border-white/[0.12] bg-white/[0.05] hover:bg-white/[0.10] hover:border-white/[0.20] transition-all duration-150 cursor-pointer"
             @click="openSettings"
           >
-            <span class="text-xs text-slate-400 pl-1">{{ currentApproachLabel }}</span>
             <span
               v-if="user"
               class="w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-bold text-white flex-shrink-0"
@@ -75,9 +74,7 @@
     <SettingsModal
       v-if="settingsOpen"
       :username="user?.username ?? ''"
-      :tone="personality.tone"
       :systemPrompt="personality.systemPrompt"
-      :responseLength="personality.responseLength"
       :saving="savingSettings"
       @close="settingsOpen = false"
       @save="saveSettings"
@@ -109,17 +106,7 @@ interface ChatMessage {
 }
 
 interface Personality {
-  tone: string
   systemPrompt: string
-  responseLength: number
-}
-
-const APPROACH_LABELS: Record<string, string> = {
-  explore: '原因を深堀る',
-  reframe: '見方を変える',
-}
-const LENGTH_LABELS: Record<number, string> = {
-  1: '一言', 2: '短め', 3: '普通', 4: '長め', 5: '詳しく',
 }
 
 const { user, isLoggedIn, checked, checkAuth, logout } = useDeepheartAuth()
@@ -140,10 +127,7 @@ const inputRef = ref<HTMLTextAreaElement | null>(null)
 
 const settingsOpen = ref(false)
 const savingSettings = ref(false)
-const personality = ref<Personality>({ tone: 'explore', systemPrompt: '', responseLength: 3 })
-
-const currentApproachLabel = computed(() => APPROACH_LABELS[personality.value.tone] ?? '原因を深堀る')
-const currentLengthLabel = computed(() => LENGTH_LABELS[personality.value.responseLength] ?? '普通')
+const personality = ref<Personality>({ systemPrompt: '' })
 
 
 onMounted(checkAuth)
@@ -185,22 +169,22 @@ async function loadHistory() {
 async function loadPersonality() {
   if (dev) {
     if (!personalityKey.value) {
-      personality.value = { tone: 'explore', systemPrompt: '', responseLength: 3 }
+      personality.value = { systemPrompt: '' }
       return
     }
     try {
       const raw = localStorage.getItem(personalityKey.value)
-      personality.value = raw ? { ...{ tone: 'explore', systemPrompt: '', responseLength: 3 }, ...JSON.parse(raw) } : { tone: 'explore', systemPrompt: '', responseLength: 3 }
+      personality.value = raw ? { systemPrompt: '', ...JSON.parse(raw) } : { systemPrompt: '' }
     } catch {
-      personality.value = { tone: 'explore', systemPrompt: '', responseLength: 3 }
+      personality.value = { systemPrompt: '' }
     }
     return
   }
   try {
-    const p = await $fetch<Personality>('/api/deepheart/personality')
-    personality.value = p
+    const p = await $fetch<{ systemPrompt: string }>('/api/deepheart/personality')
+    personality.value = { systemPrompt: p.systemPrompt }
   } catch {
-    personality.value = { tone: 'explore', systemPrompt: '', responseLength: 3 }
+    personality.value = { systemPrompt: '' }
   }
 }
 
@@ -215,7 +199,7 @@ function openSettings() {
   settingsOpen.value = true
 }
 
-async function saveSettings(payload: Personality) {
+async function saveSettings(payload: { systemPrompt: string }) {
   savingSettings.value = true
   try {
     if (dev) {
@@ -226,11 +210,11 @@ async function saveSettings(payload: Personality) {
       settingsOpen.value = false
       return
     }
-    const res = await $fetch<Personality>('/api/deepheart/personality', {
+    const res = await $fetch<{ systemPrompt: string }>('/api/deepheart/personality', {
       method: 'PUT',
       body: payload,
     })
-    personality.value = res
+    personality.value = { systemPrompt: res.systemPrompt }
     settingsOpen.value = false
   } catch (err: any) {
     error.value = err?.data?.message ?? '設定の保存に失敗しました'
@@ -308,9 +292,7 @@ async function send() {
       credentials: 'include',
       body: JSON.stringify({
         messages: payloadMessages,
-        tone: personality.value.tone,
         systemPrompt: personality.value.systemPrompt,
-        responseLength: personality.value.responseLength,
       }),
     })
 
