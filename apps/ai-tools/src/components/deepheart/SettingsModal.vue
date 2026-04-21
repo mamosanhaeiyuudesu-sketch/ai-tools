@@ -25,15 +25,18 @@
               v-for="a in APPROACHES"
               :key="a.value"
               type="button"
-              class="px-3 py-2.5 rounded-xl border text-sm text-left transition-colors"
+              class="px-3 py-3 rounded-xl border text-sm text-left transition-all duration-150"
               :class="localTone === a.value
-                ? 'border-rose-400 bg-rose-500/10 text-slate-50'
-                : 'border-white/[0.10] bg-white/[0.03] text-slate-300 hover:bg-white/[0.06]'"
+                ? 'border-rose-400 bg-gradient-to-br from-rose-500/20 to-indigo-500/10 text-slate-50 shadow-[0_0_0_1px_rgba(251,113,133,0.3)]'
+                : 'border-white/[0.10] bg-white/[0.03] text-slate-400 hover:bg-white/[0.06] hover:text-slate-200'"
               @click="localTone = a.value"
             >
-              <div class="flex items-center gap-1.5">
-                <span>{{ a.icon }}</span>
-                <span class="font-medium text-[13px]">{{ a.label }}</span>
+              <div class="flex items-center justify-between gap-1.5">
+                <div class="flex items-center gap-1.5">
+                  <span>{{ a.icon }}</span>
+                  <span class="font-medium text-[13px]">{{ a.label }}</span>
+                </div>
+                <span v-if="localTone === a.value" class="text-rose-400 text-xs">✓</span>
               </div>
             </button>
           </div>
@@ -128,10 +131,8 @@ const emit = defineEmits<{
 }>()
 
 const APPROACHES = [
-  { value: 'listen',  icon: '🫂', label: '受け止める' },
-  { value: 'explore', icon: '🔍', label: '原因を調査' },
+  { value: 'explore', icon: '🔍', label: '原因を深堀る' },
   { value: 'reframe', icon: '🔄', label: '見方を変える' },
-  { value: 'forward', icon: '🚀', label: '前向きになる' },
 ]
 
 const LENGTHS = [
@@ -142,11 +143,12 @@ const LENGTHS = [
   { value: 5, label: '詳しく' },
 ]
 
-const localTone = ref(props.tone || 'listen')
+const VALID_TONES = APPROACHES.map((a) => a.value)
+const localTone = ref(VALID_TONES.includes(props.tone) ? props.tone : 'explore')
 const localPrompt = ref(props.systemPrompt || '')
 const localLength = ref(props.responseLength || 3)
 
-watch(() => props.tone, (v) => { localTone.value = v || 'listen' })
+watch(() => props.tone, (v) => { localTone.value = VALID_TONES.includes(v) ? v : 'explore' })
 watch(() => props.systemPrompt, (v) => { localPrompt.value = v || '' })
 watch(() => props.responseLength, (v) => { localLength.value = v || 3 })
 

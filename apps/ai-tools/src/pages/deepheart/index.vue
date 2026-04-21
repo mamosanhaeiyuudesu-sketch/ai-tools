@@ -8,7 +8,6 @@
           <span class="text-xl">💗</span>
           <div class="leading-tight">
             <h1 class="m-0 text-base font-semibold bg-gradient-to-br from-rose-400 to-indigo-400 bg-clip-text text-transparent">deepheart</h1>
-            <p class="m-0 text-[11px] text-slate-500 hidden sm:block">{{ currentApproachLabel }}</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -116,10 +115,8 @@ interface Personality {
 }
 
 const APPROACH_LABELS: Record<string, string> = {
-  listen:  '受け止める',
-  explore: '原因を調査',
+  explore: '原因を深堀る',
   reframe: '見方を変える',
-  forward: '前向きになる',
 }
 const LENGTH_LABELS: Record<number, string> = {
   1: '一言', 2: '短め', 3: '普通', 4: '長め', 5: '詳しく',
@@ -143,9 +140,9 @@ const inputRef = ref<HTMLTextAreaElement | null>(null)
 
 const settingsOpen = ref(false)
 const savingSettings = ref(false)
-const personality = ref<Personality>({ tone: 'listen', systemPrompt: '', responseLength: 3 })
+const personality = ref<Personality>({ tone: 'explore', systemPrompt: '', responseLength: 3 })
 
-const currentApproachLabel = computed(() => APPROACH_LABELS[personality.value.tone] ?? '受け止めてほしい')
+const currentApproachLabel = computed(() => APPROACH_LABELS[personality.value.tone] ?? '原因を深堀る')
 const currentLengthLabel = computed(() => LENGTH_LABELS[personality.value.responseLength] ?? '普通')
 
 
@@ -188,14 +185,14 @@ async function loadHistory() {
 async function loadPersonality() {
   if (dev) {
     if (!personalityKey.value) {
-      personality.value = { tone: 'listen', systemPrompt: '', responseLength: 3 }
+      personality.value = { tone: 'explore', systemPrompt: '', responseLength: 3 }
       return
     }
     try {
       const raw = localStorage.getItem(personalityKey.value)
-      personality.value = raw ? { ...{ tone: 'listen', systemPrompt: '', responseLength: 3 }, ...JSON.parse(raw) } : { tone: 'listen', systemPrompt: '', responseLength: 3 }
+      personality.value = raw ? { ...{ tone: 'explore', systemPrompt: '', responseLength: 3 }, ...JSON.parse(raw) } : { tone: 'explore', systemPrompt: '', responseLength: 3 }
     } catch {
-      personality.value = { tone: 'listen', systemPrompt: '', responseLength: 3 }
+      personality.value = { tone: 'explore', systemPrompt: '', responseLength: 3 }
     }
     return
   }
@@ -203,7 +200,7 @@ async function loadPersonality() {
     const p = await $fetch<Personality>('/api/deepheart/personality')
     personality.value = p
   } catch {
-    personality.value = { tone: 'listen', systemPrompt: '', responseLength: 3 }
+    personality.value = { tone: 'explore', systemPrompt: '', responseLength: 3 }
   }
 }
 

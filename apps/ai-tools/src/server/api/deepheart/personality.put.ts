@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<{ tone?: string; systemPrompt?: string; responseLength?: number }>(event)
   const tone: DeepheartTone = (DEEPHEART_TONES as readonly string[]).includes(body?.tone ?? '')
     ? (body!.tone as DeepheartTone)
-    : 'listen'
+    : 'explore'
   const systemPrompt = (body?.systemPrompt ?? '').slice(0, 2000)
   const responseLength = Math.min(5, Math.max(1, Number(body?.responseLength) || 3))
 

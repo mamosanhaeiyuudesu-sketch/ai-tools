@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     .first<{ tone: string; system_prompt: string; response_length: number }>()
 
   return {
-    tone: row?.tone ?? 'listen',
+    tone: row?.tone ?? 'explore',
     systemPrompt: row?.system_prompt ?? '',
     responseLength: row?.response_length ?? 3,
   }
