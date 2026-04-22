@@ -92,7 +92,7 @@ import MessageBubble from '~/components/deepheart/MessageBubble.vue'
 import SettingsModal from '~/components/deepheart/SettingsModal.vue'
 
 
-definePageMeta({ alias: ['/deepheart', '/deepheart/'] })
+definePageMeta({ layout: 'deepheart', alias: ['/deepheart', '/deepheart/'] })
 
 useHead({
   title: import.meta.dev ? 'deepheart (dev)' : 'deepheart',

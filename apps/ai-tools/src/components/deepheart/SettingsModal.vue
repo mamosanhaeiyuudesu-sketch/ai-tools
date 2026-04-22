@@ -24,7 +24,7 @@
             v-model="localPrompt"
             class="bg-white/[0.05] border border-white/[0.12] rounded-lg text-slate-50 text-sm px-3 py-2 outline-none focus:border-rose-400 transition-colors font-[inherit] resize-y leading-relaxed"
             rows="4"
-            placeholder="例：ときどき比喩を使ってください／仕事の悩みが中心です"
+            placeholder="例：ときどき比喩を使ってください／もう少しじっくり聞いてください/質問をたくさんしてください"
             maxlength="2000"
           />
           <div class="text-[11px] text-slate-500 text-right">{{ localPrompt.length }} / 2000</div>
