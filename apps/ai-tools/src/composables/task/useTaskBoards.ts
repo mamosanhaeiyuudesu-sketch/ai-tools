@@ -10,6 +10,8 @@ export interface Card {
   isOverdue: boolean
   isUrgent: boolean
   display: string
+  isImportant: boolean
+  redLabelId: string | null
 }
 
 export interface Board {
@@ -22,6 +24,7 @@ export interface Board {
   doingListId: string
   todoListId: string
   doneListId: string
+  redLabelId: string | null
 }
 
 export type EditTarget = {
@@ -84,7 +87,7 @@ export function useTaskBoards(
   // Task modal state
   const showTaskModal = ref(false)
   const editTarget = ref<EditTarget>(null)
-  const taskForm = ref({ name: '', desc: '', due: '', boardId: '', status: 'todo' as 'todo' | 'doing' | 'done' })
+  const taskForm = ref({ name: '', desc: '', due: '', boardId: '', status: 'todo' as 'todo' | 'doing' | 'done', isImportant: false })
   const isEditing = computed(() => editTarget.value !== null)
   const modalTitle = computed(() => isEditing.value ? 'タスクを編集' : 'タスクを追加')
 
@@ -123,6 +126,32 @@ export function useTaskBoards(
     return res.json()
   }
 
+  async function trelloDelete(path: string) {
+    const sep = path.includes('?') ? '&' : '?'
+    const res = await fetch(`https://api.trello.com/1${path}${sep}key=${apiKey.value}&token=${apiToken.value}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error(`Trello API Error: ${res.status}`)
+  }
+
+  async function ensureRedLabel(board: Board): Promise<string> {
+    if (board.redLabelId) return board.redLabelId
+    const labels = await trelloGet(`/boards/${board.id}/labels`)
+    const existing = labels.find((l: any) => l.color === 'red')
+    if (existing) { board.redLabelId = existing.id; return existing.id }
+    const created = await trelloPost(`/boards/${board.id}/labels`, { name: '重要', color: 'red' })
+    board.redLabelId = created.id
+    return created.id
+  }
+
+  async function syncImportantLabel(cardId: string, card: Card, board: Board, nowImportant: boolean) {
+    if (card.isImportant === nowImportant) return
+    if (nowImportant) {
+      const labelId = await ensureRedLabel(board)
+      await trelloPost(`/cards/${cardId}/idLabels`, { value: labelId })
+    } else if (card.redLabelId) {
+      await trelloDelete(`/cards/${cardId}/idLabels/${card.redLabelId}`)
+    }
+  }
+
   // --- Utilities ---
   function timeRemaining(dueStr: string): Pick<Card, 'isOverdue' | 'isUrgent' | 'display'> {
     const diffH = (new Date(dueStr).getTime() - Date.now()) / 3_600_000
@@ -135,7 +164,8 @@ export function useTaskBoards(
   }
 
   function buildCard(raw: any): Card {
-    const c: Card = { id: raw.id, name: raw.name, desc: raw.desc || '', due: raw.due || null, pos: raw.pos ?? 0, isOverdue: false, isUrgent: false, display: '' }
+    const redLabel = Array.isArray(raw.labels) ? raw.labels.find((l: any) => l.color === 'red') : null
+    const c: Card = { id: raw.id, name: raw.name, desc: raw.desc || '', due: raw.due || null, pos: raw.pos ?? 0, isOverdue: false, isUrgent: false, display: '', isImportant: !!redLabel, redLabelId: redLabel?.id ?? null }
     if (raw.due) Object.assign(c, timeRemaining(raw.due))
     return c
   }
@@ -202,7 +232,7 @@ export function useTaskBoards(
       const results: Board[] = await Promise.all(
         filtered.map(async (b: any) => {
           const lists = await trelloGet(`/boards/${b.id}/lists`)
-          const board: Board = { id: b.id, name: b.name, desc: b.desc || '', doing: [], todo: [], done: {}, doingListId: '', todoListId: '', doneListId: '' }
+          const board: Board = { id: b.id, name: b.name, desc: b.desc || '', doing: [], todo: [], done: {}, doingListId: '', todoListId: '', doneListId: '', redLabelId: null }
 
           await Promise.all(
             lists.map(async (list: any) => {
@@ -212,11 +242,10 @@ export function useTaskBoards(
               else if (lname === 'todo') board.todoListId = list.id
               else if (lname === 'done') board.doneListId = list.id
 
-              const cards = await trelloGet(`/lists/${list.id}/cards`)
+              const cards = await trelloGet(`/lists/${list.id}/cards?fields=id,name,desc,due,pos,labels`)
               for (const card of cards) {
                 if (lname === 'doing' || lname === 'todo') {
-                  const c: Card = { id: card.id, name: card.name, desc: card.desc || '', due: card.due || null, pos: card.pos ?? 0, isOverdue: false, isUrgent: false, display: '' }
-                  if (card.due) Object.assign(c, timeRemaining(card.due))
+                  const c = buildCard(card)
                   lname === 'doing' ? board.doing.push(c) : board.todo.push(c)
                 } else {
                   if (!card.due) continue
@@ -313,22 +342,22 @@ export function useTaskBoards(
 
   function openAddTask(boardId: string, status: 'todo' | 'doing') {
     editTarget.value = null
-    taskForm.value = { name: '', desc: '', due: '', boardId, status }
+    taskForm.value = { name: '', desc: '', due: '', boardId, status, isImportant: false }
     showTaskModal.value = true
   }
 
   function openEditTask(card: Card, boardId: string, status: 'doing' | 'todo') {
     editTarget.value = { card, boardId, status }
-    taskForm.value = { name: card.name, desc: card.desc, due: card.due ? toLocalDatetimeInput(card.due) : '', boardId, status }
+    taskForm.value = { name: card.name, desc: card.desc, due: card.due ? toLocalDatetimeInput(card.due) : '', boardId, status, isImportant: card.isImportant }
     showTaskModal.value = true
   }
 
   function openEditDoneTask(item: { id: string; name: string }, dateKey: string, board: Board) {
     const dueForInput = dateKey + 'T12:00'
     const dueIso = new Date(dueForInput).toISOString()
-    const card: Card = { id: item.id, name: item.name, desc: '', due: dueIso, pos: 0, isOverdue: false, isUrgent: false, display: '' }
+    const card: Card = { id: item.id, name: item.name, desc: '', due: dueIso, pos: 0, isOverdue: false, isUrgent: false, display: '', isImportant: false, redLabelId: null }
     editTarget.value = { card, boardId: board.id, status: 'done', dateKey }
-    taskForm.value = { name: item.name, desc: '', due: dueForInput, boardId: board.id, status: 'done' }
+    taskForm.value = { name: item.name, desc: '', due: dueForInput, boardId: board.id, status: 'done', isImportant: false }
     showTaskModal.value = true
   }
 
@@ -374,8 +403,15 @@ export function useTaskBoards(
             if (board.done[dateKey].length === 0) delete board.done[dateKey]
             rebuildAllDates()
           }
+          const newCard = buildCard(raw)
+          if (taskForm.value.isImportant) {
+            const labelId = await ensureRedLabel(board)
+            await trelloPost(`/cards/${raw.id}/idLabels`, { value: labelId })
+            newCard.isImportant = true
+            newCard.redLabelId = labelId
+          }
           const dstArr = newStatus === 'doing' ? board.doing : board.todo
-          dstArr.push(buildCard(raw))
+          dstArr.push(newCard)
         }
         showTaskModal.value = false
         return
@@ -407,7 +443,10 @@ export function useTaskBoards(
         const oldListId = status === 'doing' ? board.doingListId : board.todoListId
         if (newListId && newListId !== oldListId) body.idList = newListId
         const raw = await trelloPut(`/cards/${card.id}`, body)
+        await syncImportantLabel(card.id, card, board, taskForm.value.isImportant)
         const updated = buildCard(raw)
+        updated.isImportant = taskForm.value.isImportant
+        updated.redLabelId = taskForm.value.isImportant ? (board.redLabelId ?? card.redLabelId) : null
         const srcArr = status === 'doing' ? board.doing : board.todo
         const idx = srcArr.findIndex(c => c.id === card.id)
         if (newStatus === status) {
@@ -422,8 +461,15 @@ export function useTaskBoards(
         if (!listId) throw new Error('対象リストが見つかりません')
         body.idList = listId
         const raw = await trelloPost('/cards', body)
+        const newCard = buildCard(raw)
+        if (taskForm.value.isImportant) {
+          const labelId = await ensureRedLabel(board)
+          await trelloPost(`/cards/${raw.id}/idLabels`, { value: labelId })
+          newCard.isImportant = true
+          newCard.redLabelId = labelId
+        }
         const arr = taskForm.value.status === 'doing' ? board.doing : board.todo
-        arr.push(buildCard(raw))
+        arr.push(newCard)
       }
 
       showTaskModal.value = false

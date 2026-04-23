@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import type { Board } from '~/composables/task/useTaskBoards'
 import TaskDatePicker from './TaskDatePicker.vue'
 
-type TaskForm = { name: string; desc: string; due: string; boardId: string; status: 'todo' | 'doing' | 'done' }
+type TaskForm = { name: string; desc: string; due: string; boardId: string; status: 'todo' | 'doing' | 'done'; isImportant: boolean }
 
 const props = defineProps<{
   show: boolean
@@ -21,7 +21,7 @@ const emit = defineEmits<{
   delete: []
 }>()
 
-const form = ref<TaskForm>({ name: '', desc: '', due: '', boardId: '', status: 'todo' })
+const form = ref<TaskForm>({ name: '', desc: '', due: '', boardId: '', status: 'todo', isImportant: false })
 
 watch(() => props.show, (v) => {
   if (v) form.value = { ...props.initialForm }
@@ -83,6 +83,21 @@ watch(() => props.show, (v) => {
             </select>
           </div>
         </div>
+
+        <label class="flex items-center gap-2.5 cursor-pointer select-none group w-fit">
+          <div
+            :class="[
+              'w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0',
+              form.isImportant
+                ? 'bg-red-500/20 border-red-400/70'
+                : 'bg-white/[0.04] border-white/20 group-hover:border-white/40',
+            ]"
+            @click="form.isImportant = !form.isImportant"
+          >
+            <svg v-if="form.isImportant" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="text-red-400"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <span :class="['text-[13px] font-medium transition-colors', form.isImportant ? 'text-red-400' : 'text-slate-400 group-hover:text-slate-300']">重要</span>
+        </label>
 
         <div v-if="error" class="px-3 py-2 bg-red-500/12 border border-red-500/30 rounded-lg text-red-300 text-[13px]">⚠ {{ error }}</div>
 

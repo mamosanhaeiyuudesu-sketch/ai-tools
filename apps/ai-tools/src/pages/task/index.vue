@@ -466,8 +466,9 @@ onMounted(() => {
                   :key="card.id"
                   :class="[
                     'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-2 flex flex-col gap-0.5 transition-all hover:bg-white/[0.07] cursor-grab select-none',
+                    card.isImportant && !card.isOverdue ? 'border-rose-400/60 bg-rose-400/[0.05] shadow-[inset_3px_0_0_rgba(251,113,133,0.7)]' : '',
                     card.isOverdue ? 'border-red-500/40 bg-red-500/[0.06]' : '',
-                    card.isUrgent ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
+                    card.isUrgent && !card.isOverdue ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
                     dragging?.cardId === card.id ? 'opacity-40' : '',
                     dragOverCardId === card.id ? 'border-t-2 border-t-sky-400' : '',
                   ]"
@@ -528,8 +529,9 @@ onMounted(() => {
                   :key="card.id"
                   :class="[
                     'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-2 flex flex-col gap-0.5 transition-all hover:bg-white/[0.07] cursor-grab select-none',
+                    card.isImportant && !card.isOverdue ? 'border-rose-400/60 bg-rose-400/[0.05] shadow-[inset_3px_0_0_rgba(251,113,133,0.7)]' : '',
                     card.isOverdue ? 'border-red-500/40 bg-red-500/[0.06]' : '',
-                    card.isUrgent ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
+                    card.isUrgent && !card.isOverdue ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
                     dragging?.cardId === card.id ? 'opacity-40' : '',
                     dragOverCardId === card.id ? 'border-t-2 border-t-amber-400' : '',
                   ]"
@@ -726,8 +728,9 @@ onMounted(() => {
                     data-status="todo"
                     :class="[
                       'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2 py-1.5 flex items-start gap-1.5 cursor-grab active:bg-white/[0.07] select-none',
+                      card.isImportant && !card.isOverdue ? 'border-rose-400/60 bg-rose-400/[0.05] shadow-[inset_3px_0_0_rgba(251,113,133,0.7)]' : '',
                       card.isOverdue ? 'border-red-500/40 bg-red-500/[0.06]' : '',
-                      card.isUrgent ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
+                      card.isUrgent && !card.isOverdue ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
                       dragging?.cardId === card.id ? 'opacity-40' : '',
                       dragOverCardId === card.id ? 'border-t-2 border-t-amber-400' : '',
                     ]"
@@ -768,8 +771,9 @@ onMounted(() => {
                     data-status="doing"
                     :class="[
                       'bg-white/[0.04] border border-white/[0.07] rounded-lg px-2 py-1.5 flex items-start gap-1.5 cursor-grab active:bg-white/[0.07] select-none',
+                      card.isImportant && !card.isOverdue ? 'border-rose-400/60 bg-rose-400/[0.05] shadow-[inset_3px_0_0_rgba(251,113,133,0.7)]' : '',
                       card.isOverdue ? 'border-red-500/40 bg-red-500/[0.06]' : '',
-                      card.isUrgent ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
+                      card.isUrgent && !card.isOverdue ? 'border-amber-500/40 bg-amber-500/[0.06]' : '',
                       dragging?.cardId === card.id ? 'opacity-40' : '',
                       dragOverCardId === card.id ? 'border-t-2 border-t-sky-400' : '',
                     ]"

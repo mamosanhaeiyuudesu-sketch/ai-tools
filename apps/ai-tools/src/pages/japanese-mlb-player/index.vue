@@ -106,7 +106,7 @@ function deselectAll() {
 </script>
 
 <template>
-  <MlbHeader v-model:season="selectedSeason" />
+  <MlbHeader v-model:season="selectedSeason" :show-season="activeTab === 'season'" />
 
   <div class="flex flex-1 overflow-hidden">
     <PlayerSidebar
