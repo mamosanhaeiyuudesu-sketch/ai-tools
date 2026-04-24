@@ -127,6 +127,7 @@
                     年別ヒートマップを見る
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                   </a>
+                  <img src="/images/miyako-yearly.png" alt="年別ヒートマップのスクリーンショット" class="feature-screenshot" @click="openLightbox('/images/miyako-yearly.png', '年別ヒートマップのスクリーンショット')" />
                 </div>
               </div>
               <div class="portfolio-feature">
@@ -139,6 +140,7 @@
                     議員別ヒートマップを見る
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                   </a>
+                  <img src="/images/miyako-member.png" alt="議員別ヒートマップのスクリーンショット" class="feature-screenshot" @click="openLightbox('/images/miyako-member.png', '議員別ヒートマップのスクリーンショット')" />
                 </div>
               </div>
               <div class="portfolio-feature">
@@ -151,6 +153,7 @@
                     キーワード分析を見る
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                   </a>
+                  <img src="/images/miyako-keyword.png" alt="キーワード分析のスクリーンショット" class="feature-screenshot" @click="openLightbox('/images/miyako-keyword.png', 'キーワード分析のスクリーンショット')" />
                 </div>
               </div>
             </div>
@@ -274,11 +277,37 @@
       </div>
     </footer>
 
+    <!-- ライトボックス -->
+    <Teleport to="body">
+      <div v-if="lightbox.open" class="lightbox-overlay" @click="closeLightbox">
+        <button class="lightbox-close" @click="closeLightbox">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+        <img :src="lightbox.src" :alt="lightbox.alt" class="lightbox-img" @click.stop />
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
 <script setup lang="ts">
 definePageMeta({ layout: 'ai-consultant' })
+
+const lightbox = reactive({ open: false, src: '', alt: '' })
+
+function openLightbox(src: string, alt: string) {
+  lightbox.src = src
+  lightbox.alt = alt
+  lightbox.open = true
+}
+
+function closeLightbox() {
+  lightbox.open = false
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox() })
+})
 
 useHead({
   title: 'Prototyper | あなたのデータは、宝の山かもしれない。',
