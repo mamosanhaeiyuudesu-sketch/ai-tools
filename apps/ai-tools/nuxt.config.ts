@@ -68,7 +68,7 @@ export default defineNuxtConfig({
       tasks: true,
     },
     scheduledTasks: {
-      '0 21 * * *': ['mlb:sync'],
+      '0 21 * * *': ['mlb-sync'],
     },
     devServer: {
       // @ts-ignore — Nitro の型定義に maxBodySize がないが、h3 dev server では有効
