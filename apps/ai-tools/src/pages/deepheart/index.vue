@@ -36,6 +36,7 @@
           :key="m.id"
           :role="m.role"
           :content="m.content"
+          :fontSizePx="fontSizePx"
         />
         <div v-if="streaming" ref="streamBottomRef" />
       </div>
@@ -54,6 +55,7 @@
           rows="1"
           placeholder="いまの気持ちを書いてみてください..."
           class="flex-1 resize-none bg-white/[0.05] border border-white/[0.12] rounded-xl text-slate-50 text-sm px-3 py-2.5 outline-none focus:border-rose-400 transition-colors font-[inherit] leading-relaxed max-h-40 placeholder:text-slate-600"
+          :style="{ fontSize: fontSizePx }"
           @keydown="onKeydown"
           @input="autoGrow"
         />
@@ -75,6 +77,7 @@
       v-if="settingsOpen"
       :username="user?.username ?? ''"
       :systemPrompt="personality.systemPrompt"
+      :fontSize="personality.fontSize"
       :saving="savingSettings"
       @close="settingsOpen = false"
       @save="saveSettings"
@@ -107,6 +110,7 @@ interface ChatMessage {
 
 interface Personality {
   systemPrompt: string
+  fontSize?: 'small' | 'medium' | 'large'
 }
 
 const { user, isLoggedIn, checked, checkAuth, logout } = useDeepheartAuth()
@@ -127,7 +131,12 @@ const inputRef = ref<HTMLTextAreaElement | null>(null)
 
 const settingsOpen = ref(false)
 const savingSettings = ref(false)
-const personality = ref<Personality>({ systemPrompt: '' })
+const personality = ref<Personality>({ systemPrompt: '', fontSize: 'small' })
+
+const fontSizePx = computed(() => {
+  const map = { small: '14px', medium: '16px', large: '18px' }
+  return map[personality.value.fontSize || 'small']
+})
 
 
 onMounted(checkAuth)
@@ -169,22 +178,30 @@ async function loadHistory() {
 async function loadPersonality() {
   if (dev) {
     if (!personalityKey.value) {
-      personality.value = { systemPrompt: '' }
+      personality.value = { systemPrompt: '', fontSize: 'small' }
       return
     }
     try {
       const raw = localStorage.getItem(personalityKey.value)
-      personality.value = raw ? { systemPrompt: '', ...JSON.parse(raw) } : { systemPrompt: '' }
+      personality.value = raw ? { systemPrompt: '', fontSize: 'small', ...JSON.parse(raw) } : { systemPrompt: '', fontSize: 'small' }
     } catch {
-      personality.value = { systemPrompt: '' }
+      personality.value = { systemPrompt: '', fontSize: 'small' }
     }
     return
   }
   try {
     const p = await $fetch<{ systemPrompt: string }>('/api/deepheart/personality')
-    personality.value = { systemPrompt: p.systemPrompt }
+    // fontSizeはローカルに保存しているので取り出す
+    let fontSize: 'small' | 'medium' | 'large' = 'small'
+    if (personalityKey.value) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(personalityKey.value) || '{}')
+        if (stored.fontSize) fontSize = stored.fontSize
+      } catch {}
+    }
+    personality.value = { systemPrompt: p.systemPrompt, fontSize }
   } catch {
-    personality.value = { systemPrompt: '' }
+    personality.value = { systemPrompt: '', fontSize: 'small' }
   }
 }
 
@@ -199,7 +216,7 @@ function openSettings() {
   settingsOpen.value = true
 }
 
-async function saveSettings(payload: { systemPrompt: string }) {
+async function saveSettings(payload: { systemPrompt: string; fontSize: 'small' | 'medium' | 'large' }) {
   savingSettings.value = true
   try {
     if (dev) {
@@ -212,9 +229,16 @@ async function saveSettings(payload: { systemPrompt: string }) {
     }
     const res = await $fetch<{ systemPrompt: string }>('/api/deepheart/personality', {
       method: 'PUT',
-      body: payload,
+      body: { systemPrompt: payload.systemPrompt },
     })
-    personality.value = { systemPrompt: res.systemPrompt }
+    personality.value = { systemPrompt: res.systemPrompt, fontSize: payload.fontSize }
+    // fontSizeはローカルに保存（サーバーAPIの変更不要）
+    if (personalityKey.value) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(personalityKey.value) || '{}')
+        localStorage.setItem(personalityKey.value, JSON.stringify({ ...stored, fontSize: payload.fontSize }))
+      } catch {}
+    }
     settingsOpen.value = false
   } catch (err: any) {
     error.value = err?.data?.message ?? '設定の保存に失敗しました'
@@ -277,7 +301,8 @@ async function send() {
   }
   messages.value.push(userMsg, assistantMsg)
   input.value = ''
-  autoGrow()
+  // DOMが更新される前に直接heightをリセットして引きずりを防ぐ
+  if (inputRef.value) inputRef.value.style.height = 'auto'
   await scrollToBottom()
 
   streaming.value = true

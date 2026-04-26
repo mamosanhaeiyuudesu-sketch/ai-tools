@@ -14,6 +14,23 @@
           <div class="bg-white/[0.04] border border-white/[0.10] rounded-lg px-3 py-2.5 text-slate-300 text-sm select-all">{{ username }}</div>
         </div>
 
+        <!-- 文字サイズ -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[13px] font-medium text-slate-400">文字の大きさ</label>
+          <div class="flex gap-2">
+            <button
+              v-for="opt in fontSizeOptions"
+              :key="opt.value"
+              type="button"
+              class="flex-1 py-2 rounded-lg border text-sm font-medium transition-all cursor-pointer"
+              :class="localFontSize === opt.value
+                ? 'border-rose-400 bg-rose-400/10 text-rose-300'
+                : 'border-white/[0.12] bg-white/[0.04] text-slate-400 hover:border-white/20 hover:text-slate-300'"
+              @click="localFontSize = opt.value"
+            >{{ opt.label }}</button>
+          </div>
+        </div>
+
         <!-- 追加の指示 -->
         <div class="flex flex-col gap-1.5">
           <div class="flex items-center gap-1.5">
@@ -68,22 +85,31 @@ import { ref, watch } from 'vue'
 const props = defineProps<{
   username: string
   systemPrompt: string
+  fontSize?: 'small' | 'medium' | 'large'
   saving?: boolean
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'save', payload: { systemPrompt: string }): void
+  (e: 'save', payload: { systemPrompt: string; fontSize: 'small' | 'medium' | 'large' }): void
   (e: 'clearHistory'): void
   (e: 'logout'): void
 }>()
 
 const localPrompt = ref(props.systemPrompt || '')
+const localFontSize = ref<'small' | 'medium' | 'large'>(props.fontSize || 'small')
+
+const fontSizeOptions = [
+  { value: 'small' as const, label: '小' },
+  { value: 'medium' as const, label: '中' },
+  { value: 'large' as const, label: '大' },
+]
 
 watch(() => props.systemPrompt, (v) => { localPrompt.value = v || '' })
+watch(() => props.fontSize, (v) => { localFontSize.value = v || 'small' })
 
 const save = () => {
-  emit('save', { systemPrompt: localPrompt.value })
+  emit('save', { systemPrompt: localPrompt.value, fontSize: localFontSize.value })
 }
 
 // インラインツールチップコンポーネント

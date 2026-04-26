@@ -5,6 +5,7 @@
       :class="role === 'user'
         ? 'bg-gradient-to-br from-rose-500/80 to-indigo-500/80 text-white rounded-br-sm'
         : 'bg-white/[0.06] border border-white/[0.08] text-slate-100 rounded-bl-sm'"
+      :style="fontSizePx ? { fontSize: fontSizePx } : {}"
     >
       <span v-if="content">{{ content }}</span>
       <span v-else class="inline-flex items-center gap-1 text-slate-400">
@@ -20,5 +21,6 @@
 defineProps<{
   role: 'user' | 'assistant'
   content: string
+  fontSizePx?: string
 }>()
 </script>

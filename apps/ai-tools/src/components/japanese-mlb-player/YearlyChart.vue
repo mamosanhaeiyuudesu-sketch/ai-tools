@@ -116,14 +116,38 @@ async function renderChart() {
   const years = allYears.value
   if (!years.length) { chart.clear(); return }
 
+  const rangeMin = meta?.chartMin
+  const rangeMax = meta?.chartMax
+
   const series = props.selectedIds.map(id => {
     const player = [...PITCHER_PLAYERS, ...BATTER_PLAYERS].find(p => p.id === id)
     if (!player) return null
+
+    const pts = years.map(y => {
+      const raw = getRawValue(id, y)
+      if (raw === null) return null
+      const aboveMax = rangeMax !== undefined && raw > rangeMax
+      const belowMin = rangeMin !== undefined && raw < rangeMin
+      const clipped = aboveMax ? rangeMax! : belowMin ? rangeMin! : raw
+
+      if (!aboveMax && !belowMin) {
+        return { value: clipped, originalValue: raw }
+      }
+      return {
+        value: clipped,
+        originalValue: raw,
+        symbol: 'triangle',
+        symbolSize: 9,
+        symbolRotate: aboveMax ? 0 : 180,
+        itemStyle: { color: PLAYER_COLORS[id], borderColor: '#fff', borderWidth: 1.5 },
+      }
+    })
+
     return {
       name: player.nameJa,
       type: 'line',
       smooth: false,
-      data: years.map(y => getRawValue(id, y)),
+      data: pts,
       lineStyle: { color: PLAYER_COLORS[id], width: 2 },
       itemStyle: { color: PLAYER_COLORS[id] },
       symbol: 'circle',
@@ -136,11 +160,17 @@ async function renderChart() {
     tooltip: {
       trigger: 'axis',
       formatter: (params: unknown[]) => {
-        const ps = params as Array<{ seriesName: string; value: number; color: string; axisValue: number }>
+        const ps = params as Array<{ seriesName: string; value: number; color: string; axisValue: number; data: { originalValue?: number } | null }>
         const year = ps[0]?.axisValue ?? ''
         const lines = ps
           .filter(p => p.value !== null && p.value !== undefined)
-          .map(p => `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${meta?.format(p.value) ?? p.value}</b>`)
+          .map(p => {
+            const raw = p.data?.originalValue ?? p.value
+            const formatted = meta?.format(raw) ?? raw
+            const outOfRange = p.data?.originalValue !== undefined && p.data.originalValue !== p.value
+            const suffix = outOfRange ? ' <span style="opacity:.6;font-size:10px">圏外</span>' : ''
+            return `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${formatted}</b>${suffix}`
+          })
         return `<div class="text-xs">${year}年<br/>${lines.join('<br/>')}</div>`
       },
     },
@@ -158,6 +188,8 @@ async function renderChart() {
     yAxis: {
       type: 'value',
       inverse: meta?.direction === 'low',
+      min: rangeMin,
+      max: rangeMax,
       axisLabel: { fontSize: 10, formatter: (v: number) => meta?.format(v) ?? v },
     },
     series,

@@ -50,8 +50,9 @@ const hasData = computed(() =>
 
 function buildSeries() {
   const meta = activeMeta.value.find(m => m.key === selectedMetric.value)
-  const min = meta?.chartMin
-  const max = meta?.chartMax
+  const rangeMin = meta?.chartMin
+  const rangeMax = meta?.chartMax
+  const color = (id: string) => PLAYER_COLORS[id]
 
   return props.selectedIds.map(id => {
     const data = props.seasonDataMap.get(id)
@@ -62,10 +63,22 @@ function buildSeries() {
     const pts = trend
       .filter(d => (d as Record<string, unknown>)[selectedMetric.value] !== null)
       .map(d => {
-        let val = (d as Record<string, unknown>)[selectedMetric.value] as number
-        if (min !== undefined && val < min) val = min
-        if (max !== undefined && val > max) val = max
-        return [d.date, val]
+        const raw = (d as Record<string, unknown>)[selectedMetric.value] as number
+        const aboveMax = rangeMax !== undefined && raw > rangeMax
+        const belowMin = rangeMin !== undefined && raw < rangeMin
+        const clipped = aboveMax ? rangeMax! : belowMin ? rangeMin! : raw
+
+        if (!aboveMax && !belowMin) {
+          return { value: [d.date, clipped], originalValue: raw }
+        }
+        return {
+          value: [d.date, clipped],
+          originalValue: raw,
+          symbol: 'triangle',
+          symbolSize: 9,
+          symbolRotate: aboveMax ? 0 : 180,
+          itemStyle: { color: color(id), borderColor: '#fff', borderWidth: 1.5 },
+        }
       })
 
     return {
@@ -73,8 +86,8 @@ function buildSeries() {
       type: 'line',
       smooth: true,
       data: pts,
-      lineStyle: { color: PLAYER_COLORS[id], width: 2 },
-      itemStyle: { color: PLAYER_COLORS[id] },
+      lineStyle: { color: color(id), width: 2 },
+      itemStyle: { color: color(id) },
       symbol: 'circle',
       symbolSize: 5,
     }
@@ -96,11 +109,14 @@ async function renderChart() {
     tooltip: {
       trigger: 'axis',
       formatter: (params: unknown[]) => {
-        const ps = params as Array<{ seriesName: string; value: [string, number]; color: string }>
+        const ps = params as Array<{ seriesName: string; value: [string, number]; color: string; data: { originalValue?: number } }>
         const date = ps[0]?.value[0] ?? ''
         const lines = ps.map(p => {
-          const val = meta?.format(p.value[1]) ?? p.value[1]
-          return `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${val}</b>`
+          const raw = p.data?.originalValue ?? p.value[1]
+          const formatted = meta?.format(raw) ?? raw
+          const outOfRange = p.data?.originalValue !== undefined && p.data.originalValue !== p.value[1]
+          const suffix = outOfRange ? ' <span style="opacity:.6;font-size:10px">圏外</span>' : ''
+          return `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${formatted}</b>${suffix}`
         })
         return `<div class="text-xs">${date}<br/>${lines.join('<br/>')}</div>`
       },
