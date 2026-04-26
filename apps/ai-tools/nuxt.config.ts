@@ -19,29 +19,7 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss', '@vite-pwa/nuxt'],
   pwa: {
     registerType: 'autoUpdate',
-    manifest: {
-      name: 'AI Tools',
-      short_name: 'AI Tools',
-      description: 'AI搭載のツール集',
-      theme_color: '#1a237e',
-      background_color: '#ffffff',
-      display: 'standalone',
-      start_url: '/',
-      icons: [
-        {
-          src: '/pwa-192.png',
-          sizes: '192x192',
-          type: 'image/png',
-          purpose: 'any',
-        },
-        {
-          src: '/pwa-512.png',
-          sizes: '512x512',
-          type: 'image/png',
-          purpose: 'any maskable',
-        },
-      ],
-    },
+    manifest: false,
     workbox: {
       navigateFallback: null,
       globPatterns: ['**/*.{js,css,html,svg,png,ico,woff,woff2}'],

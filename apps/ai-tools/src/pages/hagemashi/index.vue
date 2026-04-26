@@ -323,7 +323,17 @@ import { marked } from 'marked'
 
 useHead({
   title: import.meta.dev ? 'はげまし (dev)' : 'はげまし',
-  link: [{ rel: 'icon', type: 'image/svg+xml', href: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>` }]
+  link: [
+    { rel: 'icon', type: 'image/svg+xml', href: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💪</text></svg>` },
+    { rel: 'manifest', href: '/manifest-hagemashi.json' },
+    { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+  ],
+  meta: [
+    { name: 'apple-mobile-web-app-capable', content: 'yes' },
+    { name: 'apple-mobile-web-app-title', content: 'はげまし' },
+    { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+    { name: 'theme-color', content: '#f97316' },
+  ],
 })
 import { useHistory } from '~/composables/useHistory'
 import { useAuth } from '~/composables/useAuth'

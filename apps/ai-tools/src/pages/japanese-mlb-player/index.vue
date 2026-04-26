@@ -11,7 +11,17 @@ definePageMeta({ ssr: false, layout: 'japanese-mlb-player' })
 
 useHead({
   title: 'MLB日本人選手成績',
-  link: [{ rel: 'icon', type: 'image/svg+xml', href: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚾</text></svg>` }],
+  link: [
+    { rel: 'icon', type: 'image/svg+xml', href: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚾</text></svg>` },
+    { rel: 'manifest', href: '/manifest-mlb.json' },
+    { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
+  ],
+  meta: [
+    { name: 'apple-mobile-web-app-capable', content: 'yes' },
+    { name: 'apple-mobile-web-app-title', content: 'MLB日本人選手' },
+    { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
+    { name: 'theme-color', content: '#1e3a8a' },
+  ],
 })
 
 const tabs = [
