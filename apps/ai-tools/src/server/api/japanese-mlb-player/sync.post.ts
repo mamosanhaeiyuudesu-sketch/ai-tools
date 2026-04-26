@@ -20,16 +20,16 @@ import {
 
 type D1Stmt = ReturnType<D1Database['prepare']>
 
-function upsertBatter(db: D1Database, r: { playerId: string; season: number; date: string; avg: number | null; obp: number | null; ops: number | null; bbPct: number | null; kPct: number | null }): D1Stmt {
+function upsertBatter(db: D1Database, r: { playerId: string; season: number; date: string; avg: number | null; obp: number | null; slg: number | null; ops: number | null; bbPct: number | null; kPct: number | null; hr: number | null; rbi: number | null; hits: number | null; runs: number | null; stolenBases: number | null }): D1Stmt {
   return db.prepare(
-    'INSERT OR REPLACE INTO mlb_batter_stats (player_id, season, date, avg, obp, ops, bb_pct, k_pct) VALUES (?,?,?,?,?,?,?,?)'
-  ).bind(r.playerId, r.season, r.date, r.avg, r.obp, r.ops, r.bbPct, r.kPct)
+    'INSERT OR REPLACE INTO mlb_batter_stats (player_id, season, date, avg, obp, slg, ops, bb_pct, k_pct, hr, rbi, hits, runs, stolen_bases) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+  ).bind(r.playerId, r.season, r.date, r.avg, r.obp, r.slg, r.ops, r.bbPct, r.kPct, r.hr, r.rbi, r.hits, r.runs, r.stolenBases)
 }
 
-function upsertPitcher(db: D1Database, r: { playerId: string; season: number; date: string; era: number | null; whip: number | null; kPct: number | null; bbPct: number | null }): D1Stmt {
+function upsertPitcher(db: D1Database, r: { playerId: string; season: number; date: string; era: number | null; whip: number | null; kPct: number | null; bbPct: number | null; wins: number | null; losses: number | null; strikeouts: number | null; inningsPitched: number | null; saves: number | null; holds: number | null }): D1Stmt {
   return db.prepare(
-    'INSERT OR REPLACE INTO mlb_pitcher_stats (player_id, season, date, era, whip, k_pct, bb_pct) VALUES (?,?,?,?,?,?,?)'
-  ).bind(r.playerId, r.season, r.date, r.era, r.whip, r.kPct, r.bbPct)
+    'INSERT OR REPLACE INTO mlb_pitcher_stats (player_id, season, date, era, whip, k_pct, bb_pct, wins, losses, strikeouts, innings_pitched, saves, holds) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)'
+  ).bind(r.playerId, r.season, r.date, r.era, r.whip, r.kPct, r.bbPct, r.wins, r.losses, r.strikeouts, r.inningsPitched, r.saves, r.holds)
 }
 
 export default defineEventHandler(async (event) => {

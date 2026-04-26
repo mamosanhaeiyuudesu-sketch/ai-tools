@@ -17,9 +17,15 @@ export interface BatterStats {
   date: string | null
   avg: number | null
   obp: number | null
+  slg: number | null
   ops: number | null
   bbPct: number | null
   kPct: number | null
+  hr: number | null
+  rbi: number | null
+  hits: number | null
+  runs: number | null
+  stolenBases: number | null
 }
 
 export interface PitcherStats {
@@ -30,6 +36,12 @@ export interface PitcherStats {
   whip: number | null
   kPct: number | null
   bbPct: number | null
+  wins: number | null
+  losses: number | null
+  strikeouts: number | null
+  inningsPitched: number | null
+  saves: number | null
+  holds: number | null
 }
 
 export interface StatMeta {
@@ -39,6 +51,7 @@ export interface StatMeta {
   description: string
   direction: 'high' | 'low'
   format: (v: number | null) => string
+  counting?: boolean
 }
 
 export interface LeagueStatSummary {

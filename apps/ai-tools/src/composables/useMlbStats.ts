@@ -4,7 +4,7 @@ import { PLAYERS } from '~/utils/japanese-mlb-player/players'
 export function useMlbStats() {
   const selectedIds = useState<string[]>('mlb-selected', () => PLAYERS.map(p => p.id))
   const activeTab = useState<'season' | 'yearly'>('mlb-tab', () => 'season')
-  const selectedSeason = useState<number>('mlb-season', () => 2026)
+  const currentSeason = new Date().getFullYear()
 
   const seasonCache = useState<Map<string, SeasonData>>('mlb-season-cache', () => new Map())
   const yearlyCache = useState<Map<string, YearlyData>>('mlb-yearly-cache', () => new Map())
@@ -31,7 +31,7 @@ export function useMlbStats() {
     try {
       const data = await $fetch<SeasonData>(
         `/api/japanese-mlb-player/season/${playerId}`,
-        { query: { season: selectedSeason.value } }
+        { query: { season: currentSeason } }
       )
       const next = new Map(seasonCache.value)
       next.set(playerId, data)
@@ -74,7 +74,7 @@ export function useMlbStats() {
     leagueLoading.value = true
     try {
       const data = await $fetch<AllLeagueStats>('/api/japanese-mlb-player/league-stats', {
-        query: { season: selectedSeason.value },
+        query: { season: currentSeason },
       })
       leagueStatsCache.value = data
     } finally {
@@ -102,7 +102,6 @@ export function useMlbStats() {
     selectedIds,
     selectedPlayers,
     activeTab,
-    selectedSeason,
     togglePlayer,
     fetchSeason,
     fetchYearly,

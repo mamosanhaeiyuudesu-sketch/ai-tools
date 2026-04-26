@@ -7,22 +7,9 @@
         <p class="text-blue-200 text-xs m-0 hidden sm:block">2026シーズン</p>
       </div>
     </div>
-    <div class="flex items-center gap-3">
-      <select
-        v-if="showSeason"
-        :value="season"
-        @change="$emit('update:season', Number(($event.target as HTMLSelectElement).value))"
-        class="bg-blue-900 text-white text-sm border border-blue-600 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
-      >
-        <option v-for="y in seasons" :key="y" :value="y">{{ y }}年</option>
-      </select>
-    </div>
+    <div></div>
   </header>
 </template>
 
 <script setup lang="ts">
-defineProps<{ season: number; showSeason: boolean }>()
-defineEmits<{ 'update:season': [value: number] }>()
-
-const seasons = [2026, 2025, 2024, 2023, 2022]
 </script>

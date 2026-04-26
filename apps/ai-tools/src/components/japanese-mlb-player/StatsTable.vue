@@ -46,10 +46,10 @@
             <td class="py-2 px-3 text-center">
               <template v-if="getLeagueBlock('pitcher')[stat.key]">
                 <div class="text-[11px] font-mono font-semibold text-emerald-600 whitespace-nowrap">
-                  1位 {{ stat.format(getLeagueBlock('pitcher')[stat.key]!.leaderValue) }}
+                  {{ stat.format(getLeagueBlock('pitcher')[stat.key]!.leaderValue) }}（1位）
                 </div>
-                <div class="text-[11px] font-mono text-slate-400 whitespace-nowrap">
-                  平均 {{ stat.format(getLeagueBlock('pitcher')[stat.key]!.leagueAvg) }}
+                <div v-if="!stat.counting" class="text-[11px] font-mono text-slate-400 whitespace-nowrap">
+                  {{ stat.format(getLeagueBlock('pitcher')[stat.key]!.leagueAvg) }}（平均）
                 </div>
               </template>
               <span v-else class="text-slate-300 text-xs">—</span>
@@ -112,10 +112,10 @@
             <td class="py-2 px-3 text-center">
               <template v-if="getLeagueBlock('batter')[stat.key]">
                 <div class="text-[11px] font-mono font-semibold text-emerald-600 whitespace-nowrap">
-                  1位 {{ stat.format(getLeagueBlock('batter')[stat.key]!.leaderValue) }}
+                  {{ stat.format(getLeagueBlock('batter')[stat.key]!.leaderValue) }}（1位）
                 </div>
-                <div class="text-[11px] font-mono text-slate-400 whitespace-nowrap">
-                  平均 {{ stat.format(getLeagueBlock('batter')[stat.key]!.leagueAvg) }}
+                <div v-if="!stat.counting" class="text-[11px] font-mono text-slate-400 whitespace-nowrap">
+                  {{ stat.format(getLeagueBlock('batter')[stat.key]!.leagueAvg) }}（平均）
                 </div>
               </template>
               <span v-else class="text-slate-300 text-xs">—</span>
@@ -140,7 +140,7 @@
 
 <script setup lang="ts">
 import type { SeasonData, StatMeta, AllLeagueStats, LeagueStatSummary } from '~/types/mlb'
-import { PITCHER_PLAYERS, BATTER_PLAYERS, PITCHER_STATS, BATTER_STATS, PLAYER_COLORS, PLAYER_MAP } from '~/utils/japanese-mlb-player/players'
+import { PITCHER_PLAYERS, BATTER_PLAYERS, PITCHER_STATS, BATTER_STATS, PLAYER_COLORS } from '~/utils/japanese-mlb-player/players'
 
 const props = defineProps<{
   selectedIds: string[]

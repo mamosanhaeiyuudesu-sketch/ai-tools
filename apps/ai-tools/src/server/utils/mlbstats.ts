@@ -64,21 +64,34 @@ function parseBatter(s: Record<string, unknown>, playerId: string, season: numbe
     playerId, season, date,
     avg: parseNum(s.avg),
     obp: parseNum(s.obp),
+    slg: parseNum(s.slg),
     ops: parseNum(s.ops),
     bbPct: pct(parseNum(s.baseOnBalls) ?? 0, pa),
     kPct: pct(parseNum(s.strikeOuts) ?? 0, pa),
+    hr: parseNum(s.homeRuns),
+    rbi: parseNum(s.rbi),
+    hits: parseNum(s.hits),
+    runs: parseNum(s.runs),
+    stolenBases: parseNum(s.stolenBases),
   }
 }
 
 // ── stat object → pitcher row ──
 function parsePitcher(s: Record<string, unknown>, playerId: string, season: number, date: string) {
   const bf = parseNum(s.battersFaced) ?? 0
+  const ip = parseNum(s.inningsPitched)
   return {
     playerId, season, date,
     era: parseNum(s.era),
     whip: parseNum(s.whip),
     kPct: pct(parseNum(s.strikeOuts) ?? 0, bf),
     bbPct: pct(parseNum(s.baseOnBalls) ?? 0, bf),
+    wins: parseNum(s.wins),
+    losses: parseNum(s.losses),
+    strikeouts: parseNum(s.strikeOuts),
+    inningsPitched: ip,
+    saves: parseNum(s.saves),
+    holds: parseNum(s.holds),
   }
 }
 
@@ -132,6 +145,7 @@ export async function fetchBatterGameLog(mlbId: string, season: number) {
   })
 
   let h = 0, ab = 0, bb = 0, hbp = 0, sf = 0, so = 0, pa = 0, tb = 0
+  let hr = 0, rbi = 0, runs = 0, sb = 0
   const results: ReturnType<typeof parseBatter>[] = []
 
   for (const game of splits) {
@@ -146,9 +160,13 @@ export async function fetchBatterGameLog(mlbId: string, season: number) {
     const gDbl = parseNum(s.doubles) ?? 0
     const gTri = parseNum(s.triples) ?? 0
     const gHr = parseNum(s.homeRuns) ?? 0
+    const gRbi = parseNum(s.rbi) ?? 0
+    const gRuns = parseNum(s.runs) ?? 0
+    const gSb = parseNum(s.stolenBases) ?? 0
 
     h += gh; ab += gAb; bb += gBb; hbp += gHbp; sf += gSf; so += gSo; pa += gPa
     tb += (gh - gDbl - gTri - gHr) + 2 * gDbl + 3 * gTri + 4 * gHr
+    hr += gHr; rbi += gRbi; runs += gRuns; sb += gSb
 
     const date = game.date ?? ''
     if (!date) continue
@@ -159,7 +177,11 @@ export async function fetchBatterGameLog(mlbId: string, season: number) {
     const slg = ab > 0 ? Math.round(tb / ab * 1000) / 1000 : null
     const ops = obp !== null && slg !== null ? Math.round((obp + slg) * 1000) / 1000 : null
 
-    results.push({ playerId: mlbId, season, date, avg, obp, ops, bbPct: pct(bb, pa), kPct: pct(so, pa) })
+    results.push({
+      playerId: mlbId, season, date, avg, obp, slg, ops,
+      bbPct: pct(bb, pa), kPct: pct(so, pa),
+      hr, rbi, hits: h, runs, stolenBases: sb,
+    })
   }
   return results
 }
@@ -170,6 +192,7 @@ export async function fetchPitcherGameLog(mlbId: string, season: number) {
   })
 
   let er = 0, hits = 0, bb = 0, so = 0, bf = 0, outs = 0
+  let wins = 0, losses = 0, saves = 0, holds = 0
   const results: ReturnType<typeof parsePitcher>[] = []
 
   for (const game of splits) {
@@ -180,6 +203,10 @@ export async function fetchPitcherGameLog(mlbId: string, season: number) {
     so += parseNum(s.strikeOuts) ?? 0
     bf += parseNum(s.battersFaced) ?? 0
     outs += ipToOuts(s.inningsPitched)
+    wins += parseNum(s.wins) ?? 0
+    losses += parseNum(s.losses) ?? 0
+    saves += parseNum(s.saves) ?? 0
+    holds += parseNum(s.holds) ?? 0
 
     const date = game.date ?? ''
     if (!date) continue
@@ -187,8 +214,14 @@ export async function fetchPitcherGameLog(mlbId: string, season: number) {
     const innings = outs / 3
     const era = innings > 0 ? Math.round(er / innings * 9 * 100) / 100 : null
     const whip = innings > 0 ? Math.round((hits + bb) / innings * 100) / 100 : null
+    const ip = Math.round(innings * 3) / 3
 
-    results.push({ playerId: mlbId, season, date, era, whip, kPct: pct(so, bf), bbPct: pct(bb, bf) })
+    results.push({
+      playerId: mlbId, season, date, era, whip,
+      kPct: pct(so, bf), bbPct: pct(bb, bf),
+      wins, losses, strikeouts: so,
+      inningsPitched: ip, saves, holds,
+    })
   }
   return results
 }
@@ -232,6 +265,50 @@ export async function fetchLeaguePitchers(leagueId: number, season: number) {
       bbPct: pct(parseNum(s.baseOnBalls) ?? 0, bf),
     }
   })
+}
+
+// playerPool: 'all' でカウント系（HR/打点/盗塁等）を取得
+export async function fetchLeagueBatterCounts(leagueId: number, season: number) {
+  const qs = new URLSearchParams({
+    stats: 'season', season: String(season), sportId: '1',
+    group: 'hitting', gameType: 'R', playerPool: 'all',
+    leagueId: String(leagueId), limit: '1000',
+  }).toString()
+  const json = await fetchJson<MlbLeagueResponse>(`${MLB_API}/stats?${qs}`)
+  return (json?.stats?.[0]?.splits ?? [])
+    .filter(split => (parseNum(split.stat.plateAppearances) ?? 0) >= 10)
+    .map(split => {
+      const s = split.stat
+      return {
+        hr:          parseNum(s.homeRuns),
+        rbi:         parseNum(s.rbi),
+        hits:        parseNum(s.hits),
+        runs:        parseNum(s.runs),
+        stolenBases: parseNum(s.stolenBases),
+      }
+    })
+}
+
+export async function fetchLeaguePitcherCounts(leagueId: number, season: number) {
+  const qs = new URLSearchParams({
+    stats: 'season', season: String(season), sportId: '1',
+    group: 'pitching', gameType: 'R', playerPool: 'all',
+    leagueId: String(leagueId), limit: '1000',
+  }).toString()
+  const json = await fetchJson<MlbLeagueResponse>(`${MLB_API}/stats?${qs}`)
+  return (json?.stats?.[0]?.splits ?? [])
+    .filter(split => (parseNum(split.stat.battersFaced) ?? 0) >= 5)
+    .map(split => {
+      const s = split.stat
+      return {
+        wins:           parseNum(s.wins),
+        losses:         parseNum(s.losses),
+        strikeouts:     parseNum(s.strikeOuts),
+        inningsPitched: parseNum(s.inningsPitched),
+        saves:          parseNum(s.saves),
+        holds:          parseNum(s.holds),
+      }
+    })
 }
 
 export function sleep(ms: number) {

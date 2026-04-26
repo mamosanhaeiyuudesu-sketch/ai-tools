@@ -26,7 +26,55 @@ export const PLAYER_MAP = new Map(PLAYERS.map(p => [p.id, p]))
 
 const fmtAvg = (v: number | null) => v === null ? '—' : v.toFixed(3).replace(/^0\./, '')
 
+const fmtInt = (v: number | null) => v === null ? '—' : String(Math.round(v as number))
+const fmtIp = (v: number | null) => {
+  if (v === null) return '—'
+  const full = Math.floor(v as number)
+  const thirds = Math.round(((v as number) - full) * 3)
+  return thirds === 0 ? `${full}` : `${full}.${thirds}`
+}
+
 export const BATTER_STATS: StatMeta[] = [
+  {
+    key: 'hr', label: 'HR',
+    fullName: 'Home Runs',
+    description: '本塁打数。',
+    direction: 'high',
+    format: fmtInt,
+    counting: true,
+  },
+  {
+    key: 'rbi', label: '打点',
+    fullName: 'RBI = Runs Batted In',
+    description: '打点数。',
+    direction: 'high',
+    format: fmtInt,
+    counting: true,
+  },
+  {
+    key: 'hits', label: '安打',
+    fullName: 'Hits',
+    description: '安打数。',
+    direction: 'high',
+    format: fmtInt,
+    counting: true,
+  },
+  {
+    key: 'runs', label: '得点',
+    fullName: 'Runs Scored',
+    description: '得点数。',
+    direction: 'high',
+    format: fmtInt,
+    counting: true,
+  },
+  {
+    key: 'stolenBases', label: '盗塁',
+    fullName: 'SB = Stolen Bases',
+    description: '盗塁数。',
+    direction: 'high',
+    format: fmtInt,
+    counting: true,
+  },
   {
     key: 'avg', label: '打率',
     fullName: 'AVG = Batting Average',
@@ -42,7 +90,14 @@ export const BATTER_STATS: StatMeta[] = [
     format: fmtAvg,
   },
   {
-    key: 'ops', label: '出塁+長打',
+    key: 'slg', label: '長打率',
+    fullName: 'SLG = Slugging Percentage',
+    description: '塁打数 ÷ 打数。長打力の指標。高いほど良い。',
+    direction: 'high',
+    format: fmtAvg,
+  },
+  {
+    key: 'ops', label: 'OPS',
     fullName: 'OPS = On-base Plus Slugging',
     description: '出塁率＋長打率の合計。1.000以上が超一流。高いほど良い。',
     direction: 'high',
@@ -65,6 +120,50 @@ export const BATTER_STATS: StatMeta[] = [
 ]
 
 export const PITCHER_STATS: StatMeta[] = [
+  // 勝敗
+  {
+    key: 'wins', label: '勝利',
+    fullName: 'Wins',
+    description: '勝利数。',
+    direction: 'high',
+    format: fmtInt,
+    counting: true,
+  },
+  {
+    key: 'losses', label: '敗北',
+    fullName: 'Losses',
+    description: '敗北数。',
+    direction: 'low',
+    format: fmtInt,
+    counting: true,
+  },
+  // 救援
+  {
+    key: 'saves', label: 'セーブ',
+    fullName: 'Saves',
+    description: 'セーブ数。',
+    direction: 'high',
+    format: fmtInt,
+    counting: true,
+  },
+  {
+    key: 'holds', label: 'ホールド',
+    fullName: 'Holds',
+    description: 'ホールド数。',
+    direction: 'high',
+    format: fmtInt,
+    counting: true,
+  },
+  // 球量
+  {
+    key: 'inningsPitched', label: '投球回',
+    fullName: 'IP = Innings Pitched',
+    description: '投球イニング数。',
+    direction: 'high',
+    format: fmtIp,
+    counting: true,
+  },
+  // 失点
   {
     key: 'era', label: '防御率',
     fullName: 'ERA = Earned Run Average',
@@ -79,6 +178,15 @@ export const PITCHER_STATS: StatMeta[] = [
     direction: 'low',
     format: (v) => v === null ? '—' : (v as number).toFixed(2),
   },
+  // 三振
+  {
+    key: 'strikeouts', label: '奪三振',
+    fullName: 'Strikeouts',
+    description: '奪三振数。',
+    direction: 'high',
+    format: fmtInt,
+    counting: true,
+  },
   {
     key: 'kPct', label: '奪三振率',
     fullName: 'K% = Strikeout Percentage',
@@ -86,6 +194,7 @@ export const PITCHER_STATS: StatMeta[] = [
     direction: 'high',
     format: (v) => v === null ? '—' : (v as number).toFixed(1) + '%',
   },
+  // 制球
   {
     key: 'bbPct', label: '与四球率',
     fullName: 'BB% = Base on Balls Percentage',

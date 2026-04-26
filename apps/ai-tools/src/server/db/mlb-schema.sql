@@ -24,9 +24,15 @@ CREATE TABLE mlb_batter_stats (
   date TEXT NOT NULL DEFAULT '',
   avg REAL,
   obp REAL,
+  slg REAL,
   ops REAL,
   bb_pct REAL,
   k_pct REAL,
+  hr INTEGER,
+  rbi INTEGER,
+  hits INTEGER,
+  runs INTEGER,
+  stolen_bases INTEGER,
   PRIMARY KEY (player_id, season, date)
 );
 
@@ -38,6 +44,12 @@ CREATE TABLE mlb_pitcher_stats (
   whip REAL,
   k_pct REAL,
   bb_pct REAL,
+  wins INTEGER,
+  losses INTEGER,
+  strikeouts INTEGER,
+  innings_pitched REAL,
+  saves INTEGER,
+  holds INTEGER,
   PRIMARY KEY (player_id, season, date)
 );
 

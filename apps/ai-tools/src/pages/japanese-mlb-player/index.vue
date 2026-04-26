@@ -30,7 +30,6 @@ const activeLeague = ref<'AL' | 'NL'>('NL')
 const {
   selectedIds,
   activeTab,
-  selectedSeason,
   togglePlayer,
   ensureSeasonData,
   ensureYearlyData,
@@ -106,7 +105,7 @@ function deselectAll() {
 </script>
 
 <template>
-  <MlbHeader v-model:season="selectedSeason" :show-season="activeTab === 'season'" />
+  <MlbHeader />
 
   <div class="flex flex-1 overflow-hidden">
     <PlayerSidebar
