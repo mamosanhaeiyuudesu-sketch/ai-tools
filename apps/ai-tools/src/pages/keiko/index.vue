@@ -129,7 +129,7 @@ useHead({
   link: [
     { rel: 'icon', type: 'image/svg+xml', href: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>` },
     { rel: 'manifest', href: '/manifest-keiko.json' },
-    { rel: 'apple-touch-icon', href: '/api/icon/keiko' },
+    { rel: 'apple-touch-icon', href: '/apple-touch-icon-keiko.png' },
   ],
   meta: [
     { name: 'apple-mobile-web-app-capable', content: 'yes' },

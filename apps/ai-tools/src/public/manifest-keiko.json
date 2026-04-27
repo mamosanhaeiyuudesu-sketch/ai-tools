@@ -9,6 +9,6 @@
   "start_url": "/keiko",
   "scope": "/",
   "icons": [
-    { "src": "/icon-keiko.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "/apple-touch-icon-keiko.png", "sizes": "192x192", "type": "image/png", "purpose": "any" }
   ]
 }

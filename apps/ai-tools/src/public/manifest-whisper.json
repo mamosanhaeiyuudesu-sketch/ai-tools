@@ -9,6 +9,6 @@
   "start_url": "/whisper",
   "scope": "/",
   "icons": [
-    { "src": "/icon-whisper.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "/apple-touch-icon-whisper.png", "sizes": "192x192", "type": "image/png", "purpose": "any" }
   ]
 }
