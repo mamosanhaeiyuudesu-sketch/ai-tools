@@ -45,7 +45,7 @@
           <p class="strength-num">01</p>
           <h3 class="strength-title serif">「同じ境遇の人がいる」という安心感を提供できる</h3>
           <p class="story-para">
-            父親問題は孤立しやすいテーマです。体験者同士のつながりが、「自分だけかもしれない」という孤独感を解消します。
+            親子問題は孤立しやすいテーマです。体験者同士のつながりが、「自分だけかもしれない」という孤独感を解消します。
           </p>
         </div>
 
@@ -53,7 +53,7 @@
           <p class="strength-num">02</p>
           <h3 class="strength-title serif">閉じた関係を「外から見る視点」を与えられる</h3>
           <p class="story-para">
-            「父親と自分」という二人の閉じた関係に第三者の目が入ることで、初めて客観視できます。
+            「親と自分」という二人の閉じた関係に第三者の目が入ることで、初めて客観視できます。
           </p>
         </div>
 
@@ -159,7 +159,7 @@
           <h3 class="profile-name serif">まもりん</h3>
           <p class="profile-role">カウンセラー / 感情フォーカス・セラピスト</p>
           <p class="profile-bio">
-            父（や母）との長年の葛藤と、それを乗り越えたプロセスを自ら経験。<br>心理学・セラピー・コーチングを学び、感情の言語化を通じた自己受容のアプローチを実践している。<br>現在は子どもと共に生活を続ける父親でもあり、家族との関係を大切にしながら、同じ見えない痛みを抱える方の伴走をしたいと考えている。<br>AI・IT分野のプロフェッショナルとしても活動しており、論理と感情の両方の視点を持つ。
+            両親との長年の葛藤と、それを乗り越えたプロセスを自ら経験。<br>心理学・セラピー・コーチングを学び、感情の言語化を通じた自己受容のアプローチを実践している。<br>現在は子どもと共に生活を続ける父親でもあり、家族との関係を大切にしながら、同じ見えない痛みを抱える方の伴走をしたいと考えている。<br>AI・IT分野のプロフェッショナルとしても活動しており、論理と感情の両方の視点を持つ。
           </p>
         </div>
       </div>
@@ -173,15 +173,18 @@
       <h2 class="section-title serif">シンプルな料金体系</h2>
 
       <div class="price-grid">
-        <div class="price-row">
-          <div>
-            <p class="price-name">初回無料相談</p>
-            <p class="price-detail">30分 / オンライン</p>
+        <div class="price-row" style="flex-direction:column; align-items:stretch;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+            <div>
+              <p class="price-name">初回無料相談</p>
+              <p class="price-detail">30分 / オンライン</p>
+            </div>
+            <div style="text-align:right; flex-shrink:0;">
+              <p class="price-amount serif">無料</p>
+              <span class="price-badge">まずここから</span>
+            </div>
           </div>
-          <div style="text-align:right;">
-            <p class="price-amount serif">無料</p>
-            <span class="price-badge">まずここから</span>
-          </div>
+          <p class="price-note">これまでの人生やカウンセリングで叶えたいことを共有し、今後の進め方をご一緒に確認します。</p>
         </div>
 
         <div class="price-row">
@@ -237,6 +240,27 @@
       <div style="margin-top: 2rem;">
         <NuxtLink to="/qa" class="cta-btn">よくある質問を見る</NuxtLink>
       </div>
+    </section>
+  </div>
+
+  <!-- SCOPE NOTE -->
+  <div class="container">
+    <section class="section">
+      <p class="label">ご確認ください</p>
+      <h2 class="section-title serif">対応できないケースについて</h2>
+      <p class="story-para">
+        私のカウンセリングは、親子関係の葛藤・感情の整理・自己受容を主なテーマとしています。<br>
+        以下のようなケースについては、専門の医療機関や臨床心理士・公認心理師への相談をお勧めしています。
+      </p>
+      <ul class="scope-list">
+        <li>うつ病・双極性障害など、精神科・心療内科での治療が必要と思われる状態</li>
+        <li>解離症状や、日常生活に支障をきたすほどのフラッシュバックが続いている状態</li>
+        <li>複雑性PTSD・重篤なトラウマへの専門的治療が必要と判断されるケース</li>
+        <li>自傷・自殺念慮が強く、緊急の危機介入が必要な状態</li>
+      </ul>
+      <p class="scope-note">
+        ご自身の状態に迷われている場合は、初回無料相談の中でお聞きし、より適切なサポート先をご一緒に考えます。
+      </p>
     </section>
   </div>
 
@@ -362,7 +386,7 @@ useHead({
   max-width: 520px;
 }
 
-.mamorin-page .for-you-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.mamorin-page .for-you-list { list-style: none; display: flex; flex-direction: column; gap: 16px; }
 
 .mamorin-page .for-you-list li {
   font-size: 15px;
@@ -586,5 +610,47 @@ useHead({
   margin-bottom: 1rem;
   line-height: 1.8;
   color: var(--text);
+}
+
+.mamorin-page .price-note {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 6px;
+  line-height: 1.8;
+}
+
+.mamorin-page .scope-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 1.75rem;
+}
+
+.mamorin-page .scope-list li {
+  font-size: 14px;
+  color: var(--text-secondary);
+  padding-left: 1.5rem;
+  position: relative;
+  line-height: 1.8;
+}
+
+.mamorin-page .scope-list li::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text-tertiary);
+}
+
+.mamorin-page .scope-note {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  line-height: 2;
+  padding: 1rem 1.25rem;
+  background: var(--bg-muted);
+  border-radius: 8px;
+  border: 0.5px solid var(--border);
 }
 </style>
