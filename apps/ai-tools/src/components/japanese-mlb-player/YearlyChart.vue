@@ -26,8 +26,23 @@
               v-for="player in selectedPlayerList"
               :key="player.id"
               class="text-center py-2 px-3 font-medium whitespace-nowrap"
-              :style="{ color: colors[player.id] }"
-            >{{ player.nameJa }}</th>
+            >
+              <span class="inline-flex items-center gap-1" :style="{ color: colors[player.id] }">
+                {{ player.nameJa }}
+                <a
+                  :href="`https://search.yahoo.co.jp/search?p=${encodeURIComponent(player.nameJa + ' MLB')}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-slate-400 hover:text-slate-600 transition-colors"
+                  title="Yahoo検索"
+                  @click.stop
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9 3a6 6 0 100 12A6 6 0 009 3zM1 9a8 8 0 1114.32 4.906l3.387 3.387a1 1 0 01-1.414 1.414l-3.387-3.387A8 8 0 011 9z" clip-rule="evenodd"/>
+                  </svg>
+                </a>
+              </span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -102,7 +117,10 @@ function getRawValue(playerId: string, year: number): number | null {
 function getYearlyValue(playerId: string, year: number): string {
   const meta = activeMeta.value.find(m => m.key === selectedMetric.value)
   const val = getRawValue(playerId, year)
-  return meta ? meta.format(val) : (val === null ? '—' : String(val))
+  if (val === null) return '—'
+  if (meta?.chartMax !== undefined && val > meta.chartMax) return '圏外'
+  if (meta?.chartMin !== undefined && val < meta.chartMin) return '圏外'
+  return meta ? meta.format(val) : String(val)
 }
 
 async function renderChart() {
@@ -190,7 +208,14 @@ async function renderChart() {
       inverse: meta?.direction === 'low',
       min: rangeMin,
       max: rangeMax,
-      axisLabel: { fontSize: 10, formatter: (v: number) => meta?.format(v) ?? v },
+      axisLabel: {
+        fontSize: 10,
+        formatter: (v: number) => {
+          if (meta?.direction === 'low' && rangeMax !== undefined && v === rangeMax) return '圏外'
+          if (meta?.direction === 'high' && rangeMin !== undefined && v === rangeMin) return '圏外'
+          return meta?.format(v) ?? String(v)
+        },
+      },
     },
     series,
   }, true)
