@@ -273,7 +273,7 @@
       </div>
 
       <div style="text-align:center; margin-top:1rem;">
-        <a class="cta-btn" href="https://forms.gle/XXXXXXXXXXXXXXXX" target="_blank" rel="noopener noreferrer">無料相談フォームへ</a>
+        <a class="cta-btn" href="https://docs.google.com/forms/d/e/1FAIpQLSckcLkBNH9xEMSeS3_SuDznoShew41SF6Ja6Du7XHvS6-rwRg/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">無料相談フォームへ</a>
         <p class="cta-note" style="margin-top:1.25rem;">※ いただいた情報は相談対応以外に使用しません。</p>
       </div>
     </section>
@@ -291,7 +291,7 @@ definePageMeta({ layout: 'mamorin' })
 useHead({
   title: '自分を許す — カウンセリング & 感情フォーカス・セラピー',
   link: [
-    { rel: 'icon', type: 'image/svg+xml', href: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>` },
+    { rel: 'icon', type: 'image/svg+xml', href: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☯</text></svg>` },
     { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
     {
       rel: 'stylesheet',

@@ -2,13 +2,14 @@
   <div class="therapist-layout">
     <header class="mm-header">
       <div class="mm-header-inner">
+        <NuxtLink to="/" class="mm-logo">☯</NuxtLink>
         <nav class="mm-nav">
           <NuxtLink to="/" class="mm-nav-link">ホーム</NuxtLink>
           <NuxtLink to="/why-oyako" class="mm-nav-link">なぜ親子問題を扱うのか</NuxtLink>
           <NuxtLink to="/voice" class="mm-nav-link">お客様の声</NuxtLink>
           <NuxtLink to="/story" class="mm-nav-link">私の原体験</NuxtLink>
           <NuxtLink to="/qa" class="mm-nav-link">Q&amp;A</NuxtLink>
-          <NuxtLink to="#contact" class="mm-nav-link mm-nav-cta">無料相談</NuxtLink>
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLSckcLkBNH9xEMSeS3_SuDznoShew41SF6Ja6Du7XHvS6-rwRg/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer" class="mm-nav-link mm-nav-cta">無料相談</a>
         </nav>
         <button class="mm-menu-btn" :class="{ open: menuOpen }" @click="menuOpen = !menuOpen" aria-label="メニュー">
           <span /><span /><span />
@@ -20,7 +21,7 @@
         <NuxtLink to="/voice" class="mm-drawer-link">お客様の声</NuxtLink>
         <NuxtLink to="/story" class="mm-drawer-link">私の原体験</NuxtLink>
         <NuxtLink to="/qa" class="mm-drawer-link">Q&amp;A</NuxtLink>
-        <NuxtLink to="#contact" class="mm-drawer-link">無料相談（初回無料）</NuxtLink>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSckcLkBNH9xEMSeS3_SuDznoShew41SF6Ja6Du7XHvS6-rwRg/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer" class="mm-drawer-link">無料相談（初回無料）</a>
       </div>
     </header>
     <slot />
@@ -33,7 +34,7 @@ useHead({
     {
       rel: 'icon',
       type: 'image/svg+xml',
-      href: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏠</text></svg>`
+      href: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☯</text></svg>`
     }
   ]
 })
@@ -87,16 +88,18 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
 }
 
 .mm-logo {
-  font-family: 'Noto Serif JP', serif !important;
-  font-size: 16px;
-  font-weight: 400;
-  color: #0a2e38;
+  font-size: 22px;
+  color: #00a8b8;
   text-decoration: none;
-  letter-spacing: 0.04em;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-right: 0.5rem;
 }
 
+.mm-logo:hover { opacity: 0.75; }
+
 @media (prefers-color-scheme: dark) {
-  .mm-logo { color: #0a2e38; }
+  .mm-logo { color: #00a8b8; }
 }
 
 .mm-nav {
