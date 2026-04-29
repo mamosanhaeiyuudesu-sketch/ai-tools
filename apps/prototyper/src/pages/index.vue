@@ -19,27 +19,97 @@
     <!-- ヒーロー -->
     <section class="ac-hero">
       <div class="ac-wrap">
-        <span class="hero-eyebrow">Data Visualization &amp; Prototype Development</span>
-        <h1 class="hero-catch">
-          あなたのデータは、<br />
-          <span>宝の山かもしれない。</span>
-        </h1>
-        <div class="hero-sub">
-          <p>手元に眠っている数値データや文章、ちゃんと活かせていますか？</p>
-          <p>
-            集めたまま放置されているデータは、見方を変えるだけでまったく違う顔を見せます。<br />
-            性別・年代・地域・時間——多様な切り口を持つデータほど、料理のしがいがある素材です。
-          </p>
-          <p>
-            私がやることはシンプルです。<br/>「もやっとしたデータ」を、人が見て面白い！なるほど！と思える形に変えること。<br />
-            見せ方ひとつで「へえ、そうだったのか」と思ってもらえる瞬間——そこに一番の喜びを感じています。
-          </p>
-          <p>データはある。<br />でも何をすればいいかわからない。<br />そんなもやっとした感覚を持っていたら、ぜひ一度声をかけてください。</p>
+        <div class="hero-inner">
+          <div class="hero-text">
+            <span class="hero-eyebrow">Data Visualization &amp; Prototype Development</span>
+            <h1 class="hero-catch">
+              あなたのデータは、<br />
+              <span>宝の山かもしれない。</span>
+            </h1>
+            <div class="hero-sub">
+              <p>手元に眠っている数値データや文章、ちゃんと活かせていますか？</p>
+              <p>
+                集めたまま放置されているデータは、見方を変えるだけでまったく違う顔を見せます。<br />
+                性別・年代・地域・時間——多様な切り口を持つデータほど、料理のしがいがある素材です。
+              </p>
+              <p>
+                私がやることはシンプルです。<br/>「もやっとしたデータ」を、人が見て面白い！なるほど！と思える形に変えること。<br />
+                見せ方ひとつで「へえ、そうだったのか」と思ってもらえる瞬間——そこに一番の喜びを感じています。
+              </p>
+              <p>データはある。<br />でも何をすればいいかわからない。<br />そんなもやっとした感覚を持っていたら、ぜひ一度声をかけてください。</p>
+            </div>
+            <a href="#contact" class="hero-cta">
+              まずは相談する
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+          </div>
+          <div class="hero-viz-deco" aria-hidden="true">
+            <svg viewBox="0 0 380 268" fill="none" xmlns="http://www.w3.org/2000/svg" class="hero-chart-svg">
+              <defs>
+                <linearGradient id="heroAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="rgba(27,95,217,0.10)"/>
+                  <stop offset="100%" stop-color="rgba(27,95,217,0.00)"/>
+                </linearGradient>
+              </defs>
+              <!-- チャートタイトル -->
+              <text x="58" y="13" font-family="'IBM Plex Mono',monospace" font-size="8" font-weight="500" fill="rgba(27,95,217,0.42)" letter-spacing="0.12em">INSIGHT_INDEX ↑</text>
+              <!-- 水平グリッド線 -->
+              <line x1="58" y1="38" x2="362" y2="38" stroke="rgba(27,95,217,0.09)" stroke-width="1" stroke-dasharray="3 5"/>
+              <line x1="58" y1="84" x2="362" y2="84" stroke="rgba(27,95,217,0.09)" stroke-width="1" stroke-dasharray="3 5"/>
+              <line x1="58" y1="130" x2="362" y2="130" stroke="rgba(27,95,217,0.09)" stroke-width="1" stroke-dasharray="3 5"/>
+              <line x1="58" y1="176" x2="362" y2="176" stroke="rgba(27,95,217,0.09)" stroke-width="1" stroke-dasharray="3 5"/>
+              <!-- 軸 -->
+              <line x1="58" y1="20" x2="58" y2="228" stroke="rgba(27,95,217,0.22)" stroke-width="1.5"/>
+              <line x1="58" y1="228" x2="370" y2="228" stroke="rgba(27,95,217,0.22)" stroke-width="1.5"/>
+              <!-- Y軸目盛り -->
+              <line x1="52" y1="38" x2="58" y2="38" stroke="rgba(27,95,217,0.3)" stroke-width="1.5"/>
+              <line x1="52" y1="84" x2="58" y2="84" stroke="rgba(27,95,217,0.3)" stroke-width="1.5"/>
+              <line x1="52" y1="130" x2="58" y2="130" stroke="rgba(27,95,217,0.3)" stroke-width="1.5"/>
+              <line x1="52" y1="176" x2="58" y2="176" stroke="rgba(27,95,217,0.3)" stroke-width="1.5"/>
+              <!-- Y軸ラベル -->
+              <text x="46" y="42" font-family="'IBM Plex Mono',monospace" font-size="8.5" fill="rgba(27,95,217,0.38)" text-anchor="end">4k</text>
+              <text x="46" y="88" font-family="'IBM Plex Mono',monospace" font-size="8.5" fill="rgba(27,95,217,0.38)" text-anchor="end">3k</text>
+              <text x="46" y="134" font-family="'IBM Plex Mono',monospace" font-size="8.5" fill="rgba(27,95,217,0.38)" text-anchor="end">2k</text>
+              <text x="46" y="180" font-family="'IBM Plex Mono',monospace" font-size="8.5" fill="rgba(27,95,217,0.38)" text-anchor="end">1k</text>
+              <!-- バー -->
+              <g class="hero-chart-bars">
+                <rect x="70" y="198" width="26" height="30" fill="rgba(27,95,217,0.10)" rx="2"/>
+                <rect x="112" y="176" width="26" height="52" fill="rgba(27,95,217,0.12)" rx="2"/>
+                <rect x="154" y="152" width="26" height="76" fill="rgba(27,95,217,0.14)" rx="2"/>
+                <rect x="196" y="124" width="26" height="104" fill="rgba(27,95,217,0.16)" rx="2"/>
+                <rect x="238" y="90" width="26" height="138" fill="rgba(27,95,217,0.18)" rx="2"/>
+                <rect x="280" y="60" width="26" height="168" fill="rgba(27,95,217,0.20)" rx="2"/>
+                <rect x="322" y="32" width="26" height="196" fill="rgba(27,95,217,0.22)" rx="2"/>
+              </g>
+              <!-- エリア塗り -->
+              <path d="M83,200 L125,178 L167,155 L209,127 L251,93 L293,63 L335,35 L335,228 L83,228 Z" fill="url(#heroAreaGrad)"/>
+              <!-- トレンドライン -->
+              <polyline points="83,200 125,178 167,155 209,127 251,93 293,63 335,35" fill="none" stroke="#1b5fd9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hero-trend-line"/>
+              <!-- データポイント -->
+              <g class="hero-data-pts">
+                <circle cx="83" cy="200" r="3.5" fill="#f0f4fb" stroke="#1b5fd9" stroke-width="1.5"/>
+                <circle cx="125" cy="178" r="3.5" fill="#f0f4fb" stroke="#1b5fd9" stroke-width="1.5"/>
+                <circle cx="167" cy="155" r="3.5" fill="#f0f4fb" stroke="#1b5fd9" stroke-width="1.5"/>
+                <circle cx="209" cy="127" r="3.5" fill="#f0f4fb" stroke="#1b5fd9" stroke-width="1.5"/>
+                <circle cx="251" cy="93" r="3.5" fill="#f0f4fb" stroke="#1b5fd9" stroke-width="1.5"/>
+                <circle cx="293" cy="63" r="3.5" fill="#f0f4fb" stroke="#1b5fd9" stroke-width="1.5"/>
+              </g>
+              <!-- ピークポイント（オレンジ） -->
+              <circle cx="335" cy="35" r="5.5" fill="#f5700a" class="hero-data-peak"/>
+              <circle cx="335" cy="35" r="11" fill="none" stroke="#f5700a" stroke-width="1.2" class="hero-peak-ring"/>
+              <!-- ピークアノテーション -->
+              <g class="hero-peak-annotation">
+                <line x1="335" y1="22" x2="335" y2="14" stroke="#f5700a" stroke-width="1.2" stroke-dasharray="2 2"/>
+                <text x="335" y="10" font-family="'IBM Plex Mono',monospace" font-size="7.5" fill="#f5700a" font-weight="600" text-anchor="middle" letter-spacing="0.1em">PEAK</text>
+              </g>
+              <!-- X軸ラベル -->
+              <text x="83" y="244" font-family="'IBM Plex Mono',monospace" font-size="8.5" fill="rgba(27,95,217,0.36)" text-anchor="middle">'18</text>
+              <text x="167" y="244" font-family="'IBM Plex Mono',monospace" font-size="8.5" fill="rgba(27,95,217,0.36)" text-anchor="middle">'20</text>
+              <text x="251" y="244" font-family="'IBM Plex Mono',monospace" font-size="8.5" fill="rgba(27,95,217,0.36)" text-anchor="middle">'22</text>
+              <text x="335" y="244" font-family="'IBM Plex Mono',monospace" font-size="8.5" fill="rgba(27,95,217,0.58)" text-anchor="middle" font-weight="600">'24</text>
+            </svg>
+          </div>
         </div>
-        <a href="#contact" class="hero-cta">
-          まずは相談する
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
       </div>
     </section>
 
