@@ -80,7 +80,7 @@
 </template>
 
 <script setup lang="ts">
-import type { YearlyData } from '~/types/mlb'
+import type { YearlyData, BatterStats, PitcherStats } from '~/types/mlb'
 import { PITCHER_PLAYERS, BATTER_PLAYERS, PITCHER_STATS, BATTER_STATS, PLAYER_COLORS } from '~/utils/japanese-mlb-player/players'
 
 const props = defineProps<{
@@ -124,7 +124,7 @@ function getRawValue(playerId: string, year: number): number | null {
   const rows = props.mode === 'batter' ? d.yearlyBatter : d.yearlyPitcher
   const row = rows.find(r => r.season === year)
   if (!row) return null
-  return (row as Record<string, unknown>)[selectedMetric.value] as number | null
+  return (row as unknown as Record<string, unknown>)[selectedMetric.value] as number | null
 }
 
 function isOutOfRange(playerId: string, year: number): boolean {
@@ -148,16 +148,89 @@ function getCareerValue(playerId: string): string {
   const d = props.yearlyDataMap.get(playerId)
   if (!d) return '—'
   const rows = props.mode === 'batter' ? d.yearlyBatter : d.yearlyPitcher
-  const values = rows
-    .map(r => (r as Record<string, unknown>)[selectedMetric.value] as number | null)
-    .filter((v): v is number => v !== null)
-  if (!values.length) return '—'
+  const key = selectedMetric.value
+
   if (meta?.counting) {
-    const total = values.reduce((a, b) => a + b, 0)
-    return meta.format(total)
+    const values = rows
+      .map(r => (r as unknown as Record<string, unknown>)[key] as number | null)
+      .filter((v): v is number => v !== null)
+    if (!values.length) return '—'
+    return meta.format(values.reduce((a, b) => a + b, 0))
   }
-  const avg = values.reduce((a, b) => a + b, 0) / values.length
-  return meta ? meta.format(avg) : avg.toFixed(2)
+
+  if (props.mode !== 'batter') {
+    const pr = rows as PitcherStats[]
+    if (key === 'era') {
+      let er = 0, ip = 0
+      for (const r of pr)
+        if (r.era !== null && r.inningsPitched !== null && r.inningsPitched > 0)
+          { er += r.era * r.inningsPitched / 9; ip += r.inningsPitched }
+      return ip > 0 ? meta!.format(er * 9 / ip) : '—'
+    }
+    if (key === 'whip') {
+      let hbb = 0, ip = 0
+      for (const r of pr)
+        if (r.whip !== null && r.inningsPitched !== null && r.inningsPitched > 0)
+          { hbb += r.whip * r.inningsPitched; ip += r.inningsPitched }
+      return ip > 0 ? meta!.format(hbb / ip) : '—'
+    }
+    if (key === 'kPct') {
+      let k = 0, bf = 0
+      for (const r of pr)
+        if (r.kPct !== null && r.strikeouts !== null && r.kPct > 0)
+          { k += r.strikeouts; bf += r.strikeouts / (r.kPct / 100) }
+      return bf > 0 ? meta!.format(k / bf * 100) : '—'
+    }
+    // bbPct: 投球回で加重
+    let pN = 0, pIP = 0
+    for (const r of pr) {
+      const val = (r as unknown as Record<string, unknown>)[key] as number | null
+      if (val !== null && r.inningsPitched !== null && r.inningsPitched > 0)
+        { pN += val * r.inningsPitched; pIP += r.inningsPitched }
+    }
+    return pIP > 0 ? meta!.format(pN / pIP) : '—'
+  }
+
+  // 打者指標
+  const br = rows as BatterStats[]
+  const deriveAB = (r: BatterStats) =>
+    r.hits !== null && r.avg !== null && r.avg > 0 ? r.hits / r.avg : 0
+
+  if (key === 'avg') {
+    let h = 0, ab = 0
+    for (const r of br)
+      if (r.hits !== null && r.avg !== null && r.avg > 0)
+        { h += r.hits; ab += r.hits / r.avg }
+    return ab > 0 ? meta!.format(h / ab) : '—'
+  }
+  if (key === 'slg') {
+    let tb = 0, ab = 0
+    for (const r of br) {
+      const a = deriveAB(r)
+      if (r.slg !== null && a > 0) { tb += r.slg * a; ab += a }
+    }
+    return ab > 0 ? meta!.format(tb / ab) : '—'
+  }
+  if (key === 'ops') {
+    let obpW = 0, slgW = 0, ab = 0
+    for (const r of br) {
+      const a = deriveAB(r)
+      if (a > 0) {
+        if (r.obp !== null) obpW += r.obp * a
+        if (r.slg !== null) slgW += r.slg * a
+        ab += a
+      }
+    }
+    return ab > 0 ? meta!.format((obpW + slgW) / ab) : '—'
+  }
+  // obp・bbPct・kPct: 打数で加重
+  let bN = 0, bAB = 0
+  for (const r of br) {
+    const val = (r as unknown as Record<string, unknown>)[key] as number | null
+    const a = deriveAB(r)
+    if (val !== null && a > 0) { bN += val * a; bAB += a }
+  }
+  return bAB > 0 ? meta!.format(bN / bAB) : '—'
 }
 
 const hasOutOfRange = computed(() =>
