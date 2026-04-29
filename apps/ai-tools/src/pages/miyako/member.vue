@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ ssr: false, layout: 'miyako', alias: ['/miyako/member', '/miyako_gijiroku/member'] })
+definePageMeta({ ssr: false, layout: 'miyako', alias: ['/miyako/member'] })
 
 useHead({ title: import.meta.dev ? '宮古議事録 (dev)' : '宮古議事録' })
 

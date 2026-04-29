@@ -11,7 +11,7 @@ export const PLAYERS: Player[] = [
   { id: '673540', nameJa: '千賀 滉大', nameEn: 'Kodai Senga', position: 'pitcher', team: 'NYM', teamFull: 'ニューヨーク・メッツ', league: 'NL' },
   { id: '684007', nameJa: '今永 昇太', nameEn: 'Shota Imanaga', position: 'pitcher', team: 'CHC', teamFull: 'シカゴ・カブス', league: 'NL' },
   { id: '673548', nameJa: '鈴木 誠也', nameEn: 'Seiya Suzuki', position: 'batter', team: 'CHC', teamFull: 'シカゴ・カブス', league: 'NL' },
-  { id: '666971', nameJa: 'ラーズ・ヌートバー', nameEn: 'Lars Nootbaar', position: 'batter', team: 'STL', teamFull: 'セントルイス・カージナルス', league: 'NL' },
+  { id: '663457', nameJa: 'ラーズ・ヌートバー', nameEn: 'Lars Nootbaar', position: 'batter', team: 'STL', teamFull: 'セントルイス・カージナルス', league: 'NL' },
   { id: '808963', nameJa: '佐々木 朗希', nameEn: 'Roki Sasaki', position: 'pitcher', team: 'LAD', teamFull: 'ロサンゼルス・ドジャース', league: 'NL' },
   { id: '660271', nameJa: '大谷 翔平', nameEn: 'Shohei Ohtani', position: 'both', team: 'LAD', teamFull: 'ロサンゼルス・ドジャース', league: 'NL' },
   { id: '808967', nameJa: '山本 由伸', nameEn: 'Yoshinobu Yamamoto', position: 'pitcher', team: 'LAD', teamFull: 'ロサンゼルス・ドジャース', league: 'NL' },
@@ -219,7 +219,7 @@ export const PLAYER_COLORS: Record<string, string> = {
   '837227': '#009688',  // 今井
   '807799': '#26A69A',  // 吉田
   '673548': '#8BC34A',  // 鈴木
-  '666971': '#FFC107',  // ヌートバー
+  '663457': '#FFC107',  // ヌートバー
   '672960': '#E91E63',  // 岡本
   '808959': '#607D8B',  // 村上
 }
