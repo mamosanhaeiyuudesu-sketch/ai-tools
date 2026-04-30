@@ -2,9 +2,8 @@
   <div class="therapist-layout">
     <header class="mm-header">
       <div class="mm-header-inner">
-        <NuxtLink to="/" class="mm-logo">mamorin</NuxtLink>
         <nav class="mm-nav">
-          <NuxtLink to="/" class="mm-nav-link">ホーム</NuxtLink>
+          <NuxtLink to="/" class="mm-nav-link"><span class="mm-yinyang">☯</span> ホーム</NuxtLink>
           <NuxtLink to="/why-oyako" class="mm-nav-link">なぜ親子問題を扱うのか</NuxtLink>
           <NuxtLink to="/voice" class="mm-nav-link">お客様の声</NuxtLink>
           <NuxtLink to="/story" class="mm-nav-link">私の原体験</NuxtLink>
@@ -44,5 +43,11 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
 
 .v-application:has(.therapist-layout) {
   background: transparent !important;
+}
+
+.mm-yinyang {
+  font-size: 18px;
+  line-height: 1;
+  vertical-align: middle;
 }
 </style>

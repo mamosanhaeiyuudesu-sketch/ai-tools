@@ -22,19 +22,17 @@
             </a>
           </div>
           <div class="mm-hero-deco" aria-hidden="true">
-            <svg viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="140" cy="140" r="128" stroke="rgba(0,118,134,0.07)" stroke-width="0.6" class="mm-ring mm-ring-5"/>
-              <circle cx="140" cy="140" r="102" stroke="rgba(0,118,134,0.11)" stroke-width="0.8" class="mm-ring mm-ring-4"/>
-              <circle cx="140" cy="140" r="76"  stroke="rgba(0,118,134,0.18)" stroke-width="1.0" class="mm-ring mm-ring-3"/>
-              <circle cx="140" cy="140" r="52"  stroke="rgba(0,118,134,0.26)" stroke-width="1.2" class="mm-ring mm-ring-2"/>
-              <circle cx="140" cy="140" r="30"  stroke="rgba(0,118,134,0.38)" stroke-width="1.5" class="mm-ring mm-ring-1"/>
-              <circle cx="140" cy="140" r="10"  fill="rgba(0,118,134,0.15)" stroke="rgba(0,118,134,0.45)" stroke-width="1.5" class="mm-ring mm-ring-core"/>
-              <circle cx="140" cy="140" r="4"   fill="rgba(0,118,134,0.75)" class="mm-ring mm-ring-center"/>
-              <circle cx="140" cy="12"  r="2.2" fill="rgba(0,118,134,0.22)"/>
-              <circle cx="268" cy="140" r="2.2" fill="rgba(0,118,134,0.22)"/>
-              <circle cx="140" cy="268" r="2.2" fill="rgba(0,118,134,0.22)"/>
-              <circle cx="12"  cy="140" r="2.2" fill="rgba(0,118,134,0.22)"/>
-              <text x="140" y="188" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="7" fill="rgba(0,118,134,0.35)" letter-spacing="0.12em">SELF · ACCEPTANCE</text>
+            <svg viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg" class="mm-taijitu">
+              <!-- 外周装飾リング -->
+              <circle cx="140" cy="140" r="132" stroke="rgba(0,118,134,0.07)" stroke-width="1"/>
+              <!-- 陰（yin）: ベース円 -->
+              <circle cx="140" cy="140" r="120" fill="rgba(0,118,134,0.68)" stroke="rgba(0,118,134,0.35)" stroke-width="1.5"/>
+              <!-- 陽（yang）: S字パス -->
+              <path d="M 140 20 A 120 120 0 0 1 140 260 A 60 60 0 0 0 140 140 A 60 60 0 0 1 140 20 Z" fill="rgba(240,246,244,0.90)"/>
+              <!-- 陽の中の小円（陰点） -->
+              <circle cx="140" cy="80" r="20" fill="rgba(0,118,134,0.68)"/>
+              <!-- 陰の中の小円（陽点） -->
+              <circle cx="140" cy="200" r="20" fill="rgba(240,246,244,0.90)"/>
             </svg>
           </div>
         </div>
@@ -45,14 +43,14 @@
     <section id="for-you" class="mm-surface">
       <div class="mm-wrap">
         <p class="mm-section-label">For You</p>
-        <h2 class="mm-section-title">あなたに届いて欲しい</h2>
+        <h2 class="mm-section-title">こんな人に</h2>
         <div class="mm-for-you-inner">
           <ul class="mm-for-you-list">
             <li><span class="mm-for-you-dash">—</span>父親、母親に対して、長年の怒りや恨みを抱えている</li>
             <li><span class="mm-for-you-dash">—</span>親を恨んでいる自分を許せなくて、さらに自分を責めている</li>
-            <li><span class="mm-for-you-dash">—</span>自分を責め続けることに疲れた</li>
+            <li><span class="mm-for-you-dash">—</span>親や自分を責め続けることに疲れた</li>
             <li><span class="mm-for-you-dash">—</span>自己受容という言葉は知っているけど、どこから始めればいいかわからない</li>
-            <li><span class="mm-for-you-dash">—</span>特に、父と息子の関係に悩む男性の方</li>
+            <li><span class="mm-for-you-dash">—</span>父と息子の関係に悩む男性の方</li>
           </ul>
           <img src="/images/mamorin.png" alt="" class="mm-for-you-photo">
         </div>
@@ -63,7 +61,7 @@
     <section>
       <div class="mm-wrap">
         <p class="mm-section-label">Voice</p>
-        <h2 class="mm-section-title">3つの強み</h2>
+        <h2 class="mm-section-title">3つのポイント</h2>
         <div class="mm-strength-list">
           <div class="mm-strength-item">
             <p class="mm-strength-num">01</p>
@@ -278,3 +276,15 @@ useHead({
   ],
 })
 </script>
+
+<style scoped>
+.mm-taijitu {
+  animation: taijituSpin 24s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes taijituSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+</style>

@@ -49,7 +49,7 @@
     <section>
       <div class="mm-wrap">
         <p class="mm-section-label">この声から読み取れること</p>
-        <h2 class="mm-section-title">3つの強み</h2>
+        <h2 class="mm-section-title">3つのポイント</h2>
         <div class="mm-strength-list">
           <div class="mm-strength-item">
             <p class="mm-strength-num">01</p>
