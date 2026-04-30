@@ -4,13 +4,30 @@
 
       <!-- Header -->
       <header class="flex items-center justify-between gap-3 px-5 py-3 border-b border-white/[0.06]">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 shrink-0">
           <span class="text-xl">💗</span>
-          <div class="leading-tight">
-            <h1 class="m-0 text-base font-semibold bg-gradient-to-br from-rose-400 to-indigo-400 bg-clip-text text-transparent">deepheart</h1>
-          </div>
+          <h1 class="m-0 text-base font-semibold bg-gradient-to-br from-rose-400 to-indigo-400 bg-clip-text text-transparent leading-tight">deepheart</h1>
         </div>
-        <div class="flex items-center gap-2">
+
+        <!-- タブ切り替え -->
+        <div v-if="isLoggedIn" class="flex rounded-xl border border-white/[0.12] overflow-hidden bg-white/[0.03] text-xs shrink-0">
+          <button
+            class="px-3 py-1.5 transition-all duration-150 border-none cursor-pointer font-medium"
+            :class="tab === 'talk'
+              ? 'bg-gradient-to-r from-rose-500/70 to-rose-400/60 text-white'
+              : 'text-slate-500 hover:text-slate-300 bg-transparent'"
+            @click="tab = 'talk'"
+          >話す</button>
+          <button
+            class="px-3 py-1.5 transition-all duration-150 border-none cursor-pointer font-medium"
+            :class="tab === 'insight'
+              ? 'bg-gradient-to-r from-indigo-500/70 to-indigo-400/60 text-white'
+              : 'text-slate-500 hover:text-slate-300 bg-transparent'"
+            @click="switchToInsight"
+          >気づく</button>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
           <button
             class="flex items-center gap-2 p-1.5 rounded-xl border border-white/[0.12] bg-white/[0.05] hover:bg-white/[0.10] hover:border-white/[0.20] transition-all duration-150 cursor-pointer"
             @click="openSettings"
@@ -24,66 +41,87 @@
         </div>
       </header>
 
-      <!-- Messages -->
-      <div ref="scrollRef" class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 [scrollbar-width:thin] [scrollbar-color:rgba(244,63,94,0.3)_transparent]">
-        <div v-if="messages.length === 0 && !loadingHistory" class="flex-1 flex flex-col items-center justify-center text-center gap-2 py-10 text-slate-500">
-          <div class="text-4xl">💗</div>
-          <p class="m-0 text-sm">話したいことを自由に書いてみてください。</p>
-          <p class="m-0 text-xs text-slate-600">ここで話した内容はあなたのアカウントにのみ保存されます。</p>
+      <!-- 話す: メッセージ一覧 -->
+      <template v-if="tab === 'talk'">
+        <div ref="scrollRef" class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 [scrollbar-width:thin] [scrollbar-color:rgba(244,63,94,0.3)_transparent]">
+          <div v-if="messages.length === 0 && !loadingHistory" class="flex-1 flex flex-col items-center justify-center text-center gap-2 py-10 text-slate-500">
+            <div class="text-4xl">💗</div>
+            <p class="m-0 text-sm">話したいことを自由に書いてみてください。</p>
+            <p class="m-0 text-xs text-slate-600">ここで話した内容はあなたのアカウントにのみ保存されます。</p>
+          </div>
+          <MessageBubble
+            v-for="m in messages"
+            :key="m.id"
+            :role="m.role"
+            :content="m.content"
+            :fontSizePx="fontSizePx"
+            :createdAt="m.createdAt"
+          />
+          <div v-if="streaming" ref="streamBottomRef" />
         </div>
-        <MessageBubble
-          v-for="m in messages"
-          :key="m.id"
-          :role="m.role"
-          :content="m.content"
-          :fontSizePx="fontSizePx"
-          :createdAt="m.createdAt"
+
+        <!-- Scroll to bottom button -->
+        <Transition name="scroll-btn">
+          <button
+            v-if="!isAtBottom"
+            class="absolute bottom-[4.5rem] left-1/2 -translate-x-1/2 z-10 w-9 h-9 rounded-full bg-rose-500/80 hover:bg-rose-500 backdrop-blur text-white flex items-center justify-center shadow-lg transition-colors cursor-pointer border-none"
+            title="最下部へスクロール"
+            @click="scrollToBottom"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </Transition>
+
+        <!-- Error -->
+        <div v-if="error" class="mx-4 mb-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 text-red-300 text-xs flex items-center justify-between gap-2">
+          <span>{{ error }}</span>
+          <button class="text-red-300 hover:text-red-200 bg-transparent border-none cursor-pointer text-xs" @click="error = ''">閉じる</button>
+        </div>
+
+        <!-- Composer -->
+        <form class="flex items-end gap-2 p-3 border-t border-white/[0.06]" @submit.prevent="send">
+          <textarea
+            ref="inputRef"
+            v-model="input"
+            rows="1"
+            placeholder="いまの気持ちを書いてみてください..."
+            class="flex-1 resize-none bg-white/[0.05] border border-white/[0.12] rounded-xl text-slate-50 text-sm px-3 py-2.5 outline-none focus:border-rose-400 transition-colors font-[inherit] leading-relaxed max-h-40 placeholder:text-slate-600"
+            :style="{ fontSize: fontSizePx }"
+            @keydown="onKeydown"
+            @input="autoGrow"
+          />
+          <button
+            type="submit"
+            class="shrink-0 h-10 w-10 rounded-full border-none bg-gradient-to-br from-rose-500 to-indigo-500 text-white flex items-center justify-center text-base cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+            :disabled="streaming || !input.trim()"
+            title="送信"
+          >
+            <span v-if="!streaming">➤</span>
+            <span v-else class="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+          </button>
+        </form>
+      </template>
+
+      <!-- 気づく: インサイトビュー -->
+      <template v-if="tab === 'insight'">
+        <div v-if="dev" class="flex-1 flex flex-col items-center justify-center text-center gap-2 py-10 text-slate-600">
+          <p class="m-0 text-sm">開発環境では気づく機能はご利用いただけません。</p>
+        </div>
+        <InsightView
+          v-else
+          :insight="insightData"
+          :createdAt="insightCreatedAt"
+          :messageCount="insightMessageCount"
+          :tooFewMessages="insightTooFew"
+          :loading="insightLoading"
+          :refreshing="insightRefreshing"
+          :canRefresh="insightCanRefresh"
+          @refresh="refreshInsight"
         />
-        <div v-if="streaming" ref="streamBottomRef" />
-      </div>
+      </template>
 
-      <!-- Scroll to bottom button -->
-      <Transition name="scroll-btn">
-        <button
-          v-if="!isAtBottom"
-          class="absolute bottom-[4.5rem] left-1/2 -translate-x-1/2 z-10 w-9 h-9 rounded-full bg-rose-500/80 hover:bg-rose-500 backdrop-blur text-white flex items-center justify-center shadow-lg transition-colors cursor-pointer border-none"
-          title="最下部へスクロール"
-          @click="scrollToBottom"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-          </svg>
-        </button>
-      </Transition>
-
-      <!-- Error -->
-      <div v-if="error" class="mx-4 mb-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 text-red-300 text-xs flex items-center justify-between gap-2">
-        <span>{{ error }}</span>
-        <button class="text-red-300 hover:text-red-200 bg-transparent border-none cursor-pointer text-xs" @click="error = ''">閉じる</button>
-      </div>
-
-      <!-- Composer -->
-      <form class="flex items-end gap-2 p-3 border-t border-white/[0.06]" @submit.prevent="send">
-        <textarea
-          ref="inputRef"
-          v-model="input"
-          rows="1"
-          placeholder="いまの気持ちを書いてみてください..."
-          class="flex-1 resize-none bg-white/[0.05] border border-white/[0.12] rounded-xl text-slate-50 text-sm px-3 py-2.5 outline-none focus:border-rose-400 transition-colors font-[inherit] leading-relaxed max-h-40 placeholder:text-slate-600"
-          :style="{ fontSize: fontSizePx }"
-          @keydown="onKeydown"
-          @input="autoGrow"
-        />
-        <button
-          type="submit"
-          class="shrink-0 h-10 w-10 rounded-full border-none bg-gradient-to-br from-rose-500 to-indigo-500 text-white flex items-center justify-center text-base cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
-          :disabled="streaming || !input.trim()"
-          title="送信"
-        >
-          <span v-if="!streaming">➤</span>
-          <span v-else class="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-        </button>
-      </form>
     </div>
 
     <DeepheartAuthModal v-if="checked && !isLoggedIn" />
@@ -108,6 +146,7 @@ import { useDeepheartAuth } from '~/composables/useDeepheartAuth'
 import DeepheartAuthModal from '~/components/deepheart/DeepheartAuthModal.vue'
 import MessageBubble from '~/components/deepheart/MessageBubble.vue'
 import SettingsModal from '~/components/deepheart/SettingsModal.vue'
+import InsightView, { type InsightResult } from '~/components/deepheart/InsightView.vue'
 
 
 definePageMeta({ layout: 'deepheart', alias: ['/deepheart', '/deepheart/'] })
@@ -139,6 +178,14 @@ interface Personality {
   fontSize?: 'small' | 'medium' | 'large'
 }
 
+interface InsightsResponse {
+  insight: InsightResult | null
+  createdAt: string | null
+  messageCount: number
+  tooFewMessages: boolean
+  canRefresh: boolean
+}
+
 const { user, isLoggedIn, checked, checkAuth, logout } = useDeepheartAuth()
 
 const dev = import.meta.dev
@@ -147,6 +194,7 @@ const LS_PERSONALITY_PREFIX = 'dh-personality:'
 const messagesKey = computed(() => (user.value ? `${LS_MESSAGES_PREFIX}${user.value.id}` : ''))
 const personalityKey = computed(() => (user.value ? `${LS_PERSONALITY_PREFIX}${user.value.id}` : ''))
 
+// ── 話す ──
 const messages = ref<ChatMessage[]>([])
 const input = ref('')
 const streaming = ref(false)
@@ -156,6 +204,17 @@ const scrollRef = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
 const isAtBottom = ref(true)
 
+// ── 気づく ──
+const tab = ref<'talk' | 'insight'>('talk')
+const insightData = ref<InsightResult | null>(null)
+const insightCreatedAt = ref<string | null>(null)
+const insightMessageCount = ref(0)
+const insightTooFew = ref(false)
+const insightLoading = ref(false)
+const insightRefreshing = ref(false)
+const insightCanRefresh = ref(true)
+
+// ── 設定 ──
 const settingsOpen = ref(false)
 const savingSettings = ref(false)
 const personality = ref<Personality>({ systemPrompt: '', fontSize: 'medium' })
@@ -164,7 +223,6 @@ const fontSizePx = computed(() => {
   const map = { small: '14px', medium: '16px', large: '20px' }
   return map[personality.value.fontSize || 'medium']
 })
-
 
 function onScrollUpdate() {
   const el = scrollRef.value
@@ -233,7 +291,6 @@ async function loadPersonality() {
   }
   try {
     const p = await $fetch<{ systemPrompt: string }>('/api/deepheart/personality')
-    // fontSizeはローカルに保存しているので取り出す
     let fontSize: 'small' | 'medium' | 'large' = 'medium'
     if (personalityKey.value) {
       try {
@@ -244,6 +301,50 @@ async function loadPersonality() {
     personality.value = { systemPrompt: p.systemPrompt, fontSize }
   } catch {
     personality.value = { systemPrompt: '', fontSize: 'medium' }
+  }
+}
+
+async function switchToInsight() {
+  tab.value = 'insight'
+  if (!dev && !insightData.value && !insightLoading.value) {
+    await loadInsight()
+  }
+}
+
+async function loadInsight() {
+  if (dev) return
+  insightLoading.value = true
+  try {
+    const res = await $fetch<InsightsResponse>('/api/deepheart/insights')
+    insightData.value = res.insight
+    insightCreatedAt.value = res.createdAt
+    insightMessageCount.value = res.messageCount
+    insightTooFew.value = res.tooFewMessages
+    insightCanRefresh.value = res.canRefresh
+  } catch {
+    // ignore
+  } finally {
+    insightLoading.value = false
+  }
+}
+
+async function refreshInsight() {
+  if (dev) return
+  insightRefreshing.value = true
+  try {
+    const res = await $fetch<InsightsResponse & { cached: boolean }>('/api/deepheart/insights/refresh', { method: 'POST' })
+    insightData.value = res.insight
+    insightCreatedAt.value = res.createdAt
+    insightMessageCount.value = res.messageCount
+    insightCanRefresh.value = res.canRefresh
+    insightTooFew.value = false
+  } catch (err: any) {
+    if (err?.data?.tooFewMessages) {
+      insightTooFew.value = true
+      insightMessageCount.value = err.data.messageCount ?? 0
+    }
+  } finally {
+    insightRefreshing.value = false
   }
 }
 
@@ -274,7 +375,6 @@ async function saveSettings(payload: { systemPrompt: string; fontSize: 'small' |
       body: { systemPrompt: payload.systemPrompt },
     })
     personality.value = { systemPrompt: res.systemPrompt, fontSize: payload.fontSize }
-    // fontSizeはローカルに保存（サーバーAPIの変更不要）
     if (personalityKey.value) {
       try {
         const stored = JSON.parse(localStorage.getItem(personalityKey.value) || '{}')
@@ -348,7 +448,6 @@ async function send() {
   }
   messages.value.push(userMsg, assistantMsg)
   input.value = ''
-  // DOMが更新される前に直接heightをリセットして引きずりを防ぐ
   if (inputRef.value) inputRef.value.style.height = 'auto'
   await scrollToBottom()
 
