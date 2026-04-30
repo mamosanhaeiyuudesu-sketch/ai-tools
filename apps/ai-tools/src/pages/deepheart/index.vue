@@ -1,6 +1,6 @@
 <template>
   <div class="flex justify-center min-h-screen px-4 pt-4 lg:pt-8 pb-0">
-    <div class="w-full max-w-[720px] flex flex-col h-[calc(100dvh-2rem)] lg:h-[calc(100dvh-4rem)] bg-white/[0.04] border border-white/[0.08] rounded-2xl shadow-[0_20px_80px_rgba(0,0,0,0.35)] backdrop-blur-[10px] overflow-hidden">
+    <div class="relative w-full max-w-[720px] flex flex-col h-[calc(100dvh-2rem)] lg:h-[calc(100dvh-4rem)] bg-white/[0.04] border border-white/[0.08] rounded-2xl shadow-[0_20px_80px_rgba(0,0,0,0.35)] backdrop-blur-[10px] overflow-hidden">
 
       <!-- Header -->
       <header class="flex items-center justify-between gap-3 px-5 py-3 border-b border-white/[0.06]">
@@ -37,9 +37,24 @@
           :role="m.role"
           :content="m.content"
           :fontSizePx="fontSizePx"
+          :createdAt="m.createdAt"
         />
         <div v-if="streaming" ref="streamBottomRef" />
       </div>
+
+      <!-- Scroll to bottom button -->
+      <Transition name="scroll-btn">
+        <button
+          v-if="!isAtBottom"
+          class="absolute bottom-[4.5rem] left-1/2 -translate-x-1/2 z-10 w-9 h-9 rounded-full bg-rose-500/80 hover:bg-rose-500 backdrop-blur text-white flex items-center justify-center shadow-lg transition-colors cursor-pointer border-none"
+          title="最下部へスクロール"
+          @click="scrollToBottom"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+          </svg>
+        </button>
+      </Transition>
 
       <!-- Error -->
       <div v-if="error" class="mx-4 mb-2 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 text-red-300 text-xs flex items-center justify-between gap-2">
@@ -88,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted, computed, watch } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useDeepheartAuth } from '~/composables/useDeepheartAuth'
 import DeepheartAuthModal from '~/components/deepheart/DeepheartAuthModal.vue'
 import MessageBubble from '~/components/deepheart/MessageBubble.vue'
@@ -116,6 +131,7 @@ interface ChatMessage {
   id: string
   role: 'user' | 'assistant'
   content: string
+  createdAt?: string
 }
 
 interface Personality {
@@ -138,18 +154,34 @@ const error = ref('')
 const loadingHistory = ref(false)
 const scrollRef = ref<HTMLElement | null>(null)
 const inputRef = ref<HTMLTextAreaElement | null>(null)
+const isAtBottom = ref(true)
 
 const settingsOpen = ref(false)
 const savingSettings = ref(false)
 const personality = ref<Personality>({ systemPrompt: '', fontSize: 'medium' })
 
 const fontSizePx = computed(() => {
-  const map = { small: '16px', medium: '18px', large: '22px' }
+  const map = { small: '14px', medium: '16px', large: '20px' }
   return map[personality.value.fontSize || 'medium']
 })
 
 
-onMounted(checkAuth)
+function onScrollUpdate() {
+  const el = scrollRef.value
+  if (!el) return
+  isAtBottom.value = el.scrollHeight - el.scrollTop - el.clientHeight < 40
+}
+
+onMounted(() => {
+  checkAuth()
+  nextTick(() => {
+    scrollRef.value?.addEventListener('scroll', onScrollUpdate, { passive: true })
+  })
+})
+
+onUnmounted(() => {
+  scrollRef.value?.removeEventListener('scroll', onScrollUpdate)
+})
 
 watch(() => isLoggedIn.value, async (logged) => {
   if (logged) await loadAll()
@@ -176,7 +208,7 @@ async function loadHistory() {
     )
     messages.value = rows
       .filter((r) => r.role === 'user' || r.role === 'assistant')
-      .map((r) => ({ id: r.id, role: r.role as 'user' | 'assistant', content: r.content }))
+      .map((r) => ({ id: r.id, role: r.role as 'user' | 'assistant', content: r.content, createdAt: r.createdAt }))
     await scrollToBottom()
   } catch {
     // 未ログイン時など
@@ -291,7 +323,10 @@ function autoGrow() {
 async function scrollToBottom() {
   await nextTick()
   const el = scrollRef.value
-  if (el) el.scrollTop = el.scrollHeight
+  if (el) {
+    el.scrollTop = el.scrollHeight
+    isAtBottom.value = true
+  }
 }
 
 async function send() {
@@ -299,10 +334,12 @@ async function send() {
   if (!text || streaming.value) return
 
   error.value = ''
+  const nowIso = new Date().toISOString()
   const userMsg: ChatMessage = {
     id: `local-${Date.now()}-u`,
     role: 'user',
     content: text,
+    createdAt: nowIso,
   }
   const assistantMsg: ChatMessage = {
     id: `local-${Date.now()}-a`,
@@ -367,3 +404,15 @@ async function send() {
   }
 }
 </script>
+
+<style scoped>
+.scroll-btn-enter-active,
+.scroll-btn-leave-active {
+  transition: opacity 0.2s, transform 0.2s;
+}
+.scroll-btn-enter-from,
+.scroll-btn-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
+}
+</style>
