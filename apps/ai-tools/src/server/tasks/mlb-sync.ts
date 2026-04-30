@@ -4,6 +4,7 @@
  */
 
 import { PLAYERS } from '~/utils/japanese-mlb-player/players'
+import { currentYearJST } from '~/utils/jst'
 import {
   MLB_DEBUT_SEASONS,
   fetchBatterSeason,
@@ -24,7 +25,7 @@ export default defineTask({
     const db = (context as Record<string, unknown>)?.cloudflare?.env?.MLB_DB as D1Database | undefined
     if (!db) throw new Error('MLB_DB バインディングが見つかりません')
 
-    const season = new Date().getFullYear()
+    const season = currentYearJST()
 
     await db.batch(PLAYERS.map(p =>
       db.prepare(

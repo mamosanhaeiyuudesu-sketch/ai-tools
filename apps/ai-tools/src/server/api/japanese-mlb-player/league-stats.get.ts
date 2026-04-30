@@ -1,4 +1,5 @@
 import type { AllLeagueStats, LeagueStatsBlock, LeagueStatSummary } from '~/types/mlb'
+import { currentYearJST } from '~/utils/jst'
 import { fetchLeagueBatters, fetchLeaguePitchers, fetchLeagueBatterCounts, fetchLeaguePitcherCounts } from '~/server/utils/mlbstats'
 import { getDevLeagueStats } from '~/server/utils/mlb-dev'
 
@@ -53,7 +54,7 @@ async function getLeagueBlock(leagueId: number, season: number): Promise<LeagueS
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
-  const season = Number(query.season ?? new Date().getFullYear())
+  const season = Number(query.season ?? currentYearJST())
 
   const env = event.context.cloudflare?.env as Record<string, unknown> | undefined
   if (!env?.MLB_DB) {

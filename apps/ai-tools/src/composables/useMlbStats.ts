@@ -5,7 +5,7 @@ export function useMlbStats() {
   const DEFAULT_EXCLUDED = new Set(['673513', '506433']) // 松井・ダルビッシュ
   const selectedIds = useState<string[]>('mlb-selected', () => PLAYERS.map(p => p.id).filter(id => !DEFAULT_EXCLUDED.has(id)))
   const activeTab = useState<'season' | 'yearly'>('mlb-tab', () => 'season')
-  const currentSeason = new Date().getFullYear()
+  const currentSeason = currentYearJST()
 
   const seasonCache = useState<Map<string, SeasonData>>('mlb-season-cache', () => new Map())
   const yearlyCache = useState<Map<string, YearlyData>>('mlb-yearly-cache', () => new Map())

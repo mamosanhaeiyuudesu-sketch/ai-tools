@@ -26,9 +26,9 @@ function doneTotal(board: Board) {
 }
 
 function getJstKey(daysBack: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() - daysBack)
-  return new Date(d.getTime() + 9 * 3_600_000).toISOString().slice(0, 10)
+  const d = nowJST()
+  d.setUTCDate(d.getUTCDate() - daysBack)
+  return d.toISOString().slice(0, 10)
 }
 
 export function useTaskStats(

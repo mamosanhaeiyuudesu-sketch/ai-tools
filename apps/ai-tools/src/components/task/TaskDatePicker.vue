@@ -64,15 +64,15 @@ function isSelected(day: number | null) {
 
 function isToday(day: number | null) {
   if (day === null) return false
-  const t = new Date()
-  return t.getFullYear() === tempYear.value && t.getMonth() === tempMonth.value && t.getDate() === day
+  const t = nowJST()
+  return t.getUTCFullYear() === tempYear.value && t.getUTCMonth() === tempMonth.value && t.getUTCDate() === day
 }
 
 function setToday() {
-  const t = new Date()
-  tempYear.value = t.getFullYear()
-  tempMonth.value = t.getMonth()
-  tempDay.value = t.getDate()
+  const t = nowJST()
+  tempYear.value = t.getUTCFullYear()
+  tempMonth.value = t.getUTCMonth()
+  tempDay.value = t.getUTCDate()
 }
 
 function clear() {

@@ -476,8 +476,8 @@ const parsedResult = computed(() => marked.parse(encourageResult.value || '') as
 
 // --- エクスポート ---
 const formatExportDate = (iso: string): string => {
-  const d = new Date(iso)
-  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`
+  const d = toJSTDate(iso)
+  return `${d.getUTCFullYear()}/${d.getUTCMonth() + 1}/${d.getUTCDate()}`
 }
 
 const exportDates = computed(() => {
@@ -578,11 +578,11 @@ const confirmSelect = () => {
 }
 
 const formatSelectDate = (iso: string): string => {
-  const d = new Date(iso)
-  const mo = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const h = String(d.getHours()).padStart(2, '0')
-  const mi = String(d.getMinutes()).padStart(2, '0')
+  const d = toJSTDate(iso)
+  const mo = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  const h = String(d.getUTCHours()).padStart(2, '0')
+  const mi = String(d.getUTCMinutes()).padStart(2, '0')
   return `${mo}/${day} ${h}:${mi}`
 }
 

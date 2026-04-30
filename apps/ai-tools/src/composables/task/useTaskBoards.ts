@@ -207,8 +207,7 @@ export function useTaskBoards(
     const [sy, sm] = startMonth.value.split('-').map(Number)
     const [ey, em] = endMonth.value.split('-').map(Number)
     if (due < new Date(sy, sm - 1, 1) || due > new Date(ey, em, 0, 23, 59, 59)) return
-    const jst = new Date(due.getTime() + 9 * 3_600_000)
-    const key = jst.toISOString().slice(0, 10)
+    const key = toJSTDate(due).toISOString().slice(0, 10)
     ;(board.done[key] ??= []).push({ id: card.id, name: card.name })
     rebuildAllDates()
   }
@@ -251,8 +250,7 @@ export function useTaskBoards(
                   if (!card.due) continue
                   const due = new Date(card.due)
                   if (due < rangeStart || due > rangeEnd) continue
-                  const jst = new Date(due.getTime() + 9 * 3_600_000)
-                  const key = jst.toISOString().slice(0, 10)
+                  const key = toJSTDate(due).toISOString().slice(0, 10)
                   ;(board.done[key] ??= []).push({ id: card.id, name: card.name })
                 }
               }
@@ -377,9 +375,7 @@ export function useTaskBoards(
 
         if (newStatus === 'done') {
           await trelloPut(`/cards/${card.id}`, { name: taskForm.value.name.trim(), desc: taskForm.value.desc.trim(), due: effectiveDue, dueComplete: true })
-          const newDue = new Date(effectiveDue)
-          const jst = new Date(newDue.getTime() + 9 * 3_600_000)
-          const newDateKey = jst.toISOString().slice(0, 10)
+          const newDateKey = toJSTDate(effectiveDue).toISOString().slice(0, 10)
           if (dateKey && newDateKey !== dateKey) {
             const oldArr = board.done[dateKey]
             if (oldArr) {

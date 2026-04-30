@@ -26,10 +26,10 @@ import type { DoneView } from '~/composables/task/useTaskStats'
 const route = useRoute()
 const isMounted = ref(false)
 
-const now = new Date()
-const startDate = new Date(now.getFullYear(), now.getMonth() - 2, 1)
-const defaultStart = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}`
-const defaultEnd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+const now = nowJST()
+const startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 2, 1))
+const defaultStart = `${startDate.getUTCFullYear()}-${String(startDate.getUTCMonth() + 1).padStart(2, '0')}`
+const defaultEnd = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`
 const startMonth = ref((route.query.start as string) || defaultStart)
 const endMonth = ref((route.query.end as string) || defaultEnd)
 
@@ -100,9 +100,9 @@ const praiseSentences = computed(() =>
 
 const praisePeriodFlat = computed(() => {
   const keys = Array.from({ length: praiseDays.value }, (_, i) => {
-    const d = new Date()
-    d.setDate(d.getDate() - i)
-    return new Date(d.getTime() + 9 * 3_600_000).toISOString().slice(0, 10)
+    const d = nowJST()
+    d.setUTCDate(d.getUTCDate() - i)
+    return d.toISOString().slice(0, 10)
   })
   const items: { card: any; board: any; date: string }[] = []
   for (const date of keys) {

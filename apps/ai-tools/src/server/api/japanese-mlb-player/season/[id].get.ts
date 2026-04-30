@@ -1,5 +1,6 @@
 import { getDevSeasonData } from '../../../utils/mlb-dev'
 import { PLAYERS } from '~/utils/japanese-mlb-player/players'
+import { currentYearJST } from '~/utils/jst'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')
@@ -9,7 +10,7 @@ export default defineEventHandler(async (event) => {
   if (!player) throw createError({ statusCode: 404, statusMessage: '選手が見つかりません。' })
 
   const query = getQuery(event)
-  const season = Number(query.season ?? new Date().getFullYear())
+  const season = Number(query.season ?? currentYearJST())
 
   const env = event.context.cloudflare?.env as Record<string, unknown> | undefined
   const db = env?.MLB_DB as D1Database | undefined

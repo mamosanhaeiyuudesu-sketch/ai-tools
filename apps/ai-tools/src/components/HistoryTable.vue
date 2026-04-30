@@ -233,12 +233,12 @@ const copyFromModal = async () => {
 }
 
 const formatDate = (iso: string): string => {
-  const d = new Date(iso)
-  const y = String(d.getFullYear()).slice(-2)
-  const mo = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const h = String(d.getHours()).padStart(2, '0')
-  const mi = String(d.getMinutes()).padStart(2, '0')
+  const d = toJSTDate(iso)
+  const y = String(d.getUTCFullYear()).slice(-2)
+  const mo = String(d.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(d.getUTCDate()).padStart(2, '0')
+  const h = String(d.getUTCHours()).padStart(2, '0')
+  const mi = String(d.getUTCMinutes()).padStart(2, '0')
   return `${y}/${mo}/${day} ${h}:${mi}`
 }
 </script>

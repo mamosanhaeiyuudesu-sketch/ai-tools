@@ -7,6 +7,7 @@
  */
 
 import { PLAYERS } from '~/utils/japanese-mlb-player/players'
+import { currentYearJST, todayJST } from '~/utils/jst'
 import {
   MLB_DEBUT_SEASONS,
   fetchBatterSeason,
@@ -40,7 +41,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 503, statusMessage: 'MLB_DB バインディングが設定されていません。' })
   }
 
-  const season = new Date().getFullYear()
+  const season = currentYearJST()
   const results: { playerId: string; nameJa: string; status: string; detail?: string }[] = []
 
   // 選手マスタを先に全件 upsert
@@ -94,5 +95,5 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  return { syncedAt: new Date().toISOString().slice(0, 10), season, results }
+  return { syncedAt: todayJST(), season, results }
 })

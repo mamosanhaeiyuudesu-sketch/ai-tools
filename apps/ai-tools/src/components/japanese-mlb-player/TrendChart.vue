@@ -136,7 +136,14 @@ async function renderChart() {
       inverse: meta?.direction === 'low',
       min: meta?.chartMin,
       max: meta?.chartMax,
-      axisLabel: { fontSize: 10, formatter: (v: number) => meta?.format(v) ?? v },
+      axisLabel: {
+        fontSize: 10,
+        formatter: (v: number) => {
+          if (meta?.direction === 'low' && meta.chartMax !== undefined && v === meta.chartMax) return '圏外'
+          if (meta?.direction === 'high' && meta.chartMin !== undefined && v === meta.chartMin) return '圏外'
+          return meta?.format(v) ?? String(v)
+        },
+      },
     },
     series,
   }, true)

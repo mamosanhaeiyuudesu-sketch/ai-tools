@@ -190,42 +190,61 @@ function deselectAll() {
             左のサイドバーで選手を選択してください
           </div>
           <template v-else>
-            <section class="mb-8">
-              <h2 class="text-sm font-bold text-slate-600 mb-3 flex items-center gap-2">
-                <span class="w-1 h-4 rounded inline-block" style="background: #0C447C;" />
-                成績比較
-              </h2>
-              <StatsTable
-                :selected-ids="selectedIds"
-                :season-data-map="seasonDataMap"
-                :league-stats="leagueStats"
-                :league="activeLeague"
-              />
-            </section>
+            <!-- 投手 -->
+            <template v-if="pitcherIds.length">
+              <section class="mb-4">
+                <h2 class="text-sm font-bold text-slate-600 mb-3 flex items-center gap-2">
+                  <span class="w-1 h-4 rounded inline-block" style="background: #0C447C;" />
+                  成績比較（投手）
+                </h2>
+                <StatsTable
+                  :selected-ids="selectedIds"
+                  :season-data-map="seasonDataMap"
+                  :league-stats="leagueStats"
+                  :league="activeLeague"
+                  mode="pitcher"
+                />
+              </section>
+              <section class="mb-10">
+                <h2 class="text-sm font-bold text-slate-600 mb-3 flex items-center gap-2">
+                  <span class="w-1 h-4 rounded inline-block" style="background: #0C447C;" />
+                  シーズン内推移（投手）
+                </h2>
+                <TrendChart
+                  :selected-ids="pitcherIds"
+                  :season-data-map="seasonDataMap"
+                  mode="pitcher"
+                />
+              </section>
+            </template>
 
-            <section v-if="pitcherIds.length" class="mb-8">
-              <h2 class="text-sm font-bold text-slate-600 mb-3 flex items-center gap-2">
-                <span class="w-1 h-4 rounded inline-block" style="background: #0C447C;" />
-                シーズン内推移（投手）
-              </h2>
-              <TrendChart
-                :selected-ids="pitcherIds"
-                :season-data-map="seasonDataMap"
-                mode="pitcher"
-              />
-            </section>
-
-            <section v-if="batterIds.length">
-              <h2 class="text-sm font-bold text-slate-600 mb-3 flex items-center gap-2">
-                <span class="w-1 h-4 rounded inline-block" style="background: #0C447C;" />
-                シーズン内推移（野手）
-              </h2>
-              <TrendChart
-                :selected-ids="batterIds"
-                :season-data-map="seasonDataMap"
-                mode="batter"
-              />
-            </section>
+            <!-- 野手 -->
+            <template v-if="batterIds.length">
+              <section class="mb-4">
+                <h2 class="text-sm font-bold text-slate-600 mb-3 flex items-center gap-2">
+                  <span class="w-1 h-4 rounded inline-block" style="background: #0C447C;" />
+                  成績比較（野手）
+                </h2>
+                <StatsTable
+                  :selected-ids="selectedIds"
+                  :season-data-map="seasonDataMap"
+                  :league-stats="leagueStats"
+                  :league="activeLeague"
+                  mode="batter"
+                />
+              </section>
+              <section>
+                <h2 class="text-sm font-bold text-slate-600 mb-3 flex items-center gap-2">
+                  <span class="w-1 h-4 rounded inline-block" style="background: #0C447C;" />
+                  シーズン内推移（野手）
+                </h2>
+                <TrendChart
+                  :selected-ids="batterIds"
+                  :season-data-map="seasonDataMap"
+                  mode="batter"
+                />
+              </section>
+            </template>
           </template>
         </template>
 

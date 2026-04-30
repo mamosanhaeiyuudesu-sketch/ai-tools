@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- 投手テーブル -->
-    <div v-if="pitcherPlayers.length" class="mb-6">
+    <div v-if="pitcherPlayers.length && props.mode !== 'batter'" class="mb-6">
       <h3 class="text-sm font-semibold text-slate-600 mb-2">⚾ 投手</h3>
       <div class="overflow-auto max-h-[65vh] border border-slate-100 rounded isolate">
         <table class="w-full text-sm border-collapse">
@@ -81,7 +81,7 @@
     </div>
 
     <!-- 野手テーブル -->
-    <div v-if="batterPlayers.length">
+    <div v-if="batterPlayers.length && props.mode !== 'pitcher'">
       <h3 class="text-sm font-semibold text-slate-600 mb-2">🏏 野手</h3>
       <div class="overflow-auto max-h-[65vh] border border-slate-100 rounded isolate">
         <table class="w-full text-sm border-collapse">
@@ -160,7 +160,7 @@
       </div>
     </div>
 
-    <div v-if="!pitcherPlayers.length && !batterPlayers.length" class="py-12 text-center text-slate-400 text-sm">
+    <div v-if="(props.mode !== 'batter' && !pitcherPlayers.length) && (props.mode !== 'pitcher' && !batterPlayers.length)" class="py-12 text-center text-slate-400 text-sm">
       {{ league }}リーグの選手が選択されていません
     </div>
   </div>
@@ -175,6 +175,7 @@ const props = defineProps<{
   seasonDataMap: Map<string, SeasonData>
   leagueStats: AllLeagueStats | null
   league: 'AL' | 'NL'
+  mode?: 'pitcher' | 'batter'
 }>()
 
 const colors = PLAYER_COLORS
