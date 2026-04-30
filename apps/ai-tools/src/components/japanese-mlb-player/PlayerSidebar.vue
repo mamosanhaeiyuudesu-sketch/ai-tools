@@ -1,10 +1,10 @@
 <template>
   <aside
-    class="flex-shrink-0 overflow-y-auto flex flex-col"
+    class="flex-shrink-0 flex flex-col"
     style="width: 200px; background: #0C447C;"
   >
-    <!-- リーグ切り替え（デスクトップのみ） -->
-    <div v-if="showLeague !== false" class="flex border-b border-blue-700">
+    <!-- リーグ切り替え（デスクトップのみ・スクロールに追従しない） -->
+    <div v-if="showLeague !== false" class="flex border-b border-blue-700 flex-shrink-0">
       <button
         v-for="lg in leagues"
         :key="lg.key"
@@ -16,7 +16,7 @@
       >{{ lg.label }}</button>
     </div>
 
-    <div class="p-3 flex flex-col gap-4">
+    <div class="p-3 flex flex-col gap-4 overflow-y-auto flex-1">
       <!-- 投手 -->
       <div v-if="pitchers.length">
         <h3 class="text-blue-200 text-xs font-semibold uppercase tracking-wider mb-2 px-1">投手</h3>
@@ -83,12 +83,15 @@
 <script setup lang="ts">
 import { PITCHER_PLAYERS, BATTER_PLAYERS, PLAYER_COLORS } from '~/utils/japanese-mlb-player/players'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   selectedIds: string[]
   league: 'AL' | 'NL'
   showLeague?: boolean
   closable?: boolean
-}>()
+}>(), {
+  showLeague: true,
+  closable: false,
+})
 
 const emit = defineEmits<{
   toggle: [id: string]
