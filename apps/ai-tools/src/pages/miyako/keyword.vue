@@ -99,10 +99,20 @@ onMounted(async () => {
           <input
             v-model="keyword"
             type="text"
-            placeholder="キーワードを入力..."
+            placeholder="ex）サッカー, サトウキビなど"
             class="px-3 py-2.5 text-[13.5px] text-[#1c2d5a] placeholder:text-[#b8c2d8] outline-none w-[220px] bg-transparent"
             @keydown="handleKeydown"
           />
+          <button
+            v-if="keyword"
+            class="flex items-center justify-center px-2.5 text-[#b0b8cc] hover:text-[#6878a8] transition-colors shrink-0"
+            tabindex="-1"
+            @click="keyword = ''"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
         </div>
         <button
           :disabled="loading || !keyword.trim()"

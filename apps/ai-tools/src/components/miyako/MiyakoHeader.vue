@@ -18,12 +18,12 @@ const base = computed(() => {
 
     <div class="max-w-[1600px] mx-auto relative px-4">
       <!-- Desktop: single row -->
-      <div class="flex items-stretch min-h-[46px]">
+      <div class="flex items-stretch min-h-[69px]">
         <!-- Title block -->
         <div class="flex items-center gap-3 pr-5 border-r border-white/[0.07] shrink-0 py-2">
           <div class="flex flex-col gap-[2px]">
-            <span class="font-mono text-[8.5px] tracking-[0.22em] text-[#a5b4fc]/45 uppercase leading-none hidden sm:block">Miyakojima · Council Data</span>
-            <h1 class="m-0 text-[clamp(12px,1.6vw,15px)] font-bold text-white tracking-[0.04em] leading-tight whitespace-nowrap">
+            <span class="font-mono text-[11px] tracking-[0.22em] text-[#a5b4fc]/45 uppercase leading-none hidden sm:block">Miyakojima · Council Data</span>
+            <h1 class="m-0 text-[clamp(15px,2.1vw,20px)] font-bold text-white tracking-[0.04em] leading-tight whitespace-nowrap">
               議事録データ分析
             </h1>
           </div>
@@ -111,7 +111,7 @@ const base = computed(() => {
   align-items: center;
   justify-content: center;
   padding: 0 16px;
-  font-size: 11.5px;
+  font-size: 15px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.48);
   text-decoration: none;
@@ -129,7 +129,7 @@ const base = computed(() => {
   align-items: center;
   justify-content: center;
   padding: 0 16px;
-  font-size: 11.5px;
+  font-size: 15px;
   font-weight: 600;
   color: #a5b4fc;
   white-space: nowrap;
@@ -155,7 +155,7 @@ const base = computed(() => {
   align-items: center;
   justify-content: center;
   padding: 7px 4px;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.48);
   text-decoration: none;
