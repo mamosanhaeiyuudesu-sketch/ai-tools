@@ -259,12 +259,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f0f2f8] overflow-x-hidden">
+  <div class="min-h-screen overflow-x-hidden page-bg">
     <MiyakoHeader active-page="member" />
 
     <!-- Loading -->
-    <div v-if="loading" class="flex justify-center items-center py-[72px]">
-      <span class="w-11 h-11 rounded-full border-[3px] border-[#1A237E]/30 border-t-[#1A237E] animate-spin block" />
+    <div v-if="loading" class="flex flex-col justify-center items-center py-[72px] gap-3">
+      <span class="w-8 h-8 rounded-full border-2 border-[#1A237E]/20 border-t-[#1A237E] animate-spin block" />
+      <span class="font-mono text-[10px] text-[#9aa3c0] tracking-[0.12em] uppercase">Loading data...</span>
     </div>
 
     <!-- Main content -->
@@ -306,6 +307,12 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.page-bg {
+  background-color: #f0f2f8;
+  background-image: radial-gradient(circle, rgba(100,120,168,0.12) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
 .ctrl-select {
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);

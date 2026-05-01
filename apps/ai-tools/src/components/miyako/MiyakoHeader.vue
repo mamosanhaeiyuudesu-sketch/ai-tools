@@ -12,85 +12,158 @@ const base = computed(() => {
 </script>
 
 <template>
-  <header class="bg-gradient-to-br from-[#121d3e] to-[#2a3f7a] px-4 py-3">
-    <div class="max-w-[1600px] mx-auto">
-      <!-- 1段目: タイトル（PCは同行にタブも並ぶ） -->
-      <div class="flex items-center md:gap-4">
-        <h1 class="m-0 text-[clamp(13px,2vw,19px)] font-bold text-white tracking-[0.03em] whitespace-nowrap">
-          宮古島市議会バズワード
-        </h1>
-        <!-- タブ（PCのみ同行） -->
-        <div class="hidden md:flex rounded overflow-hidden border border-white/50 ml-4">
+  <header class="bg-gradient-to-r from-[#0d1728] via-[#121d3e] to-[#1a2a52] border-b border-[#3d5fc4]/25 relative overflow-hidden" style="box-shadow: 0 1px 0 rgba(61,95,196,0.18), inset 0 -1px 0 rgba(61,95,196,0.12)">
+    <!-- Subtle horizontal scan-line texture -->
+    <div class="absolute inset-0 pointer-events-none" style="background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(165,180,252,0.018) 2px, rgba(165,180,252,0.018) 3px)" />
+
+    <div class="max-w-[1600px] mx-auto relative px-4">
+      <!-- Desktop: single row -->
+      <div class="flex items-stretch min-h-[46px]">
+        <!-- Title block -->
+        <div class="flex items-center gap-3 pr-5 border-r border-white/[0.07] shrink-0 py-2">
+          <div class="flex flex-col gap-[2px]">
+            <span class="font-mono text-[8.5px] tracking-[0.22em] text-[#a5b4fc]/45 uppercase leading-none hidden sm:block">Miyakojima · Council Data</span>
+            <h1 class="m-0 text-[clamp(12px,1.6vw,15px)] font-bold text-white tracking-[0.04em] leading-tight whitespace-nowrap">
+              議事録データ分析
+            </h1>
+          </div>
+        </div>
+
+        <!-- Desktop tabs (underline style) -->
+        <div class="hidden md:flex items-stretch ml-1">
           <NuxtLink
             v-if="activePage !== 'session'"
             :to="base"
-            class="px-3 py-1 text-[12px] font-medium bg-white/10 text-white/70 hover:bg-white/25 whitespace-nowrap transition-colors"
-          >年で見る</NuxtLink>
-          <span
-            v-else
-            class="px-3 py-1 text-[12px] font-semibold bg-[#a5b4fc] text-[#121d3e] whitespace-nowrap"
-          >年で見る</span>
+            class="tab-inactive group"
+          >
+            <span>年で見る</span>
+            <span class="tab-bar group-hover:opacity-50" />
+          </NuxtLink>
+          <span v-else class="tab-active">
+            <span>年で見る</span>
+            <span class="tab-bar opacity-100" />
+          </span>
 
           <NuxtLink
             v-if="activePage !== 'member'"
             :to="`${base}/member`"
-            class="px-3 py-1 text-[12px] font-medium bg-white/10 text-white/70 hover:bg-white/25 whitespace-nowrap transition-colors border-l border-white/50"
-          >議員で見る</NuxtLink>
-          <span
-            v-else
-            class="px-3 py-1 text-[12px] font-semibold bg-[#a5b4fc] text-[#121d3e] whitespace-nowrap border-l border-white/50"
-          >議員で見る</span>
+            class="tab-inactive group border-l border-white/[0.06]"
+          >
+            <span>議員で見る</span>
+            <span class="tab-bar group-hover:opacity-50" />
+          </NuxtLink>
+          <span v-else class="tab-active border-l border-white/[0.06]">
+            <span>議員で見る</span>
+            <span class="tab-bar opacity-100" />
+          </span>
 
           <NuxtLink
             v-if="activePage !== 'keyword'"
             :to="`${base}/keyword`"
-            class="px-3 py-1 text-[12px] font-medium bg-white/10 text-white/70 hover:bg-white/25 whitespace-nowrap transition-colors border-l border-white/50"
-          >キーワードで見る</NuxtLink>
-          <span
-            v-else
-            class="px-3 py-1 text-[12px] font-semibold bg-[#a5b4fc] text-[#121d3e] whitespace-nowrap border-l border-white/50"
-          >キーワードで見る</span>
+            class="tab-inactive group border-l border-white/[0.06]"
+          >
+            <span>キーワードで見る</span>
+            <span class="tab-bar group-hover:opacity-50" />
+          </NuxtLink>
+          <span v-else class="tab-active border-l border-white/[0.06]">
+            <span>キーワードで見る</span>
+            <span class="tab-bar opacity-100" />
+          </span>
         </div>
-        <!-- ページ固有コントロール（PCのみ同行・右寄せ） -->
+
+        <!-- Right slot -->
         <div class="hidden md:flex items-center flex-wrap gap-y-1.5 gap-x-4 ml-auto">
           <slot />
         </div>
       </div>
 
-      <!-- 2段目: タブ（スマホのみ） -->
-      <div class="flex md:hidden mt-2">
-        <div class="flex rounded overflow-hidden border border-white/50">
-          <NuxtLink
-            v-if="activePage !== 'session'"
-            :to="base"
-            class="px-3 py-1 text-[12px] font-medium bg-white/10 text-white/70 hover:bg-white/25 whitespace-nowrap transition-colors"
-          >年で見る</NuxtLink>
-          <span
-            v-else
-            class="px-3 py-1 text-[12px] font-semibold bg-[#a5b4fc] text-[#121d3e] whitespace-nowrap"
-          >年で見る</span>
+      <!-- Mobile tabs (second row) -->
+      <div class="flex md:hidden border-t border-white/[0.07]">
+        <NuxtLink
+          v-if="activePage !== 'session'"
+          :to="base"
+          class="mobile-tab"
+        >年で見る</NuxtLink>
+        <span v-else class="mobile-tab mobile-tab-active">年で見る</span>
 
-          <NuxtLink
-            v-if="activePage !== 'member'"
-            :to="`${base}/member`"
-            class="px-3 py-1 text-[12px] font-medium bg-white/10 text-white/70 hover:bg-white/25 whitespace-nowrap transition-colors border-l border-white/50"
-          >議員で見る</NuxtLink>
-          <span
-            v-else
-            class="px-3 py-1 text-[12px] font-semibold bg-[#a5b4fc] text-[#121d3e] whitespace-nowrap border-l border-white/50"
-          >議員で見る</span>
+        <NuxtLink
+          v-if="activePage !== 'member'"
+          :to="`${base}/member`"
+          class="mobile-tab border-l border-white/[0.07]"
+        >議員で見る</NuxtLink>
+        <span v-else class="mobile-tab mobile-tab-active border-l border-white/[0.07]">議員で見る</span>
 
-          <NuxtLink
-            v-if="activePage !== 'keyword'"
-            :to="`${base}/keyword`"
-            class="px-3 py-1 text-[12px] font-medium bg-white/10 text-white/70 hover:bg-white/25 whitespace-nowrap transition-colors border-l border-white/50"
-          >キーワードで見る</NuxtLink>
-          <span
-            v-else
-            class="px-3 py-1 text-[12px] font-semibold bg-[#a5b4fc] text-[#121d3e] whitespace-nowrap border-l border-white/50"
-          >キーワードで見る</span>
-        </div>
+        <NuxtLink
+          v-if="activePage !== 'keyword'"
+          :to="`${base}/keyword`"
+          class="mobile-tab border-l border-white/[0.07]"
+        >キーワード</NuxtLink>
+        <span v-else class="mobile-tab mobile-tab-active border-l border-white/[0.07]">キーワード</span>
       </div>
     </div>
   </header>
 </template>
+
+<style scoped>
+.tab-inactive {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.48);
+  text-decoration: none;
+  white-space: nowrap;
+  position: relative;
+  transition: color 0.15s;
+}
+.tab-inactive:hover {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.tab-active {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #a5b4fc;
+  white-space: nowrap;
+  position: relative;
+  cursor: default;
+}
+
+.tab-bar {
+  position: absolute;
+  bottom: 0;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: #a5b4fc;
+  border-radius: 2px 2px 0 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.mobile-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.48);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+.mobile-tab-active {
+  color: #a5b4fc;
+  font-weight: 600;
+}
+</style>

@@ -77,7 +77,6 @@ function layoutWordcloud() {
     boxes.push({ x: px, y: py, hw, hh })
   }
 
-  // 配置済み単語をコンテナいっぱいに拡大
   let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity
   for (let i = 0; i < spans.length; i++) {
     const p = newPos[words[i].name]
@@ -109,11 +108,13 @@ function layoutWordcloud() {
 </script>
 
 <template>
-  <div class="bg-white border border-[#dde2ef] rounded-[10px] shadow-[0_1px_4px_rgba(28,45,90,0.07),0_0_0_1px_rgba(28,45,90,0.06)] overflow-hidden">
+  <div class="bg-white border border-[#dde2ef] rounded-[8px] shadow-[0_2px_8px_rgba(28,45,90,0.07),0_0_0_1px_rgba(28,45,90,0.04)] overflow-hidden">
     <template v-if="session">
-      <div class="flex items-center gap-1 px-3.5 py-2.5 bg-[#eef1fb] border-b border-[#dde2ef]">
-        <span class="opacity-70">📅</span>
-        <span class="text-xs font-semibold text-[#1c2d5a] tracking-[0.02em]">{{ session.replace(/〜[\d-]+$/, '〜') }}</span>
+      <div class="flex items-center gap-2 px-3.5 py-2 bg-white border-b border-[#dde2ef]" style="border-left: 3px solid #a5b4fc">
+        <span class="font-mono text-[8.5px] tracking-[0.18em] text-[#a5b4fc] uppercase shrink-0">Buzzwords</span>
+        <span class="text-[10px] text-[#dde2ef] shrink-0">|</span>
+        <span class="text-[11.5px] font-semibold text-[#1c2d5a] tracking-[0.01em] truncate min-w-0">{{ session.replace(/〜[\d-]+$/, '〜') }}</span>
+        <span v-if="words.length" class="ml-auto shrink-0 font-mono text-[9.5px] text-[#6878a8] bg-[#f0f2f8] px-1.5 py-[2px] rounded-[3px]">{{ words.length }}w</span>
       </div>
       <div class="p-0">
         <div ref="wcContainerRef" class="wordcloud-container">
@@ -135,10 +136,12 @@ function layoutWordcloud() {
       </div>
     </template>
 
-    <div v-else class="flex flex-col items-center justify-center min-h-[160px] md:min-h-[280px] gap-3 p-6 text-center text-[#6878a8] text-xs leading-relaxed">
-      <span class="text-4xl opacity-25">👆</span>
-      <p class="m-0 hidden md:block">左のヒートマップの列をクリックすると<br>ワードクラウドが表示されます</p>
-      <p class="m-0 md:hidden">上のヒートマップの列をクリックすると<br>ワードクラウドが表示されます</p>
+    <div v-else class="flex flex-col items-center justify-center min-h-[160px] md:min-h-[280px] gap-3 p-6 text-center">
+      <div class="font-mono text-[10.5px] text-[#9aa3c0] leading-[1.8]">
+        <span class="text-[#c5cad8]">$ </span>select <span class="text-[#a5b4fc]/60">year</span> <span class="text-[#c5cad8]">from</span> heatmap<span class="blink">▋</span>
+      </div>
+      <p class="m-0 text-[11px] text-[#9aa3c0] hidden md:block">左のヒートマップで年をクリック</p>
+      <p class="m-0 text-[11px] text-[#9aa3c0] md:hidden">上のヒートマップで年をクリック</p>
     </div>
   </div>
 </template>
@@ -169,5 +172,14 @@ function layoutWordcloud() {
 
 .wc-word:hover {
   opacity: 0.55 !important;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.blink {
+  animation: blink 1.1s step-end infinite;
+  color: #a5b4fc;
 }
 </style>

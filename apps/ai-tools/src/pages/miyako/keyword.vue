@@ -87,50 +87,53 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f0f2f8]">
+  <div class="min-h-screen page-bg">
     <MiyakoHeader active-page="keyword" />
 
-    <div class="max-w-[1400px] mx-auto px-3 md:px-6 pt-5 pb-8">
+    <div class="max-w-[1400px] mx-auto px-3 md:px-6 pt-6 pb-8">
 
       <!-- 検索バー -->
-      <div class="flex gap-2 mb-6 items-center justify-center">
-        <input
-          v-model="keyword"
-          type="text"
-          placeholder="キーワード"
-          class="rounded-[8px] border border-[#c5cad8] bg-white px-3 py-2.5 text-[14px] text-[#1c2d5a] placeholder:text-[#a0aac4] outline-none focus:border-[#3d5fc4] focus:ring-2 focus:ring-[#3d5fc4]/15 shadow-[0_1px_3px_rgba(28,45,90,0.06)] transition-all w-[200px]"
-          @keydown="handleKeydown"
-        />
+      <div class="flex gap-2 mb-7 items-center justify-center">
+        <div class="flex rounded-[7px] border border-[#c5cad8] bg-white overflow-hidden shadow-[0_1px_4px_rgba(28,45,90,0.07)] focus-within:border-[#3d5fc4] focus-within:shadow-[0_0_0_3px_rgba(61,95,196,0.1)] transition-all">
+          <span class="font-mono text-[11px] text-[#9aa3c0] tracking-[0.1em] flex items-center px-3 border-r border-[#edf0f8] bg-[#fafbff] shrink-0 select-none">検索</span>
+          <input
+            v-model="keyword"
+            type="text"
+            placeholder="キーワードを入力..."
+            class="px-3 py-2.5 text-[13.5px] text-[#1c2d5a] placeholder:text-[#b8c2d8] outline-none w-[220px] bg-transparent"
+            @keydown="handleKeydown"
+          />
+        </div>
         <button
           :disabled="loading || !keyword.trim()"
-          class="flex-shrink-0 rounded-[8px] bg-[#1c2d5a] text-white text-[13.5px] font-semibold px-5 py-2.5 hover:bg-[#2a3f7a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-[0_1px_3px_rgba(28,45,90,0.18)]"
+          class="shrink-0 rounded-[7px] bg-[#1c2d5a] text-white text-[13px] font-semibold px-5 py-2.5 hover:bg-[#2a3f7a] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-[0_1px_4px_rgba(28,45,90,0.2)]"
           @click="search"
-        >
-          検索
-        </button>
+        >検索</button>
       </div>
 
       <!-- ローディング -->
       <div v-if="loading" class="flex flex-col items-center justify-center py-20 gap-4">
-        <span class="w-10 h-10 rounded-full border-[3px] border-[#1A237E]/25 border-t-[#1A237E] animate-spin block" />
-        <p class="text-[13px] text-[#6878a8]">「{{ searchedWord }}」を検索中…</p>
+        <span class="w-8 h-8 rounded-full border-2 border-[#1A237E]/20 border-t-[#1A237E] animate-spin block" />
+        <p class="font-mono text-[10px] text-[#9aa3c0] tracking-[0.12em] uppercase">Searching "{{ searchedWord }}"...</p>
       </div>
 
       <!-- 初期状態 -->
-      <div v-else-if="!searchedWord" class="flex flex-col items-center justify-center py-20 text-[#6878a8]">
-        <div class="text-[40px] mb-3 opacity-40">🔍</div>
-        <p class="text-[14px]">キーワードを入力して、議論の変遷を見る</p>
+      <div v-else-if="!searchedWord" class="flex flex-col items-center justify-center py-24 gap-4">
+        <div class="font-mono text-[11px] text-[#9aa3c0] leading-[1.9] text-center">
+          <span class="text-[#c5cad8]">$ </span>search <span class="text-[#a5b4fc]/60">&lt;keyword&gt;</span><br/>
+          <span class="text-[#c5cad8]">→ </span><span class="text-[#b8c2d8]">議会での議論の変遷を表示</span>
+        </div>
       </div>
 
-      <!-- 結果（カード間に矢印） -->
+      <!-- 結果 -->
       <div v-else class="flex flex-col md:flex-row md:items-stretch gap-0">
         <template v-for="(topic, i) in topics" :key="i">
           <!-- カード -->
-          <div class="flex-1 min-w-0 bg-white border border-[#dde2ef] rounded-[10px] shadow-[0_1px_4px_rgba(28,45,90,0.07),0_0_0_1px_rgba(28,45,90,0.06)] overflow-hidden flex flex-col">
+          <div class="flex-1 min-w-0 bg-white border border-[#dde2ef] rounded-[8px] shadow-[0_2px_8px_rgba(28,45,90,0.07),0_0_0_1px_rgba(28,45,90,0.04)] overflow-hidden flex flex-col">
             <!-- 会期ヘッダー -->
-            <div class="flex items-center flex-shrink-0 bg-[#1c2d5a] text-white px-3.5 py-2.5 gap-1.5">
-              <span class="text-[11px] opacity-60">📅</span>
-              <span class="text-[12.5px] font-semibold tracking-[0.02em]">{{ topic.period || '会期不明' }}</span>
+            <div class="flex items-center flex-shrink-0 bg-[#1c2d5a] text-white px-3.5 py-2.5" style="border-left: 3px solid #a5b4fc">
+              <span class="font-mono text-[8.5px] tracking-[0.2em] text-[#a5b4fc] uppercase mr-3 shrink-0">Period</span>
+              <span class="text-[12px] font-semibold tracking-[0.02em]">{{ topic.period || '会期不明' }}</span>
             </div>
 
             <!-- トピック内容 -->
@@ -139,23 +142,27 @@ onMounted(async () => {
               <div class="conclusion">{{ topic.conclusion }}</div>
               <div v-if="topic.flow?.length" class="flow-list">
                 <template v-for="(step, si) in topic.flow" :key="si">
-                  <div class="flow-step">{{ step }}</div>
+                  <div class="flow-step">
+                    <span class="step-num">{{ String(si + 1).padStart(2, '0') }}</span>
+                    <span>{{ step }}</span>
+                  </div>
                   <div v-if="si < topic.flow.length - 1" class="flow-arrow">↓</div>
                 </template>
               </div>
             </div>
           </div>
 
-          <!-- カード間の矢印（最後のカードには表示しない） -->
+          <!-- カード間の矢印 -->
           <div v-if="i < topics.length - 1" class="card-arrow">
-            <span class="md:hidden">↓</span>
-            <span class="hidden md:inline">→</span>
+            <span class="md:hidden text-[#3d5fc4] opacity-50">↓</span>
+            <span class="hidden md:inline text-[#3d5fc4] opacity-50">→</span>
           </div>
         </template>
 
         <!-- 結果なし -->
-        <div v-if="topics.length === 0" class="flex flex-col items-center justify-center py-16 text-[#6878a8] w-full">
-          <p class="text-[14px]">「{{ searchedWord }}」に関する議論は見つかりませんでした</p>
+        <div v-if="topics.length === 0" class="flex flex-col items-center justify-center py-16 gap-3 w-full">
+          <span class="font-mono text-[10px] text-[#9aa3c0] tracking-[0.1em]">// no results found</span>
+          <p class="text-[13px] text-[#6878a8]">「{{ searchedWord }}」に関する議論は見つかりませんでした</p>
         </div>
       </div>
 
@@ -164,32 +171,11 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.search-select {
-  background: white;
-  border: 1px solid #c5cad8;
-  border-radius: 6px;
-  color: #1c2d5a;
-  font-size: 11.5px;
-  font-weight: 500;
-  padding: 2px 6px;
-  cursor: pointer;
-  outline: none;
+.page-bg {
+  background-color: #f0f2f8;
+  background-image: radial-gradient(circle, rgba(100,120,168,0.12) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
-.search-select:focus { border-color: #3d5fc4; }
-
-.ctrl-select {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 6px;
-  color: rgba(255,255,255,0.85);
-  font-size: 11.5px;
-  font-weight: 500;
-  padding: 2px 6px;
-  cursor: pointer;
-  outline: none;
-}
-.ctrl-select:focus { border-color: rgba(255,255,255,0.4); }
-.ctrl-select option { background: #1c2d5a; color: white; }
 
 .ai-body {
   font-size: 13px;
@@ -199,22 +185,23 @@ onMounted(async () => {
 }
 
 .topic-title {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   color: #1c2d5a;
   border-left: 3px solid #3d5fc4;
   padding-left: 8px;
 }
 
 .conclusion {
-  font-size: 12.5px;
+  font-size: 12px;
   color: #3a4a72;
-  background: #f0f3fb;
-  border-radius: 6px;
-  padding: 6px 10px;
+  background: #f4f6fc;
+  border: 1px solid #e8ecf8;
+  border-radius: 5px;
+  padding: 7px 10px;
   margin-bottom: 10px;
-  line-height: 1.7;
+  line-height: 1.72;
 }
 
 .flow-list {
@@ -224,21 +211,34 @@ onMounted(async () => {
 }
 
 .flow-step {
-  font-size: 12.5px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
   color: #1c2d5a;
   background: #fff;
   border: 1px solid #dde2ef;
-  border-radius: 6px;
+  border-radius: 5px;
   padding: 6px 10px;
   line-height: 1.65;
+}
+
+.step-num {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  color: #a5b4fc;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+  letter-spacing: 0.05em;
 }
 
 .flow-arrow {
   text-align: center;
   color: #3d5fc4;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.4;
-  opacity: 0.6;
+  opacity: 0.45;
   margin: 1px 0;
 }
 
@@ -247,9 +247,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: #3d5fc4;
   font-size: 20px;
-  opacity: 0.5;
-  padding: 8px 4px;
+  padding: 8px 6px;
 }
 </style>

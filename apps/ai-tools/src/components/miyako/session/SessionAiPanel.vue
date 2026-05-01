@@ -13,13 +13,14 @@ defineProps<{
 </script>
 
 <template>
-  <div class="bg-white border border-[#dde2ef] rounded-[10px] shadow-[0_1px_4px_rgba(28,45,90,0.07),0_0_0_1px_rgba(28,45,90,0.06)] overflow-hidden flex flex-col md:flex-1 md:min-h-0">
-    <div v-if="!selectedWord" class="flex items-center px-3.5 py-3 text-xs text-[#6878a8]">
-      👆 単語をクリックするとAI解説が表示されます
+  <div class="bg-white border border-[#dde2ef] rounded-[8px] shadow-[0_2px_8px_rgba(28,45,90,0.07),0_0_0_1px_rgba(28,45,90,0.04)] overflow-hidden flex flex-col md:flex-1 md:min-h-0">
+    <div v-if="!selectedWord" class="flex items-center px-3.5 py-3">
+      <span class="font-mono text-[10px] text-[#9aa3c0] tracking-[0.06em]">// 単語をクリックして分析</span>
     </div>
     <template v-else>
-      <div class="flex items-center flex-shrink-0 bg-[#1c2d5a] text-white text-[13.5px] font-semibold px-3.5 py-2.5 tracking-[0.02em]">
-        🤖 「{{ selectedWord }}」の議論
+      <div class="flex items-center flex-shrink-0 bg-[#1c2d5a] text-white px-3.5 py-2.5" style="border-left: 3px solid #a5b4fc">
+        <span class="font-mono text-[8.5px] tracking-[0.2em] text-[#a5b4fc] uppercase mr-3 shrink-0">Analysis</span>
+        <span class="text-[12.5px] font-semibold tracking-[0.02em] truncate">「{{ selectedWord }}」の議論</span>
       </div>
       <div class="overflow-y-auto md:flex-1 md:min-h-0">
         <div v-if="aiLoading" class="flex items-center justify-center min-h-[80px]">
@@ -31,7 +32,10 @@ defineProps<{
             <div class="conclusion">{{ topic.conclusion }}</div>
             <div v-if="topic.flow.length" class="flow-list">
               <template v-for="(step, si) in topic.flow" :key="si">
-                <div class="flow-step">{{ step }}</div>
+                <div class="flow-step">
+                  <span class="step-num">{{ String(si + 1).padStart(2, '0') }}</span>
+                  <span>{{ step }}</span>
+                </div>
                 <div v-if="si < topic.flow.length - 1" class="flow-arrow">↓</div>
               </template>
             </div>
@@ -51,22 +55,23 @@ defineProps<{
 }
 
 .topic-title {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   color: #1c2d5a;
   border-left: 3px solid #3d5fc4;
   padding-left: 8px;
 }
 
 .conclusion {
-  font-size: 12.5px;
+  font-size: 12px;
   color: #3a4a72;
-  background: #f0f3fb;
-  border-radius: 6px;
-  padding: 6px 10px;
+  background: #f4f6fc;
+  border: 1px solid #e8ecf8;
+  border-radius: 5px;
+  padding: 7px 10px;
   margin-bottom: 10px;
-  line-height: 1.7;
+  line-height: 1.72;
 }
 
 .flow-list {
@@ -76,21 +81,34 @@ defineProps<{
 }
 
 .flow-step {
-  font-size: 12.5px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
   color: #1c2d5a;
   background: #fff;
   border: 1px solid #dde2ef;
-  border-radius: 6px;
+  border-radius: 5px;
   padding: 6px 10px;
   line-height: 1.65;
+}
+
+.step-num {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10px;
+  color: #a5b4fc;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+  letter-spacing: 0.05em;
 }
 
 .flow-arrow {
   text-align: center;
   color: #3d5fc4;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.4;
-  opacity: 0.6;
+  opacity: 0.45;
   margin: 1px 0;
 }
 </style>

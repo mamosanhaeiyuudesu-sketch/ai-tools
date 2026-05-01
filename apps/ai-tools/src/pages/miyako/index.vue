@@ -204,12 +204,13 @@ watch(selectedCategory, resetAndRender)
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f0f2f8] overflow-x-hidden">
+  <div class="min-h-screen overflow-x-hidden page-bg">
     <MiyakoHeader active-page="session" />
 
     <!-- Loading -->
-    <div v-if="loading" class="flex justify-center items-center py-[72px] px-6">
-      <span class="w-11 h-11 rounded-full border-[3px] border-[#1A237E]/30 border-t-[#1A237E] animate-spin block" />
+    <div v-if="loading" class="flex flex-col justify-center items-center py-[72px] px-6 gap-3">
+      <span class="w-8 h-8 rounded-full border-2 border-[#1A237E]/20 border-t-[#1A237E] animate-spin block" />
+      <span class="font-mono text-[10px] text-[#9aa3c0] tracking-[0.12em] uppercase">Loading data...</span>
     </div>
 
     <!-- Main content -->
@@ -226,15 +227,16 @@ watch(selectedCategory, resetAndRender)
           @session-click="selectedSession = $event"
         >
           <template #label>
-            <div class="flex items-center flex-wrap gap-y-0.5 gap-x-0 ml-1">
-              <template v-for="(cat, i) in CATEGORY_OPTIONS" :key="cat">
-                <span v-if="i > 0" class="text-[#c5cad8] text-[11px] select-none mx-0.5">/</span>
-                <button
-                  class="text-[11px] px-1 py-0.5 rounded transition-colors leading-5"
-                  :class="selectedCategory === cat ? 'text-[#1A237E] font-bold' : 'text-[#6878a8] hover:text-[#3949AB]'"
-                  @click="selectedCategory = cat"
-                >{{ CATEGORY_SHORT[cat] ?? cat }}</button>
-              </template>
+            <div class="flex items-center flex-wrap gap-x-1 gap-y-1">
+              <button
+                v-for="cat in CATEGORY_OPTIONS"
+                :key="cat"
+                class="text-[10.5px] font-medium px-2 py-[2px] rounded-[3px] transition-all leading-5"
+                :class="selectedCategory === cat
+                  ? 'bg-[#1A237E] text-white shadow-[0_1px_4px_rgba(26,35,126,0.3)]'
+                  : 'text-[#6878a8] hover:text-[#1c2d5a] hover:bg-[#eef1fb]'"
+                @click="selectedCategory = cat"
+              >{{ CATEGORY_SHORT[cat] ?? cat }}</button>
             </div>
           </template>
         </MiyakoSessionHeatmap>
@@ -259,6 +261,12 @@ watch(selectedCategory, resetAndRender)
 </template>
 
 <style scoped>
+.page-bg {
+  background-color: #f0f2f8;
+  background-image: radial-gradient(circle, rgba(100,120,168,0.12) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
 .ctrl-select {
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
