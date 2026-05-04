@@ -178,7 +178,7 @@ function deselectAll() {
         >{{ tab.label }}</button>
 
         <div class="ml-auto hidden md:flex items-center pr-4 text-[11px] text-slate-400">
-          <img src="/new_10785603.png" class="w-4 h-4 mr-1" alt="NEW" />
+          <img src="/new_10785603.png" class="w-5 h-5 mr-1" alt="NEW" />
           当日または前日に更新あり
         </div>
 
