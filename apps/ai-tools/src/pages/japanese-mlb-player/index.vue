@@ -178,7 +178,7 @@ function deselectAll() {
         >{{ tab.label }}</button>
 
         <div class="ml-auto hidden md:flex items-center pr-4 text-[11px] text-slate-400">
-          <span class="font-bold px-1 py-0.5 rounded mr-1" style="background:#FEE2E2; color:#C42121; border:1px solid #FCA5A5;">NEW!</span>
+          <img src="/new_10785603.png" class="w-4 h-4 mr-1" alt="NEW" />
           当日または前日に更新あり
         </div>
 

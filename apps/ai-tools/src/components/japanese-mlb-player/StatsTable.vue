@@ -16,8 +16,7 @@
                 class="text-center py-2 px-3 text-xs font-medium whitespace-nowrap sticky top-0 z-20 bg-white"
               >
                 <span class="inline-flex items-center gap-1" :style="{ color: colors[player.id] }">
-                  <span class="w-2 h-2 rounded-full inline-block flex-shrink-0" :style="{ background: colors[player.id] }" />
-                  <span v-if="isRecentlyUpdated(player.id)" class="text-[9px] font-bold px-1 py-0.5 rounded" style="background:#FEE2E2; color:#C42121; border:1px solid #FCA5A5;">NEW!</span>
+                  <img v-if="isRecentlyUpdated(player.id)" src="/new_10785603.png" class="w-4 h-4 flex-shrink-0" alt="NEW" />
                   {{ player.nameJa }}
                   <a
                     :href="`https://baseball.yahoo.co.jp/mlb/player/${player.sportnavi}/top`"
@@ -96,8 +95,7 @@
                 class="text-center py-2 px-3 text-xs font-medium whitespace-nowrap sticky top-0 z-20 bg-white"
               >
                 <span class="inline-flex items-center gap-1" :style="{ color: colors[player.id] }">
-                  <span class="w-2 h-2 rounded-full inline-block flex-shrink-0" :style="{ background: colors[player.id] }" />
-                  <span v-if="isRecentlyUpdated(player.id)" class="text-[9px] font-bold px-1 py-0.5 rounded" style="background:#FEE2E2; color:#C42121; border:1px solid #FCA5A5;">NEW!</span>
+                  <img v-if="isRecentlyUpdated(player.id)" src="/new_10785603.png" class="w-4 h-4 flex-shrink-0" alt="NEW" />
                   {{ player.nameJa }}
                   <a
                     :href="`https://baseball.yahoo.co.jp/mlb/player/${player.sportnavi}/top`"
