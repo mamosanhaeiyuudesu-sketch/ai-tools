@@ -13,6 +13,7 @@ export function useMlbStats() {
   const lastSyncedAt = useState<string | null>('mlb-last-synced', () => null)
   const loadingIds = useState<Set<string>>('mlb-loading', () => new Set())
   const leagueLoading = useState<boolean>('mlb-league-loading', () => false)
+  const failedIds = useState<Set<string>>('mlb-failed', () => new Set())
 
   const selectedPlayers = computed(() =>
     selectedIds.value.map(id => PLAYERS.find(p => p.id === id)).filter(Boolean) as typeof PLAYERS
@@ -30,14 +31,29 @@ export function useMlbStats() {
   async function fetchSeason(playerId: string) {
     if (seasonCache.value.has(playerId) || loadingIds.value.has(playerId)) return
     loadingIds.value = new Set([...loadingIds.value, playerId])
+    const cleared = new Set(failedIds.value)
+    cleared.delete(playerId)
+    failedIds.value = cleared
     try {
-      const data = await $fetch<SeasonData>(
-        `/api/japanese-mlb-player/season/${playerId}`,
-        { query: { season: currentSeason } }
-      )
-      const next = new Map(seasonCache.value)
-      next.set(playerId, data)
-      seasonCache.value = next
+      let lastError: unknown
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const data = await $fetch<SeasonData>(
+            `/api/japanese-mlb-player/season/${playerId}`,
+            { query: { season: currentSeason } }
+          )
+          const next = new Map(seasonCache.value)
+          next.set(playerId, data)
+          seasonCache.value = next
+          return
+        } catch (e) {
+          lastError = e
+          if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)))
+        }
+      }
+      throw lastError
+    } catch {
+      failedIds.value = new Set([...failedIds.value, playerId])
     } finally {
       const next = new Set(loadingIds.value)
       next.delete(playerId)
@@ -48,11 +64,26 @@ export function useMlbStats() {
   async function fetchYearly(playerId: string) {
     if (yearlyCache.value.has(playerId) || loadingIds.value.has(playerId)) return
     loadingIds.value = new Set([...loadingIds.value, playerId])
+    const cleared = new Set(failedIds.value)
+    cleared.delete(playerId)
+    failedIds.value = cleared
     try {
-      const data = await $fetch<YearlyData>(`/api/japanese-mlb-player/yearly/${playerId}`)
-      const next = new Map(yearlyCache.value)
-      next.set(playerId, data)
-      yearlyCache.value = next
+      let lastError: unknown
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const data = await $fetch<YearlyData>(`/api/japanese-mlb-player/yearly/${playerId}`)
+          const next = new Map(yearlyCache.value)
+          next.set(playerId, data)
+          yearlyCache.value = next
+          return
+        } catch (e) {
+          lastError = e
+          if (attempt < 2) await new Promise(r => setTimeout(r, 1000 * (attempt + 1)))
+        }
+      }
+      throw lastError
+    } catch {
+      failedIds.value = new Set([...failedIds.value, playerId])
     } finally {
       const next = new Set(loadingIds.value)
       next.delete(playerId)
@@ -91,12 +122,28 @@ export function useMlbStats() {
     }
   }
 
+  const hasFailed = computed(() => failedIds.value.size > 0)
+
+  async function retryFailed() {
+    const ids = [...failedIds.value]
+    failedIds.value = new Set()
+    if (activeTab.value === 'season') {
+      await Promise.all([...ids.map(id => fetchSeason(id)), ensureLeagueStats()])
+    } else {
+      await Promise.all(ids.map(id => fetchYearly(id)))
+    }
+  }
+
   function getLeagueStats(): AllLeagueStats | null {
     return leagueStatsCache.value
   }
 
   function isLoading(id: string) {
     return loadingIds.value.has(id)
+  }
+
+  function isError(id: string) {
+    return failedIds.value.has(id)
   }
 
   function getSeasonData(id: string) {
@@ -112,13 +159,16 @@ export function useMlbStats() {
     selectedPlayers,
     activeTab,
     lastSyncedAt,
+    hasFailed,
     togglePlayer,
     fetchSeason,
     fetchYearly,
     fetchMeta,
     ensureSeasonData,
     ensureYearlyData,
+    retryFailed,
     isLoading,
+    isError,
     getSeasonData,
     getYearlyData,
     getLeagueStats,

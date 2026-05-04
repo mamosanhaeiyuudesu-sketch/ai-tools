@@ -42,13 +42,17 @@ function pct(num: number, den: number): number | null {
 }
 
 async function fetchJson<T>(url: string): Promise<T | null> {
-  try {
-    const res = await fetch(url)
-    if (!res.ok) return null
-    return await res.json() as T
-  } catch {
-    return null
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url)
+      if (res.ok) return await res.json() as T
+      if (res.status < 500 || attempt === 2) return null
+    } catch {
+      if (attempt === 2) return null
+    }
+    await new Promise(r => setTimeout(r, 1000 * (attempt + 1)))
   }
+  return null
 }
 
 async function fetchPlayerSplits(mlbId: string, params: Record<string, string>): Promise<MlbSplit[]> {

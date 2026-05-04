@@ -42,14 +42,22 @@ const {
   selectedIds,
   activeTab,
   lastSyncedAt,
+  hasFailed,
   togglePlayer,
   fetchMeta,
   ensureSeasonData,
   ensureYearlyData,
+  retryFailed,
   getSeasonData,
   getYearlyData,
   getLeagueStats,
 } = useMlbStats()
+
+const isRetrying = ref(false)
+async function handleRetry() {
+  isRetrying.value = true
+  try { await retryFailed() } finally { isRetrying.value = false }
+}
 
 watch([activeLeague, activeTab], ([league, tab]) => {
   const query: Record<string, string> = {}
@@ -202,6 +210,16 @@ function deselectAll() {
           @close="mobileMenu = false"
           style="width: 100%;"
         />
+      </div>
+
+      <!-- エラーバナー -->
+      <div v-if="hasFailed" class="mx-5 mt-4 px-4 py-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-700 flex items-center justify-between">
+        <span>一部のデータを取得できませんでした</span>
+        <button
+          @click="handleRetry"
+          :disabled="isRetrying"
+          class="text-xs font-medium text-amber-800 hover:text-amber-900 underline disabled:opacity-50"
+        >{{ isRetrying ? '再試行中...' : '再試行' }}</button>
       </div>
 
       <!-- コンテンツ -->
