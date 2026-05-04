@@ -17,7 +17,7 @@
               >
                 <span class="inline-flex items-center gap-1" :style="{ color: colors[player.id] }">
                   <span class="w-2 h-2 rounded-full inline-block flex-shrink-0" :style="{ background: colors[player.id] }" />
-                  <span v-if="isRecentlyUpdated(player.id)" class="text-[9px] font-bold px-1 py-0.5 rounded bg-emerald-50 text-emerald-600 border border-emerald-200">NEW</span>
+                  <span v-if="isRecentlyUpdated(player.id)" class="text-[9px] font-bold px-1 py-0.5 rounded" style="background:#FEE2E2; color:#C42121; border:1px solid #FCA5A5;">NEW!</span>
                   {{ player.nameJa }}
                   <a
                     :href="`https://baseball.yahoo.co.jp/mlb/player/${player.sportnavi}/top`"
@@ -72,7 +72,7 @@
                 :key="player.id"
                 class="py-2 px-3 text-center font-mono text-sm"
               >
-                <!-- <span :class="getCellClass(player.id, stat.key, 'pitcher')" :style="getTopRankStyle(player.id, stat.key, stat.direction, 'pitcher')">{{ formatStat(player.id, stat.key, stat.format, 'pitcher') }}</span><span class="text-[11px] text-slate-400 ml-0.5">{{ getPlayerRankLabel(player.id, stat.key, stat.direction, 'pitcher') }}</span><span v-if="getTrendArrow(player.id, stat.key, 'pitcher')" class="text-[18px] ml-0.5 font-bold leading-none" style="color: #C42121;">{{ getTrendArrow(player.id, stat.key, 'pitcher') }}</span> -->
+                <span :class="getCellClass(player.id, stat.key, 'pitcher')" :style="getTopRankStyle(player.id, stat.key, stat.direction, 'pitcher')">{{ formatStat(player.id, stat.key, stat.format, 'pitcher') }}</span><span class="text-[11px] text-slate-400 ml-0.5">{{ getPlayerRankLabel(player.id, stat.key, stat.direction, 'pitcher') }}</span>
               </td>
             </tr>
           </tbody>
@@ -97,7 +97,7 @@
               >
                 <span class="inline-flex items-center gap-1" :style="{ color: colors[player.id] }">
                   <span class="w-2 h-2 rounded-full inline-block flex-shrink-0" :style="{ background: colors[player.id] }" />
-                  <span v-if="isRecentlyUpdated(player.id)" class="text-[9px] font-bold px-1 py-0.5 rounded bg-emerald-50 text-emerald-600 border border-emerald-200">NEW</span>
+                  <span v-if="isRecentlyUpdated(player.id)" class="text-[9px] font-bold px-1 py-0.5 rounded" style="background:#FEE2E2; color:#C42121; border:1px solid #FCA5A5;">NEW!</span>
                   {{ player.nameJa }}
                   <a
                     :href="`https://baseball.yahoo.co.jp/mlb/player/${player.sportnavi}/top`"
@@ -152,7 +152,7 @@
                 :key="player.id"
                 class="py-2 px-3 text-center font-mono text-sm"
               >
-                <!-- <span :class="getCellClass(player.id, stat.key, 'batter')" :style="getTopRankStyle(player.id, stat.key, stat.direction, 'batter')">{{ formatStat(player.id, stat.key, stat.format, 'batter') }}</span><span class="text-[11px] text-slate-400 ml-0.5">{{ getPlayerRankLabel(player.id, stat.key, stat.direction, 'batter') }}</span><span v-if="getTrendArrow(player.id, stat.key, 'batter')" class="text-[22px] ml-0.5 font-bold leading-none" style="color: #C42121;">{{ getTrendArrow(player.id, stat.key, 'batter') }}</span> -->
+                <span :class="getCellClass(player.id, stat.key, 'batter')" :style="getTopRankStyle(player.id, stat.key, stat.direction, 'batter')">{{ formatStat(player.id, stat.key, stat.format, 'batter') }}</span><span class="text-[11px] text-slate-400 ml-0.5">{{ getPlayerRankLabel(player.id, stat.key, stat.direction, 'batter') }}</span>
               </td>
             </tr>
           </tbody>
@@ -253,26 +253,4 @@ function isRecentlyUpdated(playerId: string): boolean {
   return date === today || date === yesterday
 }
 
-function isTodayOrYesterday(date: string): boolean {
-  const jstNow = new Date(Date.now() + 9 * 60 * 60 * 1000)
-  const today = jstNow.toISOString().slice(0, 10)
-  const yesterday = new Date(jstNow.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-  return date === today || date === yesterday
-}
-
-function getTrendArrow(playerId: string, key: string, type: 'pitcher' | 'batter'): '↑' | '↓' | '' {
-  const data = props.seasonDataMap.get(playerId)
-  if (!data) return ''
-  const trend = type === 'pitcher' ? data.trendPitcher : data.trendBatter
-  if (!trend || trend.length < 2) return ''
-  const latest = trend[trend.length - 1]
-  if (!latest.date || !isTodayOrYesterday(latest.date)) return ''
-  const prev = trend[trend.length - 2]
-  const latestVal = (latest as unknown as Record<string, unknown>)[key] as number | null
-  const prevVal = (prev as unknown as Record<string, unknown>)[key] as number | null
-  if (latestVal === null || prevVal === null) return ''
-  if (latestVal > prevVal) return '↑'
-  if (latestVal < prevVal) return '↓'
-  return ''
-}
 </script>
