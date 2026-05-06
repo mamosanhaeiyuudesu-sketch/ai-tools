@@ -12,11 +12,19 @@
               自分の人生を生きる
             </h1>
             <p class="mm-hero-sub">
-              
+              長年の親との葛藤を乗り越えたカウンセラーが、<br>
+              同じ痛みを抱えるあなたの伴走者になります。
             </p>
-            <a class="mm-hero-cta" href="https://docs.google.com/forms/d/e/1FAIpQLSckcLkBNH9xEMSeS3_SuDznoShew41SF6Ja6Du7XHvS6-rwRg/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">
+            <a
+              class="mm-hero-cta"
+              href="https://docs.google.com/forms/d/e/1FAIpQLSckcLkBNH9xEMSeS3_SuDznoShew41SF6Ja6Du7XHvS6-rwRg/viewform?usp=publish-editor"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               無料相談フォームへ
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
             </a>
           </div>
           <div class="mm-hero-deco" aria-hidden="true">
@@ -44,11 +52,50 @@
         <h4 class="mm-section-title">親子関係が影響して、以下の問題を抱えてませんか？</h4>
         <div class="mm-for-you-inner">
           <ul class="mm-for-you-list">
-            <li><span class="mm-for-you-dash">—</span>目上の人への反発心が強く、人間関係がうまく作れない。</li>
-            <li><span class="mm-for-you-dash">—</span>他人の目線を過度に意識して、自分を抑え込んでいる。</li>
-            <li><span class="mm-for-you-dash">—</span>頑張っても、自分を認められず、達成感を感じられない。</li>
+            <li>
+              <span class="mm-for-you-dash">—</span>
+              目上の人への反発心が強く、人間関係がうまく作れない。
+            </li>
+            <li>
+              <span class="mm-for-you-dash">—</span>
+              他人の目線を過度に意識して、自分を抑え込んでいる。
+            </li>
+            <li>
+              <span class="mm-for-you-dash">—</span>
+              頑張っても、自分を認められず、達成感を感じられない。
+            </li>
           </ul>
           <img src="/images/mamorin.png" alt="" class="mm-for-you-photo">
+        </div>
+      </div>
+    </section>
+
+    <!-- 私が大事にしていること -->
+    <section id="values">
+      <div class="mm-wrap">
+        <p class="mm-section-label">Values</p>
+        <h2 class="mm-section-title">私が選ばれる理由</h2>
+        <div class="mm-strength-list">
+          <div class="mm-strength-item">
+            <p class="mm-strength-num">01</p>
+            <h3 class="mm-strength-title">当事者であること</h3>
+            <p class="mm-strength-body">
+              私自身が、親との長年の葛藤を体験してきました。<br>
+              ふつうの親子関係を持てた人には理解しがたい体験が、言葉にしなくても即座に共有できます。<br>
+              そして、それを乗り越えてきたからこそ、私自身の言動にも信頼性が生まれると考えています。
+            </p>
+          </div>
+          <div class="mm-strength-item">
+            <p class="mm-strength-num">02</p>
+            <h3 class="mm-strength-title">感情を大事にする</h3>
+            <p class="mm-strength-body">
+              自分がどんな感情を本当は感じているのかを認識することが、変わっていくためにとても大事なことだと考えています。<br>
+              多くの人は、自分が本当に感じている感情を感じないようにして生きています。<br>
+              しかし結果的に、その感情に振り回されて人生を苦しくなっていきます。<br>
+              セッションでは、本当に感じている感情を認識して受容していけるようサポートします。<br>
+              これが自己受容につながっていきます。
+            </p>
+          </div>
         </div>
       </div>
     </section>
@@ -62,11 +109,13 @@
           <div class="mm-service-card">
             <p class="mm-service-type">Service 01</p>
             <h3 class="mm-service-name">カウンセリング</h3>
-            <p class="mm-service-desc">感情にフォーカスしながら、話すことから始めます。<br>怒りや悲しみをしっかり感じきることで、長年抱えてきた未消化の感情を解放することを目指します。</p>
+            <p class="mm-service-desc">
+              話すことから始めます。<br>
+              怒りや悲しみをしっかり感じきることで、長年抱えてきた未消化の感情を解放することを目指します。
+            </p>
             <ul class="mm-service-points">
               <li>傾聴・対話を中心とした60分セッション</li>
               <li>オンライン（ビデオ通話）対応</li>
-              <li>親との関係にフォーカスした対話</li>
               <li>初回無料相談あり（30分）</li>
             </ul>
           </div>
@@ -75,54 +124,134 @@
     </section>
 
     <!-- お客様の声 -->
-    <section>
+    <section id="voice">
       <div class="mm-wrap">
         <p class="mm-section-label">Voice</p>
         <h2 class="mm-section-title">お客様の声</h2>
-        <div class="mm-strength-list">
-          <div class="mm-strength-item">
-            <p class="mm-strength-num">30代 男性</p>
-            <h3 class="mm-strength-title">「自分だけじゃなかったんだ」という一言に尽きます。</h3>
-            <p class="mm-strength-body">父親のことを、友人に話しても深く共感してもらえたことがなかった。まもりんさんと話して初めて、「親と自分」という閉じた関係が外に開いた感じがしました。ずっと抱えていた何かが、緩んだんです。</p>
-          </div>
-          <div class="mm-strength-item">
-            <p class="mm-strength-num">40代 女性</p>
-            <h3 class="mm-strength-title">「自分を可愛がりたかった」という言葉が、自分の口から出てきた。</h3>
-            <p class="mm-strength-body">感情がわからないまま日常に流されていた。セッションを通じて、奥に積み重なっていたものに気づき、「長い間詰まっていたものが、やっとすっと通り抜けていった」という感覚になりました。</p>
-          </div>
-        </div>
-        <NuxtLink to="/voice" class="mm-cta-btn">お客様の声を読む</NuxtLink>
-      </div>
-    </section>
+        <div class="mm-voice-grid">
 
-    <!-- 私の原体験 -->
-    <section>
-      <div class="mm-wrap">
-        <p class="mm-section-label">Story</p>
-        <h2 class="mm-section-title">理解が先に来て、許しはずっとあとについてくる</h2>
-        <div class="mm-quote-block">
-          <p class="mm-quote-text">「親を批判していた、あの頃が、一番自分を許していなかった。」</p>
+          <!-- 30代 男性 -->
+          <div class="mm-service-card">
+            <p class="mm-service-type">30代 男性</p>
+            <h3 class="mm-service-name">父親のことを、誰かに話せたことがありませんでした。</h3>
+            <p class="mm-story-para">
+              父は九州気質で感情的になりやすく、食事のマナーや掃除のことまで、何をやっても否定されるような感じがありました。<br>
+              罵声を浴びせられることもありました。
+            </p>
+            <p class="mm-story-para">
+              父のやり方に従わなければ怒られる。<br>
+              自分の自主性や意思は叩きのめされる。<br>
+              だから表向きは従いながら、裏で自分のやりたいことをやる——そんな二重の生き方をずっと続けてきたんです。
+            </p>
+            <p class="mm-story-para">
+              父自身も、祖父が仕事で不在がちな家庭で育っていて、子どもへの接し方を知らないまま親になった人だとは頭ではわかっていました。<br>
+              距離が取れるようになってから、父の言っていたことが半分は正しかったとも気づきました。<br>
+              でも、感情的な部分だけはどうしても許せなくて。
+            </p>
+            <div class="mm-quote-block">
+              <p class="mm-quote-text">
+                父親との関係って、友人に話しても『そういうもんじゃない？』で終わってしまう。<br>
+                深く共感してもらえた経験が、ほとんどなかったんです。
+              </p>
+            </div>
+            <p class="mm-story-para">
+              そして何より、この悩みを話せる場所がどこにもなかった。<br>
+              だから「これは自分だけの問題で、自分が悪いのかもしれない」という気持ちをずっと抱えていました。<br>
+              父親のことを考えるとき、いつも自分一人でその重さを抱えていた。<br>
+              「一生引きずるんだろうな」と、どこかで諦めてもいました。
+            </p>
+            <p class="mm-story-para">
+              まもりんさんと出会って思ったこと、それは「自分だけじゃなかったんだ」という一言に尽きます。
+            </p>
+            <p class="mm-story-para">
+              誰かと一緒に親のことを見て、分析して、共感してもらえた。<br>
+              「親と自分」という閉じた二人の関係が、初めて外に開いた感じがしました。<br>
+              それだけで、ずっと抱えていた何かが緩んだんです。
+            </p>
+            <div class="mm-quote-block">
+              <p class="mm-quote-text">
+                父親を『完璧な存在』だと思い込んで、それに従えない自分に劣等感を感じていたことにも気づきました。<br>
+                でも、父親も一人の人間なんだと。
+              </p>
+            </div>
+            <p class="mm-story-para">
+              感情的に何でもかんでも従わせるのは良くなかったと、改めて整理できた。
+            </p>
+            <p class="mm-story-para">
+              今は、距離を取り続けていたところから、もう一歩歩み寄ってみようかなという気持ちになっています。<br>
+              ずっと拒絶していた自分が、やっとスタート地点に立てた気がします。
+            </p>
+          </div>
+
+          <!-- 40代 女性 -->
+          <div class="mm-service-card">
+            <p class="mm-service-type">40代 女性</p>
+            <h3 class="mm-service-name">「自分を可愛がりたかった」という言葉が、自分の口から出てきた。</h3>
+            <p class="mm-story-para">
+              自分の感情が、ずっとよくわかりませんでした。<br>
+              怒っているのか、悲しいのか、なんとなく苦しいのに、何がそうさせているのかが言葉にならない。<br>
+              そのまま日常に流されていく、そんな状態が続いていました。
+            </p>
+            <p class="mm-story-para">
+              セッションで話し始めたのは、ちょっとした嫉妬心のことでした。<br>
+              セミナーで先生が他の人の話をするとき、一瞬イラッとする自分がいる。<br>
+              それを「子供みたいだ」「恥ずかしい」と、ずっと自分で抑えつけていたんです。
+            </p>
+            <p class="mm-story-para">
+              でも話していくうちに、その奥に全然別のものが見えてきました。<br>
+              親の期待に応えるために、ずっと自分を演じてきた。<br>
+              素直な感情を出すと怒られる、嫌われる、そういう恐れが積み重なって、本当の自分をどこかに押し込めていた。
+            </p>
+            <div class="mm-quote-block">
+              <p class="mm-quote-text">
+                嫌いな人にも嫌いと言えない、好きな人にも好きと言えない、そんな生き方をずっとしてきたんだなと気づいたとき、<br>
+                なんでそんな仕方をしなきゃいけなかったんだろうって、悲しみが出てきました。
+              </p>
+            </div>
+            <p class="mm-story-para">
+              一番驚いたのは、「自分を可愛がりたかった」という言葉が自分の口から出てきたことです。<br>
+              そんなふうに思っていたなんて、自分でも知らなかった。<br>
+              でもその言葉が出てきた瞬間、ずっと張り詰めていたものが緩んだような気がしました。
+            </p>
+            <p class="mm-story-para">
+              昔の自分だったら、ここまでたどり着けなかったと思います。<br>
+              出来事の話ばかりして「もう嫌だ」で終わっていた。<br>
+              でも今は、怒りや嫉妬という感情を意識できるようになって、その奥にある本当の自分の気持ちまで追えるようになった。
+            </p>
+            <div class="mm-quote-block">
+              <p class="mm-quote-text">
+                「長い間どこかに詰まっていたものが、やっとすっと通り抜けていった」という感覚が一番近い変化です。<br>
+                思っていなかったところにたどり着けた、と感じたセッションでした。
+              </p>
+            </div>
+            <p class="mm-story-para">
+              カウンセリングを受けてみて、まもりんさんは温かい人柄の方だと思いました。
+            </p>
+          </div>
+
         </div>
-        <p class="mm-story-para">父への長年の恨みと、恨んでいる自分を責める二重の苦しさ——<br>私自身がその場所にいました。<br>そして、その場所から抜け出す道を、自分で歩いてきました。</p>
-        <p class="mm-story-para">その道で出会ったのが、同じように父親への恨みを抱えながらそれを乗り越えてきた、一人の男性カウンセラーの存在でした。<br>その人の本、その人との関わり、そして実際のセッションが、私の中に確かな変化をもたらしてくれました。</p>
-        <NuxtLink to="/story" class="mm-cta-btn">私の原体験を読む</NuxtLink>
       </div>
     </section>
 
     <!-- プロフィール -->
-    <section id="profile" class="mm-surface">
+    <section id="profile">
       <div class="mm-wrap">
         <p class="mm-section-label">Profile</p>
         <div class="mm-profile-inner">
           <h3 class="mm-profile-name">まもりん</h3>
           <p class="mm-profile-role">Counselor / Emotion-Focused Therapist</p>
-          <p class="mm-profile-bio">両親との長年の葛藤と、それを乗り越えたプロセスを自ら経験。心理学・セラピー・コーチングを学び、感情の言語化を通じた自己受容のアプローチを実践している。現在は子どもと共に生活を続ける父親でもあり、家族との関係を大切にしながら、同じ見えない痛みを抱える方の伴走をしたいと考えている。AI・IT分野のプロフェッショナルとしても活動しており、論理と感情の両方の視点を持つ。</p>
+          <p class="mm-profile-bio">
+            両親との長年の葛藤と、それを乗り越えたプロセスを自ら経験。<br>
+            心理学・セラピー・コーチングを学び、感情の言語化を通じた自己受容のアプローチを実践している。<br>
+            現在は子どもと共に生活を続ける父親でもあり、家族との関係を大切にしながら、同じ見えない痛みを抱える方の伴走をしたいと考えている。<br>
+            AI・IT分野のプロフェッショナルとしても活動しており、論理と感情の両方の視点を持つ。
+          </p>
         </div>
       </div>
     </section>
 
     <!-- 料金 -->
-    <section id="pricing">
+    <section id="pricing" class="mm-surface">
       <div class="mm-wrap">
         <p class="mm-section-label">Pricing</p>
         <h2 class="mm-section-title">料金体系</h2>
@@ -138,7 +267,9 @@
                 <span class="mm-price-badge">まずここから</span>
               </div>
             </div>
-            <p class="mm-price-note">これまでの人生やカウンセリングで叶えたいことを共有し、今後の進め方をご一緒に確認します。</p>
+            <p class="mm-price-note">
+              これまでの人生やカウンセリングで叶えたいことを共有し、今後の進め方をご一緒に確認します。
+            </p>
           </div>
           <div class="mm-price-row">
             <div>
@@ -164,12 +295,33 @@
     </section>
 
     <!-- よくある質問 -->
-    <section class="mm-surface">
+    <section id="qa">
       <div class="mm-wrap">
         <p class="mm-section-label">Q&amp;A</p>
         <h2 class="mm-section-title">よくある質問</h2>
-        <p class="mm-story-para">「どんな人が対象？」「セッションでは何をするの？」「心理系の資格は持っていないの？」<br>気になる疑問にまとめてお答えしています。</p>
-        <NuxtLink to="/qa" class="mm-cta-btn">よくある質問を見る</NuxtLink>
+        <div class="mm-faq-list">
+          <div
+            v-for="(item, i) in faqs"
+            :key="i"
+            class="mm-faq-item"
+            :class="{ open: openIndex === i }"
+          >
+            <button class="mm-faq-q" @click="toggle(i)">
+              <span class="mm-faq-q-text">{{ item.q }}</span>
+              <span class="mm-faq-icon">{{ openIndex === i ? '−' : '+' }}</span>
+            </button>
+            <div class="mm-faq-a-wrap">
+              <div class="mm-faq-a">
+                <p
+                  v-for="(para, j) in item.a"
+                  :key="j"
+                  class="mm-story-para"
+                  v-html="para"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -179,11 +331,21 @@
         <div class="mm-cta-inner">
           <p class="mm-section-label">Contact</p>
           <h2 class="mm-cta-title">同じ場所にいるあなたへ。</h2>
-          <p class="mm-cta-desc">初回30分は無料で、お話を聞かせてください。<br>いただいた情報は相談対応以外に使用しません。</p>
+          <p class="mm-cta-desc">
+            初回30分は無料で、お話を聞かせてください。<br>
+            いただいた情報は相談対応以外に使用しません。
+          </p>
           <div class="mm-cta-buttons">
-            <a class="mm-btn-primary" href="https://docs.google.com/forms/d/e/1FAIpQLSckcLkBNH9xEMSeS3_SuDznoShew41SF6Ja6Du7XHvS6-rwRg/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">
+            <a
+              class="mm-btn-primary"
+              href="https://docs.google.com/forms/d/e/1FAIpQLSckcLkBNH9xEMSeS3_SuDznoShew41SF6Ja6Du7XHvS6-rwRg/viewform?usp=publish-editor"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               無料相談フォームへ
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
             </a>
           </div>
         </div>
@@ -211,6 +373,63 @@ useHead({
     { rel: 'icon', type: 'image/svg+xml', href: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☯</text></svg>` },
   ],
 })
+
+const openIndex = ref<number | null>(null)
+
+function toggle(i: number) {
+  openIndex.value = openIndex.value === i ? null : i
+}
+
+const faqs = [
+  {
+    q: 'どんな方が対象ですか？',
+    a: [
+      '主に、父親・母親との関係に長年悩んできた方、自己受容に向き合いたい方を対象にしています。',
+      '特に、「親を恨みながら、そんな自分も責めている」という二重の苦しさの中にいる方と、一緒に向き合いたいと考えています。また、父と息子の関係に悩む男性の方にも、特にお力になれると思っています。',
+      'カウンセリングや自己啓発に何度か取り組んだけどなかなか変われない、という方も、ぜひ一度お話しください。',
+    ],
+  },
+  {
+    q: 'セッションでは何をするのですか？',
+    a: [
+      'まず「話すこと」から始めます。親との関係、自分への怒り、誰にも言えなかったこと——安心して話せる場を作ることが最初のステップです。',
+      '進んでいくなかで、感情を言語化する作業に入ることがあります。感情フォーカス・セラピーでは、「寂しさ」「怒り」「悲しみ」「恥」など、表には出てこない感情に一つひとつ名前をつけていきます。感情を可視化することが、自己受容への入口になります。',
+      '何をするかよりも、「何を話してもいい」という感覚を大切にしています。',
+    ],
+  },
+  {
+    q: '何回くらい受けたら変化を感じられますか？',
+    a: [
+      '個人差がありますが、最初の数回で「ここなら話せる」という感覚が生まれることが多いです。5〜10回の継続で、何かしらの変化を感じる方が多い印象です。',
+      'ただ、長年のうちに積み重なってきた感情のパターンに向き合うには、時間がかかります。焦りは禁物です。継続パッケージ（10回セット）から始めてみる方が多いです。',
+      '初回の無料相談（30分）で、ご自身の状況をお聞きしながら、どんなペースで進めるかを一緒に考えます。',
+    ],
+  },
+  {
+    q: 'オンラインでも大丈夫ですか？',
+    a: [
+      'はい、すべてオンライン（ビデオ通話）での対応です。場所を選ばず、ご自身の安心できる環境から参加できます。',
+      'むしろ、オンラインの方が「自分の空間にいながら話せる」ので、話しやすいと感じる方も多いです。',
+    ],
+  },
+  {
+    q: '初回の無料相談では何をしますか？',
+    a: [
+      '30分間、今どんなことで悩んでいるか、どんなことを変えたいかを自由にお話しいただきます。こちらからは、どんなサポートができるかをお伝えします。',
+      'この時点で申し込みを決める必要はありません。まず「話してみる」だけで構いません。',
+    ],
+  },
+  {
+    q: '心理系の資格を持っていないとのことですが、大丈夫ですか？',
+    a: [
+      'これは、私自身もずっと考えてきた問いです。',
+      '自分の恨みや葛藤を手放すために、たくさんの人のカウンセリングやセラピーを受けてきました。臨床心理士の方、NLPの資格を持つ方、コーチング資格を持つ方など、様々なバックグラウンドを持つ人たちに出会いました。',
+      'ですが、自分を一番開放して、本当の意味で理解してくれて、立ち直らせてくれたのは——同じように親との葛藤を抱え、それを乗り越えた経験を持つ人でした。その人は、特に心理系の資格を持っていませんでした。',
+      '資格は、知識や技術の証明として大切なものだと思っています。でも、「この人なら話せる」という安心感は、資格ではなく、<strong>同じ場所にいたことのある人間としての共鳴</strong>から来るのだと、私は自分の経験から感じています。',
+      '私自身、親との葛藤に長年苦しみ、それを乗り越えてきた。その経験が、自分の一番の武器だと思っています。',
+    ],
+  },
+]
 </script>
 
 <style scoped>
