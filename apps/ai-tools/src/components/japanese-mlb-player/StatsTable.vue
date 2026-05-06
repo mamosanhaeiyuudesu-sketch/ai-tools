@@ -41,18 +41,13 @@
               class="border-b border-slate-100 hover:bg-slate-50 transition-colors group"
             >
               <td class="py-2 px-3 sticky left-0 z-10 bg-white group-hover:bg-slate-50 border-r border-slate-100 transition-colors">
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center gap-1.5 whitespace-nowrap">
                   <span class="font-semibold text-slate-700 text-xs">{{ stat.label }}</span>
-                  <div class="relative group/tooltip">
-                    <span class="text-slate-400 cursor-help text-[10px] border border-slate-300 rounded-full w-3.5 h-3.5 inline-flex items-center justify-center leading-none">?</span>
-                    <div class="absolute left-5 top-0 z-50 hidden group-hover/tooltip:block w-60 bg-slate-800 text-white text-xs rounded-lg p-2.5 shadow-xl pointer-events-none">
-                      <div class="font-mono text-yellow-300 mb-1">{{ stat.fullName }}</div>
-                      <div>{{ stat.description }}</div>
-                      <span class="block mt-1 font-medium" :class="stat.direction === 'high' ? 'text-green-400' : 'text-red-400'">
-                        {{ stat.direction === 'high' ? '▲ 高いほど良い' : '▼ 低いほど良い' }}
-                      </span>
-                    </div>
-                  </div>
+                  <span
+                    class="text-slate-400 cursor-help text-[10px] border border-slate-300 rounded-full w-3.5 h-3.5 inline-flex items-center justify-center leading-none flex-shrink-0"
+                    @mouseenter="showTooltip($event, stat)"
+                    @mouseleave="hideTooltip"
+                  >?</span>
                 </div>
               </td>
               <td class="py-2 px-3 text-center">
@@ -120,18 +115,13 @@
               class="border-b border-slate-100 hover:bg-slate-50 transition-colors group"
             >
               <td class="py-2 px-3 sticky left-0 z-10 bg-white group-hover:bg-slate-50 border-r border-slate-100 transition-colors">
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center gap-1.5 whitespace-nowrap">
                   <span class="font-semibold text-slate-700 text-xs">{{ stat.label }}</span>
-                  <div class="relative group/tooltip">
-                    <span class="text-slate-400 cursor-help text-[10px] border border-slate-300 rounded-full w-3.5 h-3.5 inline-flex items-center justify-center leading-none">?</span>
-                    <div class="absolute left-5 top-0 z-50 hidden group-hover/tooltip:block w-60 bg-slate-800 text-white text-xs rounded-lg p-2.5 shadow-xl pointer-events-none">
-                      <div class="font-mono text-yellow-300 mb-1">{{ stat.fullName }}</div>
-                      <div>{{ stat.description }}</div>
-                      <span class="block mt-1 font-medium" :class="stat.direction === 'high' ? 'text-green-400' : 'text-red-400'">
-                        {{ stat.direction === 'high' ? '▲ 高いほど良い' : '▼ 低いほど良い' }}
-                      </span>
-                    </div>
-                  </div>
+                  <span
+                    class="text-slate-400 cursor-help text-[10px] border border-slate-300 rounded-full w-3.5 h-3.5 inline-flex items-center justify-center leading-none flex-shrink-0"
+                    @mouseenter="showTooltip($event, stat)"
+                    @mouseleave="hideTooltip"
+                  >?</span>
                 </div>
               </td>
               <td class="py-2 px-3 text-center">
@@ -161,6 +151,21 @@
     <div v-if="(props.mode !== 'batter' && !pitcherPlayers.length) && (props.mode !== 'pitcher' && !batterPlayers.length)" class="py-12 text-center text-slate-400 text-sm">
       {{ league }}リーグの選手が選択されていません
     </div>
+
+    <!-- ツールチップ: body直下にテレポートして全stacking contextを超える -->
+    <Teleport to="body">
+      <div
+        v-if="tooltip.show && tooltip.stat"
+        class="fixed z-[9999] w-60 bg-slate-800 text-white text-xs rounded-lg p-2.5 shadow-xl pointer-events-none"
+        :style="tooltipStyle"
+      >
+        <div class="font-mono text-yellow-300 mb-1">{{ tooltip.stat.fullName }}</div>
+        <div>{{ tooltip.stat.description }}</div>
+        <span class="block mt-1 font-medium" :class="tooltip.stat.direction === 'high' ? 'text-green-400' : 'text-red-400'">
+          {{ tooltip.stat.direction === 'high' ? '▲ 高いほど良い' : '▼ 低いほど良い' }}
+        </span>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -177,6 +182,33 @@ const props = defineProps<{
 }>()
 
 const colors = PLAYER_COLORS
+
+const tooltip = ref<{ show: boolean; x: number; y: number; stat: StatMeta | null }>({
+  show: false,
+  x: 0,
+  y: 0,
+  stat: null,
+})
+
+const TOOLTIP_WIDTH = 240
+const TOOLTIP_OFFSET = 6
+
+const tooltipStyle = computed(() => {
+  const vw = window.innerWidth
+  const x = tooltip.value.x + TOOLTIP_OFFSET + TOOLTIP_WIDTH > vw
+    ? tooltip.value.x - TOOLTIP_WIDTH - TOOLTIP_OFFSET
+    : tooltip.value.x + TOOLTIP_OFFSET
+  return { left: `${x}px`, top: `${tooltip.value.y}px` }
+})
+
+function showTooltip(event: MouseEvent, stat: StatMeta) {
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  tooltip.value = { show: true, x: rect.right, y: rect.top, stat }
+}
+
+function hideTooltip() {
+  tooltip.value.show = false
+}
 
 const pitcherPlayers = computed(() =>
   PITCHER_PLAYERS.filter(p => props.selectedIds.includes(p.id) && p.league === props.league)
@@ -251,5 +283,4 @@ function isRecentlyUpdated(playerId: string, type: 'batter' | 'pitcher'): boolea
   const yesterday = new Date(jstNow.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
   return date === today || date === yesterday
 }
-
 </script>
